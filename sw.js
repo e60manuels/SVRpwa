@@ -21,6 +21,7 @@ const ASSETS_TO_CACHE = [
 
 // Install event - caching assets
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Forceer de nieuwe SW om direct actief te worden
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('SW: Caching assets');
