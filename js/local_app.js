@@ -9,7 +9,7 @@
         if (!debugDiv) {
             debugDiv = document.createElement('div');
             debugDiv.id = 'debug-console';
-            debugDiv.style = "position:fixed;top:0;left:0;width:100%;max-height:150px;overflow-y:auto;background:rgba(255,0,0,0.9);color:white;font-size:11px;z-index:10000;padding:10px;border-bottom:2px solid black;font-family:monospace;";
+            debugDiv.style = "position:fixed;bottom:0;left:0;width:100%;max-height:120px;overflow-y:auto;background:rgba(0,0,0,0.8);color:white;font-size:10px;z-index:10000;padding:5px;font-family:monospace;pointer-events:none;";
             document.body.appendChild(debugDiv);
         }
         const p = document.createElement('p');
@@ -19,15 +19,14 @@
         debugDiv.scrollTop = debugDiv.scrollHeight;
     }
     window.logDebug = logDebug;
-    logDebug("SVR PWA Start...");
+    logDebug("SVR PWA v2.2 Start");
 
     // --- CSV & SEARCH LOGIC ---
     window.allLocations = [];
     async function loadLocations() {
         try {
-            logDebug("Laden van locaties CSV...");
             const res = await fetch('assets/Woonplaatsen_in_Nederland.csv');
-            if (!res.ok) throw new Error("Status: " + res.status);
+            if (!res.ok) throw new Error("CSV Status: " + res.status);
             const text = await res.text();
             const lines = text.split('\n');
             window.allLocations = lines.slice(1).map(line => {
@@ -37,9 +36,9 @@
                 }
                 return null;
             }).filter(l => l && l.name);
-            logDebug("CSV geladen: " + window.allLocations.length + " items");
+            logDebug("CSV OK: " + window.allLocations.length + " items");
         } catch (e) {
-            logDebug("Fout bij laden CSV: " + e.message);
+            logDebug("CSV Fout: " + e.message);
         }
     }
     loadLocations();
@@ -55,31 +54,31 @@
     window.getCoordinatesWeb = async function(place) {
         const locationName = place.includes(" (") ? place.split(" (")[0] : place;
         try {
-            logDebug("Geocoding voor: " + locationName);
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationName + ", Nederland")}&limit=1`);
             const data = await res.json();
             if (data && data.length > 0) {
                 return { latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) };
             }
         } catch (e) {
-            logDebug("Geocoding fout: " + e.message);
+            logDebug("Geocode Fout: " + e.message);
         }
         return null;
     };
 
-    // Proxy helper om CORS te omzeilen (voor test-doeleinden)
+    // Proxy helper
     window.proxyUrl = function(url) {
-        return "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+        // Gebruik corsproxy.io als alternatief
+        return "https://corsproxy.io/?" + encodeURIComponent(url);
     }
 
-    // Helper voor navigatie (vervangt Android.openNavigation)
+    // Helper voor navigatie
     window.openNavHelper = function(lat, lng, nameEnc) {
         try {
             const name = decodeURIComponent(escape(window.atob(nameEnc)));
             const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
             window.open(url, '_blank');
         } catch(e) {
-            logDebug("Navigatie fout: " + e.message);
+            logDebug("Nav Fout: " + e.message);
         }
     };
 
@@ -317,13 +316,28 @@ async function performSearch() {
         }
         
         logDebug("Search via proxy...");
-        const res = await fetch(window.proxyUrl(apiUrl), { headers: { 'x-requested-with': 'XMLHttpRequest' } });
+        const res = await fetch(window.proxyUrl(apiUrl), { 
+            headers: { 'x-requested-with': 'XMLHttpRequest' } 
+        });
+        
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+            const text = await res.text();
+            const doc = new DOMParser().parseFromString(text, 'text/html');
+            logDebug("API Fout: Ontving HTML (Login?): " + (doc.title || "Geen titel"));
+            throw new Error("API returned HTML instead of JSON");
+        }
+
         const data = await res.json();
         const objects = (data.objects || []).filter(o => o.properties && o.properties.type_camping !== 3);
         logDebug("Resultaten: " + objects.length);
         objects.forEach(o => { o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; });
         objects.sort((a, b) => a.distM - b.distM);
         renderResults(objects, sLat, sLng);
+        
+        // Forceer kaart-refresh
+        setTimeout(() => map.invalidateSize(), 500);
+        
     } catch (e) { logDebug("Search fout: " + e.message); }
     finally { $('#loading-overlay').hide(); isSearching = false; }
 }
