@@ -9,7 +9,7 @@
         if (!debugDiv) {
             debugDiv = document.createElement('div');
             debugDiv.id = 'debug-console';
-            debugDiv.style = "position:fixed;bottom:0;left:0;width:100%;max-height:100px;overflow-y:auto;background:rgba(0,0,0,0.8);color:white;font-size:10px;z-index:9999;pointer-events:none;padding:5px;";
+            debugDiv.style = "position:fixed;top:0;left:0;width:100%;max-height:150px;overflow-y:auto;background:rgba(255,0,0,0.9);color:white;font-size:11px;z-index:10000;padding:10px;border-bottom:2px solid black;font-family:monospace;";
             document.body.appendChild(debugDiv);
         }
         const p = document.createElement('p');
