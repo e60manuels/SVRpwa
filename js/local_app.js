@@ -228,6 +228,7 @@
 
 // --- MAP & CORE LOGIC ---
 let isListView = false;
+let isSearching = false;
 logDebug("Map initialiseren...");
 const map = L.map('map', { zoomControl: false }).setView([52.1326, 5.2913], 8);
 const markerCluster = L.markerClusterGroup();
@@ -235,16 +236,22 @@ const top10Layer = L.featureGroup();
 let centerMarker = null;
 let currentUserLatLng = null;
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap'
 }).addTo(map);
+
+tiles.on('tileload', () => { if(!window.tilesLogged) { logDebug("Kaart-tegel geladen OK"); window.tilesLogged=true; } });
+tiles.on('tileerror', (e) => logDebug("Kaart-tegel FOUT: " + e.message));
+
 map.addLayer(markerCluster); map.addLayer(top10Layer);
 
 map.on('locationfound', (e) => { 
-    logDebug("Locatie gevonden: " + e.latlng.lat + "," + e.latlng.lng);
-    currentUserLatLng = e.latlng; 
+    if (!currentUserLatLng || currentUserLatLng.distanceTo(e.latlng) > 100) {
+        logDebug("Locatie gevonden: " + e.latlng.lat.toFixed(4) + "," + e.latlng.lng.toFixed(4));
+        currentUserLatLng = e.latlng;
+    }
 });
-map.locate({ watch: true, enableHighAccuracy: true });
+map.locate({ watch: false, enableHighAccuracy: true });
 
 $('#locateBtn').on('click', () => {
     if (currentUserLatLng) map.setView(currentUserLatLng, 10);
@@ -285,6 +292,9 @@ $searchInput.on('input', function() {
 });
 
 async function performSearch() {
+    if (isSearching) return;
+    isSearching = true;
+
     const q = $searchInput.val().trim();
     let sLat, sLng;
 
@@ -293,7 +303,9 @@ async function performSearch() {
         if (coords) { sLat = coords.latitude; sLng = coords.longitude; }
     }
     
-    sLat = sLat || 52.1326; sLng = sLng || 5.2913;
+    sLat = sLat || (currentUserLatLng ? currentUserLatLng.lat : 52.1326);
+    sLng = sLng || (currentUserLatLng ? currentUserLatLng.lng : 5.2913);
+
     if (centerMarker) map.removeLayer(centerMarker);
     centerMarker = L.marker([sLat, sLng], { icon: L.divIcon({ className: 'search-marker', html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>', iconSize:[30,30], iconAnchor:[15,30] }) }).addTo(map);
 
@@ -304,16 +316,16 @@ async function performSearch() {
             window.currentFilters.forEach(f => apiUrl += `&filter[facilities][]=${f}`);
         }
         
-        logDebug("Zoeken via proxy: " + apiUrl);
+        logDebug("Search via proxy...");
         const res = await fetch(window.proxyUrl(apiUrl), { headers: { 'x-requested-with': 'XMLHttpRequest' } });
         const data = await res.json();
         const objects = (data.objects || []).filter(o => o.properties && o.properties.type_camping !== 3);
-        logDebug("Resultaten ontvangen: " + objects.length);
+        logDebug("Resultaten: " + objects.length);
         objects.forEach(o => { o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; });
         objects.sort((a, b) => a.distM - b.distM);
         renderResults(objects, sLat, sLng);
     } catch (e) { logDebug("Search fout: " + e.message); }
-    finally { $('#loading-overlay').hide(); }
+    finally { $('#loading-overlay').hide(); isSearching = false; }
 }
 
 function renderResults(objects, cLat, cLng) {
