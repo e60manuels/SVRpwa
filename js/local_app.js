@@ -68,7 +68,7 @@
     };
 
     // Proxy helper om CORS te omzeilen (voor test-doeleinden)
-    function proxyUrl(url) {
+    window.proxyUrl = function(url) {
         return "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
     }
 
@@ -182,7 +182,7 @@
     async function fetchFilterData() {
         try {
             logDebug("Filters ophalen via proxy...");
-            const response = await fetch(proxyUrl('https://www.svr.nl/objects'));
+            const response = await fetch(window.proxyUrl('https://www.svr.nl/objects'));
             const html = await response.text();
             logDebug("Filters HTML ontvangen: " + html.length + " chars");
             const parser = new DOMParser(); 
@@ -305,7 +305,7 @@ async function performSearch() {
         }
         
         logDebug("Zoeken via proxy: " + apiUrl);
-        const res = await fetch(proxyUrl(apiUrl), { headers: { 'x-requested-with': 'XMLHttpRequest' } });
+        const res = await fetch(window.proxyUrl(apiUrl), { headers: { 'x-requested-with': 'XMLHttpRequest' } });
         const data = await res.json();
         const objects = (data.objects || []).filter(o => o.properties && o.properties.type_camping !== 3);
         logDebug("Resultaten ontvangen: " + objects.length);
