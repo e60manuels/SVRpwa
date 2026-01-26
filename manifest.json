@@ -1,0 +1,24 @@
+{
+  "name": "SVR Campings",
+  "short_name": "SVR",
+  "description": "Vind SVR campings bij de boer.",
+  "start_url": "/SVRpwa/index.html",
+  "scope": "/SVRpwa/",
+  "display": "standalone",
+  "background_color": "#FDCC01",
+  "theme_color": "#008AD3",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

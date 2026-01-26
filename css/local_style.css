@@ -1,0 +1,144 @@
+        @font-face {
+            font-family: 'Befalow';
+            src: url('../fonts/befalow.ttf') format('truetype');
+            font-weight: normal; font-style: normal;
+        }
+
+        :root {
+            --svr-yellow: #FDCC01; --svr-blue: #008AD3; --svr-red: #c0392b; --svr-green: #92d050;
+            --status-bar-height: 36px; --header-height: 110px;
+        }
+
+        body { margin: 0; padding: 0; font-family: sans-serif; background-color: #eee; overflow: hidden; }
+        
+        .svr-header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100px;
+            background-color: var(--svr-yellow); z-index: 1000;
+            display: flex; align-items: center; padding-top: var(--status-bar-height); box-sizing: border-box;
+        }
+
+        .svr-top-row { flex: 1; display: flex; padding: 0 12px; gap: 10px; align-items: center; }
+        .search-container { flex: 1; display: flex; background: white; border-radius: 20px; padding: 0 8px; align-items: center; height: 40px; box-sizing: border-box; }
+        .search-container input { border: none; outline: none; width: 100%; padding: 0 8px; font-size: 15px; background: transparent; }
+        
+        #searchIcon { color: var(--svr-blue); padding: 5px; font-size: 16px; }
+        #infoBtn { color: var(--svr-blue); padding: 5px; font-size: 18px; font-family: serif; font-style: italic; font-weight: bold; cursor: pointer; }
+
+        /* --- HELP OVERLAY --- */
+        #help-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); z-index: 5000;
+            display: none; color: white; pointer-events: auto;
+        }
+        .help-item { position: absolute; display: flex; align-items: center; }
+        .help-text { 
+            background: white; color: black; padding: 6px 12px; border-radius: 8px; 
+            font-size: 14px; font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.3); 
+            white-space: nowrap; 
+        }
+        .help-arrow { width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; }
+        .arrow-right { border-left: 8px solid white; margin-left: 6px; }
+        .arrow-up { border-bottom: 8px solid white; border-left: 6px solid transparent; border-right: 6px solid transparent; margin-bottom: 4px; }
+
+        /* Verberg scroll-help standaard, toon alleen in lijst-modus */
+        .help-scroll-item { display: none !important; }
+        #help-overlay.is-list-view .help-scroll-item { display: flex !important; }
+
+        #map-container, #list-container { position: absolute; top: 100px; left: 0; right: 0; bottom: 0; }
+        #list-container { background: #eee; overflow-y: auto; display: none; padding: 12px; }
+
+        /* --- ACTION BUTTONS STACK --- */
+        .map-actions-stack {
+            position: fixed; bottom: 20px; right: 12px;
+            display: flex; flex-direction: column; gap: 12px; z-index: 2000;
+        }
+        .map-stack-btn {
+            width: 44px; height: 44px;
+            background-color: white; color: black !important;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: pointer; border: 1px solid var(--svr-yellow); outline: none;
+            font-size: 18px; transition: transform 0.2s;
+        }
+        .map-stack-btn i { width: 20px; text-align: center; color: black !important; }
+        
+        /* Scroll-to-Top als onderdeel van de stack */
+        #scroll_top_btn { display: none; }
+        #scroll_top_btn.visible { display: flex; }
+
+        .camping-card { background: white; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
+        .card-body { padding: 10px 12px; }
+        .card-body h3 { margin: 0 0 2px 0; font-family: 'Befalow', sans-serif; font-size: 25px; color: var(--svr-blue); font-weight: normal; }
+        .card-location { font-size: 13px; color: var(--svr-green); font-weight: 500; margin-bottom: 2px; }
+        .card-distance { font-size: 13px; color: var(--svr-red); font-weight: 500; }
+        
+        .camping-actions { display: flex; background: #ffffff; border-top: 1px solid #eee; }
+        .action-btn { flex: 1; text-align: center; padding: 8px 0; font-size: 10px; font-weight: 600; text-decoration: none !important; display: flex; align-items: center; justify-content: center; gap: 4px; border-right: 1px solid #eee; }
+        .action-btn:last-child { border-right: none; }
+        .btn-kaart { color: var(--svr-red) !important; }
+        .btn-route { color: var(--svr-green) !important; }
+        .btn-info { color: var(--svr-blue) !important; }
+
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; }
+
+        .suggestions-list {
+            position: absolute; top: 45px; left: 12px; right: 12px;
+            background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 200px; overflow-y: auto; z-index: 2000; display: none; 
+            margin: 0; padding: 0; list-style: none;
+        }
+        .suggestion-item { padding: 10px 15px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; color: #333; }
+
+        /* Leaflet Popup Styling - Yellow Border */
+        .leaflet-popup-content-wrapper {
+            border: 2px solid #FDCC01 !important;
+            border-radius: 4px !important;
+            background: #fff !important;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.4) !important;
+        }
+        .leaflet-popup-content {
+            margin: 15px !important; /* Terug naar een gezonde standaard marge */
+            line-height: 1.2 !important;
+        }
+        .leaflet-popup-tip-container {
+            left: 50% !important;
+            width: 40px !important;
+            margin-left: 12px !important;
+        }
+        .leaflet-popup-tip {
+            background-color: #FDCC01 !important;
+            width: 14px !important;
+            height: 14px !important;
+            margin-left: -7px !important;
+            transform: rotate(45deg) !important;
+        }
+
+        /* --- SCROLL TO TOP BUTTON --- */
+        .svr-scroll-top {
+            position: fixed; bottom: 20px; right: 12px; width: 40px; height: 40px;
+            background-color: #FDCC01; color: #333; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 2000; cursor: pointer;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+            border: none; outline: none;
+        }
+        .svr-scroll-top.visible { opacity: 1; visibility: visible; }
+
+        /* --- USER LOCATION STYLES --- */
+        .user-location-dot {
+            width: 12px; height: 12px;
+            background-color: #008AD3;
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        .locate-btn {
+            position: absolute; bottom: 20px; right: 12px;
+            width: 44px; height: 44px;
+            background-color: white; color: #008AD3;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 1000;
+            pointer-events: auto;
+            cursor: pointer; border: none; outline: none;
+        }
+        /* Scroll-top moet iets hoger staan als de locate-btn er ook is */
+        .svr-scroll-top { bottom: 75px !important; }
