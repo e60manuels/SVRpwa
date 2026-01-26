@@ -58,8 +58,31 @@
         return null;
     };
 
-    window.proxyUrl = function(url) {
-        return "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+    window.proxyUrl = function(url, provider = 'ao') {
+        if (provider === 'ao') return "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+        return "https://corsproxy.io/?" + encodeURIComponent(url);
+    }
+
+    async function fetchWithRetry(url) {
+        logDebug("Poging via AllOrigins...");
+        try {
+            const res = await fetch(window.proxyUrl(url, 'ao'));
+            const wrapper = await res.json();
+            if (wrapper.status && wrapper.status.http_code >= 400) {
+                logDebug("AO meldt HTTP " + wrapper.status.http_code);
+                throw new Error("Proxy error");
+            }
+            return wrapper.contents;
+        } catch (e) {
+            logDebug("AO mislukt, poging via CORSProxy...");
+            try {
+                const res2 = await fetch(window.proxyUrl(url, 'cp'));
+                return await res2.text();
+            } catch (e2) {
+                logDebug("Beide proxies mislukt.");
+                return "";
+            }
+        }
     }
 
     window.openNavHelper = function(lat, lng, nameEnc) {
@@ -120,7 +143,7 @@
     const content = overlay.querySelector('#filter-container');
     const loading = overlay.querySelector('#filter-loading');
 
-    window.closeFilterOverlay = function() {
+    window.closeFilterOverlay = function() { 
         overlay.classList.remove('open'); backdrop.classList.remove('open');
         setTimeout(() => { if (!overlay.classList.contains('open')) backdrop.style.display = 'none'; }, 300);
     };
@@ -134,18 +157,14 @@
 
     async function fetchFilterData() {
         try {
-            logDebug("Filters via AllOrigins...");
-            const response = await fetch(window.proxyUrl('https://www.svr.nl/objects'));
-            const wrapper = await response.json();
-            const contents = wrapper.contents;
-            
+            logDebug("Filters ophalen...");
+            const contents = await fetchWithRetry('https://www.svr.nl/objects');
             if (contents.includes("<!doctype") || contents.includes("<html")) {
                 const doc = new DOMParser().parseFromString(contents, 'text/html');
-                logDebug("Filter HTML: " + (doc.title || "Fout"));
+                logDebug("Filter HTML: " + (doc.title || "Foutpagina"));
                 return;
             }
             loading.style.display = 'none'; content.innerHTML = '';
-            // ... (rest van de filter logica blijft gelijk)
         } catch (e) { logDebug("Filter Fout: " + e.message); }
     }
 
@@ -171,7 +190,7 @@ const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
 tiles.on('tileload', () => { if(!window.tilesLogged) { logDebug("Tegels OK"); window.tilesLogged=true; } });
 map.addLayer(markerCluster); map.addLayer(top10Layer);
 
-map.on('locationfound', (e) => {
+map.on('locationfound', (e) => { 
     if (!currentUserLatLng || currentUserLatLng.distanceTo(e.latlng) > 100) {
         logDebug("Loc: " + e.latlng.lat.toFixed(3) + "," + e.latlng.lng.toFixed(3));
         currentUserLatLng = e.latlng;
@@ -193,7 +212,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 function applyState(state) {
     if (!state) return; isListView = (state.view === 'list');
-    if (isListView) { $('#map-container').hide(); $('#list-container').show(); $('#toggleView i').attr('class', 'fas fa-map'); }
+    if (isListView) { $('#map-container').hide(); $('#list-container').show(); $('#toggleView i').attr('class', 'fas fa-map'); } 
     else { $('#map-container').show(); $('#list-container').hide(); $('#toggleView i').attr('class', 'fas fa-list'); setTimeout(() => map.invalidateSize(), 100); }
 }
 
@@ -237,21 +256,21 @@ async function performSearch() {
             window.currentFilters.forEach(f => apiUrl += `&filter[facilities][]=${f}`);
         }
         
-        logDebug("Search via AO...");
-        const res = await fetch(window.proxyUrl(apiUrl));
-        const wrapper = await res.json();
-        const contents = wrapper.contents;
+        const contents = await fetchWithRetry(apiUrl);
 
-        if (contents.trim().startsWith("<!doctype") || contents.trim().startsWith("<html")) {
+        if (!contents || contents.trim().startsWith("<!doctype") || contents.trim().startsWith("<html") || contents.includes("Internal Server Error")) {
             const doc = new DOMParser().parseFromString(contents, 'text/html');
-            logDebug("SVR meldt: " + (doc.title || "Foutpagina"));
-            if (contents.includes("login")) logDebug("HINT: Inloggen op svr.nl vereist");
+            const title = doc.title || "Foutpagina";
+            logDebug("SVR meldt: " + title);
+            if (contents.toLowerCase().includes("login") || contents.toLowerCase().includes("inloggen")) {
+                logDebug("HINT: Inloggen op SVR.nl vereist!");
+            }
             throw new Error("SVR stuurde HTML ipv JSON");
         }
 
         const data = JSON.parse(contents);
         const objects = (data.objects || []).filter(o => o.properties && o.properties.type_camping !== 3);
-        logDebug("Campings: " + objects.length);
+        logDebug("Gevonden: " + objects.length);
         objects.forEach(o => { o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; });
         objects.sort((a, b) => a.distM - b.distM);
         renderResults(objects, sLat, sLng);
