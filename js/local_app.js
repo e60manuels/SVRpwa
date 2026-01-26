@@ -2,11 +2,32 @@
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
     window.SVR_FILTER_OVERLAY_INJECTED = true;
 
+    // --- DEBUG LOGGING ---
+    function logDebug(msg) {
+        console.log(msg);
+        let debugDiv = document.getElementById('debug-console');
+        if (!debugDiv) {
+            debugDiv = document.createElement('div');
+            debugDiv.id = 'debug-console';
+            debugDiv.style = "position:fixed;bottom:0;left:0;width:100%;max-height:100px;overflow-y:auto;background:rgba(0,0,0,0.8);color:white;font-size:10px;z-index:9999;pointer-events:none;padding:5px;";
+            document.body.appendChild(debugDiv);
+        }
+        const p = document.createElement('p');
+        p.style.margin = "2px 0";
+        p.innerText = "[" + new Date().toLocaleTimeString() + "] " + msg;
+        debugDiv.appendChild(p);
+        debugDiv.scrollTop = debugDiv.scrollHeight;
+    }
+    window.logDebug = logDebug;
+    logDebug("SVR PWA Start...");
+
     // --- CSV & SEARCH LOGIC ---
     window.allLocations = [];
     async function loadLocations() {
         try {
+            logDebug("Laden van locaties CSV...");
             const res = await fetch('assets/Woonplaatsen_in_Nederland.csv');
+            if (!res.ok) throw new Error("Status: " + res.status);
             const text = await res.text();
             const lines = text.split('\n');
             window.allLocations = lines.slice(1).map(line => {
@@ -16,9 +37,9 @@
                 }
                 return null;
             }).filter(l => l && l.name);
-            console.log("SVR PWA: Loaded " + window.allLocations.length + " locations from CSV");
+            logDebug("CSV geladen: " + window.allLocations.length + " items");
         } catch (e) {
-            console.error("SVR PWA: Error loading CSV", e);
+            logDebug("Fout bij laden CSV: " + e.message);
         }
     }
     loadLocations();
@@ -34,16 +55,22 @@
     window.getCoordinatesWeb = async function(place) {
         const locationName = place.includes(" (") ? place.split(" (")[0] : place;
         try {
+            logDebug("Geocoding voor: " + locationName);
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationName + ", Nederland")}&limit=1`);
             const data = await res.json();
             if (data && data.length > 0) {
                 return { latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) };
             }
         } catch (e) {
-            console.error("SVR PWA: Geocoding error", e);
+            logDebug("Geocoding fout: " + e.message);
         }
         return null;
     };
+
+    // Proxy helper om CORS te omzeilen (voor test-doeleinden)
+    function proxyUrl(url) {
+        return "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+    }
 
     // Helper voor navigatie (vervangt Android.openNavigation)
     window.openNavHelper = function(lat, lng, nameEnc) {
@@ -52,7 +79,7 @@
             const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
             window.open(url, '_blank');
         } catch(e) {
-            console.error("SVR ERROR: Could not open navigation", e);
+            logDebug("Navigatie fout: " + e.message);
         }
     };
 
@@ -154,12 +181,15 @@
 
     async function fetchFilterData() {
         try {
-            const response = await fetch('https://www.svr.nl/objects');
+            logDebug("Filters ophalen via proxy...");
+            const response = await fetch(proxyUrl('https://www.svr.nl/objects'));
             const html = await response.text();
+            logDebug("Filters HTML ontvangen: " + html.length + " chars");
             const parser = new DOMParser(); 
             const doc = parser.parseFromString(html, 'text/html');
             loading.style.display = 'none'; content.innerHTML = '';
             const befalowElements = Array.from(doc.querySelectorAll('.befalow')).filter(el => el.innerText.trim().length > 2);
+            logDebug("Filter groepen gevonden: " + befalowElements.length);
             befalowElements.forEach((headerEl) => {
                 const title = headerEl.innerText.trim().replace(/:$/, '');
                 const sectionCard = document.createElement('div'); sectionCard.className = 'filter-section-card';
@@ -184,12 +214,13 @@
                 }
                 if (body.children.length > 0) { sectionCard.appendChild(header); sectionCard.appendChild(body); content.appendChild(sectionCard); }
             });
-        } catch (e) { console.error("SVR PWA: Filter error", e); }
+        } catch (e) { logDebug("Filter fout: " + e.message); }
     }
 
     overlay.querySelector('#svr-filter-apply-btn').onclick = function() {
         const selected = []; overlay.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => selected.push(cb.value));
         window.currentFilters = selected;
+        logDebug("Filters toegepast: " + selected.length);
         window.closeFilterOverlay(); window.performSearch();
     };
 
@@ -197,21 +228,30 @@
 
 // --- MAP & CORE LOGIC ---
 let isListView = false;
+logDebug("Map initialiseren...");
 const map = L.map('map', { zoomControl: false }).setView([52.1326, 5.2913], 8);
 const markerCluster = L.markerClusterGroup();
 const top10Layer = L.featureGroup();
 let centerMarker = null;
 let currentUserLatLng = null;
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+}).addTo(map);
 map.addLayer(markerCluster); map.addLayer(top10Layer);
 
-map.on('locationfound', (e) => { currentUserLatLng = e.latlng; });
+map.on('locationfound', (e) => { 
+    logDebug("Locatie gevonden: " + e.latlng.lat + "," + e.latlng.lng);
+    currentUserLatLng = e.latlng; 
+});
 map.locate({ watch: true, enableHighAccuracy: true });
 
 $('#locateBtn').on('click', () => {
     if (currentUserLatLng) map.setView(currentUserLatLng, 10);
-    else map.locate({ setView: true, maxZoom: 10 });
+    else {
+        logDebug("Locatie onbekend, nieuwe poging...");
+        map.locate({ setView: true, maxZoom: 10 });
+    }
 });
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -261,15 +301,18 @@ async function performSearch() {
     try {
         let apiUrl = `https://www.svr.nl/api/objects?page=0&lat=${sLat}&lng=${sLng}&distance=50000&limit=1500`;
         if (window.currentFilters && window.currentFilters.length > 0) {
-            window.currentFilters.forEach(f => apiUrl += `&filter[facilities]=${f}`);
+            window.currentFilters.forEach(f => apiUrl += `&filter[facilities][]=${f}`);
         }
-        const res = await fetch(apiUrl, { headers: { 'x-requested-with': 'XMLHttpRequest' } });
+        
+        logDebug("Zoeken via proxy: " + apiUrl);
+        const res = await fetch(proxyUrl(apiUrl), { headers: { 'x-requested-with': 'XMLHttpRequest' } });
         const data = await res.json();
         const objects = (data.objects || []).filter(o => o.properties && o.properties.type_camping !== 3);
+        logDebug("Resultaten ontvangen: " + objects.length);
         objects.forEach(o => { o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; });
         objects.sort((a, b) => a.distM - b.distM);
         renderResults(objects, sLat, sLng);
-    } catch (e) { console.error("SVR PWA: Search error", e); }
+    } catch (e) { logDebug("Search fout: " + e.message); }
     finally { $('#loading-overlay').hide(); }
 }
 
