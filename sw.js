@@ -50,33 +50,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Intercept SVR API calls to add CORS headers
-  if (url.origin === 'https://www.svr.nl' && url.pathname.includes('/api/objects')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          // Clone the response to modify headers
-          const newHeaders = new Headers(response.headers);
-          newHeaders.set('Access-Control-Allow-Origin', '*'); // Or specific origin of your PWA
-          // You might also need to set Access-Control-Allow-Methods, etc., if not already handled by server
-          
-          const newResponse = new Response(response.body, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: newHeaders,
-          });
-          return newResponse;
-        })
-        .catch(error => {
-          console.error('SW: API fetch failed:', error);
-          // Optionally, return a cached offline response or a custom error response
-          return caches.match('./offline.html'); 
-        })
-    );
-    return;
-  }
-
-  // Original logic for other API calls (skip caching) - this should ideally not be needed anymore
+  // Skip API caching
   if (url.pathname.includes('/api/')) {
     event.respondWith(fetch(event.request));
     return;

@@ -64,16 +64,19 @@
     }
 
     async function fetchWithRetry(url) {
-        logDebug("Directe fetch naar SVR API...");
+        logDebug("Fetch via Cloudflare Worker...");
+        const cloudflareWorkerUrl = 'https://svr-api-proxy.e60-manuels.workers.dev';
+        const proxiedUrl = `${cloudflareWorkerUrl}/?targetUrl=${encodeURIComponent(url)}`;
+        
         try {
-            const res = await fetch(url);
+            const res = await fetch(proxiedUrl);
             if (!res.ok) {
                 const errorText = await res.text();
                 throw new Error(`HTTP error! Status: ${res.status}, Response: ${errorText}`);
             }
             return await res.text();
         } catch (e) {
-            logDebug("Directe fetch mislukt: " + e.message);
+            logDebug("Fetch via Worker mislukt: " + e.message);
             return "";
         }
     }
