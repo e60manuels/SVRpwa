@@ -19,7 +19,7 @@
         debugDiv.scrollTop = debugDiv.scrollHeight;
     }
     window.logDebug = logDebug;
-    logDebug("SVR PWA v2.4 Start");
+    logDebug("SVR PWA v2.5 Start");
 
     // --- CSV & SEARCH LOGIC ---
     window.allLocations = [];
@@ -64,24 +64,17 @@
     }
 
     async function fetchWithRetry(url) {
-        logDebug("Poging via AllOrigins...");
+        logDebug("Directe fetch naar SVR API...");
         try {
-            const res = await fetch(window.proxyUrl(url, 'ao'));
-            const wrapper = await res.json();
-            if (wrapper.status && wrapper.status.http_code >= 400) {
-                logDebug("AO meldt HTTP " + wrapper.status.http_code);
-                throw new Error("Proxy error");
+            const res = await fetch(url);
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`HTTP error! Status: ${res.status}, Response: ${errorText}`);
             }
-            return wrapper.contents;
+            return await res.text();
         } catch (e) {
-            logDebug("AO mislukt, poging via CORSProxy...");
-            try {
-                const res2 = await fetch(window.proxyUrl(url, 'cp'));
-                return await res2.text();
-            } catch (e2) {
-                logDebug("Beide proxies mislukt.");
-                return "";
-            }
+            logDebug("Directe fetch mislukt: " + e.message);
+            return "";
         }
     }
     window.fetchWithRetry = fetchWithRetry;
