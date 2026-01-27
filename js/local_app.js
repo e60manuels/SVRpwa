@@ -64,24 +64,39 @@
     }
 
     async function fetchWithRetry(url) {
-        logDebug("Fetch via Cloudflare Worker...");
-        const cloudflareWorkerUrl = 'https://svr-api-proxy.e60-manuels.workers.dev';
-        const originalApiUrl = new URL(url); // Parse the original svr.nl URL
-        const proxiedUrl = `${cloudflareWorkerUrl}${originalApiUrl.pathname}${originalApiUrl.search}`;
-        
+        logDebug("Fetch via Cloudflare Worker Proxy...");
+        // Replace with your deployed Cloudflare Worker URL
+        const PROXY_BASE_URL = 'https://svr-proxy-worker.e60-manuels.workers.dev'; 
+    
+        // Determine if the URL needs to be proxied.
+        // We proxy requests to svr.nl. For local files (like CSV), we don't proxy.
+        const isSvrRequest = url.includes('svr.nl');
+        let fetchUrl = url;
+    
+        if (isSvrRequest) {
+            // Construct the URL to hit our proxy's forwarding endpoint
+            // Example: https://www.svr.nl/api/objects?page=0 becomes https://your-worker-url.workers.dev/api/objects?page=0
+            const originalUrl = new URL(url);
+            // Note: The proxy endpoint is /api/* so we need to ensure the path starts with /api/
+            let pathForProxy = originalUrl.pathname.startsWith('/api/') ? originalUrl.pathname : `/api${originalUrl.pathname}`;
+            fetchUrl = `${PROXY_BASE_URL}${pathForProxy}${originalUrl.search}`;
+            logDebug(`Proxying SVR request: ${url} -> ${fetchUrl}`);
+        } else {
+            logDebug(`Fetching non-SVR request directly: ${url}`);
+        }
+    
         try {
-            const res = await fetch(proxiedUrl);
+            const res = await fetch(fetchUrl);
             if (!res.ok) {
                 const errorText = await res.text();
                 throw new Error(`HTTP error! Status: ${res.status}, Response: ${errorText}`);
             }
             return await res.text();
         } catch (e) {
-            logDebug("Fetch via Worker mislukt: " + e.message);
+            logDebug("Fetch via Proxy mislukt: " + e.message);
             return "";
         }
-    }
-    window.fetchWithRetry = fetchWithRetry;
+    }    window.fetchWithRetry = fetchWithRetry;
 
     window.openNavHelper = function(lat, lng, nameEnc) {
         try {

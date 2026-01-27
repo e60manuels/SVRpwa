@@ -1,0 +1,52 @@
+Ik zie het probleem! Je Service Worker kan geen CORS headers toevoegen op deze manier. Browsers blokkeren dit om veiligheidsredenen - een Service Worker mag geen CORS headers manipuleren voor cross-origin requests.
+Waarom het niet werkt:
+javascript// Dit werkt NIET voor cross-origin requests:
+const newHeaders = new Headers(response.headers);
+newHeaders.set('Access-Control-Allow-Origin', '*');
+De browser ziet dat de response van www.svr.nl komt (niet van e60manuels.github.io) en blokkeert de fetch voordat je SW de headers kan aanpassen.
+Oplossingen:
+Optie A: Gebruik mode: 'no-cors' (QUICK FIX, maar beperkt)
+javascriptif (url.origin === 'https://www.svr.nl' && url.pathname.includes('/api/objects')) {
+  event.respondWith(
+    fetch(event.request, { mode: 'no-cors' })
+      .then(response => response)
+      .catch(error => {
+        console.error('SW: API fetch failed:', error);
+        return caches.match('./offline.html'); 
+      })
+  );
+  return;
+}
+Nadeel: Je krijgt een "opaque" response terug - je kunt de data niet lezen! Dit werkt dus niet voor jouw use case.
+Optie B: Proxy via eigen backend (BESTE OPLOSSING)
+Je moet een server-side proxy maken. Opties:
+1. Cloudflare Worker (gratis):
+javascript// https://your-worker.workers.dev/api/objects
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request))
+})
+
+async function handleRequest(request) {
+  const url = new URL(request.url)
+  const apiUrl = 'https://www.svr.nl' + url.pathname + url.search
+  
+  const response = await fetch(apiUrl)
+  const newResponse = new Response(response.body, response)
+  
+  newResponse.headers.set('Access-Control-Allow-Origin', '*')
+  return newResponse
+}
+2. Vercel Serverless Function:
+javascript// api/proxy.js
+export default async function handler(req, res) {
+  const apiUrl = `https://www.svr.nl/api/objects${req.url.split('?')[1] ? '?' + req.url.split('?')[1] : ''}`;
+  
+  const response = await fetch(apiUrl);
+  const data = await response.json();
+  
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.json(data);
+}
+Optie C: GitHub Pages kan geen backend draaien
+Omdat je op e60manuels.github.io zit (static hosting), moet je een externe proxy gebruiken of overstappen naar een platform dat serverless functions ondersteunt (Vercel, Netlify, Cloudflare Pages).
+
