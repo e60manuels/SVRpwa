@@ -19,7 +19,7 @@
         debugDiv.scrollTop = debugDiv.scrollHeight;
     }
     window.logDebug = logDebug;
-    logDebug("SVR PWA v2.3 Start");
+    logDebug("SVR PWA v2.4 Start");
 
     // --- CSV & SEARCH LOGIC ---
     window.allLocations = [];
@@ -84,6 +84,7 @@
             }
         }
     }
+    window.fetchWithRetry = fetchWithRetry;
 
     window.openNavHelper = function(lat, lng, nameEnc) {
         try {
