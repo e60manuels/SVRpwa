@@ -1,0 +1,14 @@
+local_app.js?v=5:7 SVR PWA v2.5 Start
+local_app.js?v=5:7 Map init...
+Map.js:649 [Violation] Only request geolocation information in response to a user gesture.
+locate @ Map.js:649
+(anonymous) @ local_app.js?v=5:196
+local_app.js?v=5:7 Tegels OK
+local_app.js?v=5:7 CSV OK: 2501
+index.html:115 Service Worker geregistreerd ServiceWorkerRegistration {installing: null, waiting: null, active: ServiceWorker, navigationPreload: NavigationPreloadManager, scope: 'https://e60manuels.github.io/SVRpwa/', …}
+favicon.ico:1  GET https://e60manuels.github.io/favicon.ico 404 (Not Found)
+local_app.js?v=5:7 Fetch via Cloudflare Worker...
+local_app.js?v=5:7 SVR meldt: SVR - Stichting Vrije Recreatie
+local_app.js?v=5:7 HINT: Inloggen op SVR.nl vereist!
+local_app.js?v=5:7 Search fout: SVR stuurde HTML ipv JSON
+/workspace set C:\Users\emanu\AndroidStudioProjects
