@@ -72,6 +72,7 @@
         // We proxy requests to svr.nl. For local files (like CSV), we don't proxy.
         const isSvrRequest = url.includes('svr.nl');
         let fetchUrl = url;
+        const options = {};
     
         if (isSvrRequest) {
             // Construct the URL to hit our proxy's forwarding endpoint
@@ -81,12 +82,24 @@
             let pathForProxy = originalUrl.pathname.startsWith('/api/') ? originalUrl.pathname : `/api${originalUrl.pathname}`;
             fetchUrl = `${PROXY_BASE_URL}${pathForProxy}${originalUrl.search}`;
             logDebug(`Proxying SVR request: ${url} -> ${fetchUrl}`);
+            
+            // Add credentials to SVR requests
+            options.credentials = 'include';
         } else {
             logDebug(`Fetching non-SVR request directly: ${url}`);
         }
     
         try {
-            const res = await fetch(fetchUrl);
+            const res = await fetch(fetchUrl, options);
+
+            // Check for 401 = sessie expired (only for SVR requests)
+            if (isSvrRequest && res.status === 401) {
+                console.warn('⚠️ Sessie verlopen, opnieuw inloggen vereist');
+                logDebug('⚠️ Sessie verlopen (401)');
+                if (window.showLoginScreen) window.showLoginScreen();
+                throw new Error('Session expired');
+            }
+
             if (!res.ok) {
                 const errorText = await res.text();
                 throw new Error(`HTTP error! Status: ${res.status}, Response: ${errorText}`);
@@ -94,6 +107,7 @@
             return await res.text();
         } catch (e) {
             logDebug("Fetch via Proxy mislukt: " + e.message);
+            if (e.message === 'Session expired') throw e;
             return "";
         }
     }    window.fetchWithRetry = fetchWithRetry;
@@ -330,10 +344,136 @@ window.showHelp = function() {
     document.getElementById('help-overlay').style.display = 'block';
 };
 
-$(document).ready(() => {
+// === LOGIN FUNCTIONALITEIT VOOR SVR PWA ===
+async function checkSession() {
+  try {
+    const response = await fetch('https://svr-proxy-worker.e60-manuels.workers.dev/api/objects?page=0&lat=52.1326&lng=5.2913&distance=1&limit=1', {
+      credentials: 'include'
+    });
+    
+    if (response.ok) {
+      console.log('✅ Bestaande sessie is nog geldig');
+      return true;
+    } else if (response.status === 401) {
+      console.log('❌ Geen geldige sessie, login vereist');
+      return false;
+    }
+    return false;
+  } catch (error) {
+    console.error('Session check failed:', error);
+    return false;
+  }
+}
+
+async function loginToSVR(email, password) {
+  try {
+    const response = await fetch('https://svr-proxy-worker.e60-manuels.workers.dev/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+      credentials: 'include'
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Login succesvol:', data.message);
+      return true;
+    } else {
+      const error = await response.json();
+      console.error('❌ Login mislukt:', error.message);
+      alert('Login mislukt: ' + error.message);
+      return false;
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    alert('Login fout: ' + error.message);
+    return false;
+  }
+}
+
+window.showLoginScreen = function() {
+  if (document.getElementById('login-overlay')) return;
+
+  const loginHtml = `
+    <div id="login-overlay" style="
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 10000;
+    ">
+      <div style="
+        background: white; padding: 30px; border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; width: 90%;
+      ">
+        <h2 style="margin-top: 0; color: #333;">SVR Login</h2>
+        <p style="color: #666; margin-bottom: 20px;">Log in om de app te gebruiken</p>
+        
+        <input type="email" id="svr-email" placeholder="Email" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 16px;">
+        <input type="password" id="svr-password" placeholder="Wachtwoord" style="width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 16px;">
+        
+        <button id="svr-login-btn" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold;">Inloggen</button>
+        <div id="login-error" style="color: red; margin-top: 15px; display: none;"></div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', loginHtml);
+  
+  document.getElementById('svr-login-btn').addEventListener('click', async () => {
+    const email = document.getElementById('svr-email').value;
+    const password = document.getElementById('svr-password').value;
+    
+    if (!email || !password) {
+      const err = document.getElementById('login-error');
+      err.textContent = 'Vul email en wachtwoord in';
+      err.style.display = 'block';
+      return;
+    }
+    
+    const btn = document.getElementById('svr-login-btn');
+    btn.textContent = 'Bezig met inloggen...';
+    btn.disabled = true;
+    
+    const success = await loginToSVR(email, password);
+    
+    if (success) {
+      document.getElementById('login-overlay').remove();
+      window.initializeApp();
+    } else {
+      btn.textContent = 'Inloggen';
+      btn.disabled = false;
+      const err = document.getElementById('login-error');
+      err.textContent = 'Login mislukt, probeer opnieuw';
+      err.style.display = 'block';
+    }
+  });
+  
+  document.getElementById('svr-password').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') document.getElementById('svr-login-btn').click();
+  });
+}
+
+async function initApp() {
+  console.log('🚀 SVR PWA Start - Checking session...');
+  const hasValidSession = await checkSession();
+  
+  if (hasValidSession) {
+    console.log('✅ Sessie geldig, app starten...');
+    window.initializeApp();
+  } else {
+    console.log('❌ Geen geldige sessie, login scherm tonen...');
+    window.showLoginScreen();
+  }
+}
+
+window.initializeApp = function() {
     history.replaceState({ view: 'map' }, "");
     setTimeout(() => performSearch(), 500);
     if (!localStorage.getItem('svr_help_shown')) {
         setTimeout(() => { window.showHelp(); localStorage.setItem('svr_help_shown', 'true'); }, 2500);
     }
+};
+
+$(document).ready(() => {
+    initApp();
 });
