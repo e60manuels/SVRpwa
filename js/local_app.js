@@ -381,9 +381,15 @@ async function loginToSVR(email, password) {
       console.log('✅ Login succesvol:', data.message);
       return true;
     } else {
-      const error = await response.json();
-      console.error('❌ Login mislukt:', error.message);
-      alert('Login mislukt: ' + error.message);
+      let errorData;
+      try {
+        errorData = await response.json(); // Probeer als JSON te parsen
+      } catch (jsonError) {
+        // Als JSON parsen faalt, haal dan de ruwe tekst op
+        errorData = { message: `Worker error (non-JSON response): ${await response.text()}`, details: jsonError.message };
+      }
+      console.error('❌ Login mislukt:', errorData.message || errorData.details || 'Onbekende fout');
+      alert('Login mislukt: ' + (errorData.message || errorData.details || 'Onbekende fout'));
       return false;
     }
   } catch (error) {
