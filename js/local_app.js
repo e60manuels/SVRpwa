@@ -66,7 +66,8 @@
     async function fetchWithRetry(url) {
         logDebug("Fetch via Cloudflare Worker...");
         const cloudflareWorkerUrl = 'https://svr-api-proxy.e60-manuels.workers.dev';
-        const proxiedUrl = `${cloudflareWorkerUrl}/?targetUrl=${encodeURIComponent(url)}`;
+        const originalApiUrl = new URL(url); // Parse the original svr.nl URL
+        const proxiedUrl = `${cloudflareWorkerUrl}${originalApiUrl.pathname}${originalApiUrl.search}`;
         
         try {
             const res = await fetch(proxiedUrl);
