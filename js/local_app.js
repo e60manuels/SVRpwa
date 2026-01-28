@@ -72,28 +72,39 @@
         const PROXY_BASE_URL = 'https://svr-proxy-worker.e60-manuels.workers.dev'; 
     
         // Determine if the URL needs to be proxied.
-        // We proxy requests to svr.nl. For local files (like CSV), we don't proxy.
-        const isSvrRequest = url.includes('svr.nl');
+        // We proxy requests to svr.nl and nominatim.openstreetmap.org
+        const isProxiedTarget = url.includes('svr.nl') || url.includes('nominatim.openstreetmap.org');
         let fetchUrl = url;
         const options = { headers: {} }; // Initialize options with an empty headers object
     
-        if (isSvrRequest) {
+        if (isProxiedTarget) {
             // Construct the URL to hit our proxy's forwarding endpoint
-            // Example: https://www.svr.nl/api/objects?page=0 becomes https://your-worker-url.workers.dev/api/objects?page=0
             const originalUrl = new URL(url);
-            // Note: The proxy endpoint is /api/* so we need to ensure the path starts with /api/
-            let pathForProxy = originalUrl.pathname.startsWith('/api/') ? originalUrl.pathname : `/api${originalUrl.pathname}`;
-            fetchUrl = `${PROXY_BASE_URL}${pathForProxy}${originalUrl.search}`;
-            logDebug(`Proxying SVR request: ${url} -> ${fetchUrl}`);
             
-            // Manually add session ID from localStorage
-            const sessionId = localStorage.getItem('svr_session_id');
-            if (sessionId) {
-                options.headers['X-SVR-Session'] = sessionId;
-                logDebug(`Adding X-SVR-Session header: ${sessionId.substring(0, 20)}...`);
-            } else {
-                logDebug('No session ID found in localStorage.');
+            // For SVR.nl requests, we often need to map to /api/*
+            let pathForProxy = originalUrl.pathname;
+            if (originalUrl.hostname === 'www.svr.nl') {
+                pathForProxy = originalUrl.pathname.startsWith('/api/') ? originalUrl.pathname : `/api${originalUrl.pathname}`;
             }
+            // For Nominatim, use the full path and hostname directly
+            if (originalUrl.hostname === 'nominatim.openstreetmap.org') {
+                pathForProxy = originalUrl.hostname + originalUrl.pathname; // Send hostname as part of the path for worker routing
+            }
+
+            fetchUrl = `${PROXY_BASE_URL}/${pathForProxy}${originalUrl.search}`;
+            logDebug(`Proxying request: ${url} -> ${fetchUrl}`);
+            
+            // Manually add session ID from localStorage only for SVR requests
+            if (originalUrl.hostname === 'www.svr.nl') {
+                const sessionId = localStorage.getItem('svr_session_id');
+                if (sessionId) {
+                    options.headers['X-SVR-Session'] = sessionId;
+                    logDebug(`Adding X-SVR-Session header: ${sessionId.substring(0, 20)}...`);
+                } else {
+                    logDebug('No session ID found in localStorage.');
+                }
+            }
+
 
             // options.credentials = 'include'; // Removed, as we manually manage session via custom header
         } else {
