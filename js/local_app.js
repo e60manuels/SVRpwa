@@ -5,18 +5,7 @@
     // --- DEBUG LOGGING ---
     function logDebug(msg) {
         console.log(msg);
-        let debugDiv = document.getElementById('debug-console');
-        if (!debugDiv) {
-            debugDiv = document.createElement('div');
-            debugDiv.id = 'debug-console';
-            debugDiv.style = "position:fixed;bottom:0;left:0;width:100%;max-height:120px;overflow-y:auto;background:rgba(0,0,0,0.8);color:white;font-size:10px;z-index:10000;padding:5px;font-family:monospace;pointer-events:auto;";
-            document.body.appendChild(debugDiv);
-        }
-        const p = document.createElement('p');
-        p.style.margin = "2px 0";
-        p.innerText = "[" + new Date().toLocaleTimeString() + "] " + msg;
-        debugDiv.appendChild(p);
-        debugDiv.scrollTop = debugDiv.scrollHeight;
+        // Removed on-screen debug console as requested
     }
     window.logDebug = logDebug;
     logDebug("SVR PWA v2.5 Start");
@@ -73,13 +62,13 @@
     
         // Determine if the URL needs to be proxied.
         // We proxy requests to svr.nl and nominatim.openstreetmap.org
-        const isProxiedTarget = url.includes('svr.nl') || url.includes('nominatim.openstreetmap.org');
+        const originalUrl = new URL(url); // Parse original URL once
+        const isProxiedTarget = originalUrl.hostname === 'www.svr.nl' || originalUrl.hostname === 'nominatim.openstreetmap.org';
         let fetchUrl = url;
         const options = { headers: {} }; // Initialize options with an empty headers object
     
         if (isProxiedTarget) {
             // Construct the URL to hit our proxy's forwarding endpoint
-            const originalUrl = new URL(url);
             
             // For SVR.nl requests, we often need to map to /api/*
             let pathForProxy = originalUrl.pathname;
@@ -108,7 +97,7 @@
 
             // options.credentials = 'include'; // Removed, as we manually manage session via custom header
         } else {
-            logDebug(`Fetching non-SVR request directly: ${url}`);
+            logDebug(`Fetching non-proxied request directly: ${url}`);
         }
     
         try {
@@ -116,7 +105,7 @@
 
 
             // Check for 401 = sessie expired (only for SVR requests)
-            if (isSvrRequest && res.status === 401) {
+            if (originalUrl.hostname === 'www.svr.nl' && res.status === 401) { // Fixed: used originalUrl.hostname
                 console.warn('⚠️ Sessie verlopen, opnieuw inloggen vereist');
                 logDebug('⚠️ Sessie verlopen (401)');
                 if (window.showLoginScreen) window.showLoginScreen();
