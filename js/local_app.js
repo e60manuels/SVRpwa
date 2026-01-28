@@ -49,8 +49,11 @@
     window.getCoordinatesWeb = async function(place) {
         const locationName = place.includes(" (") ? place.split(" (")[0] : place;
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationName + ", Nederland")}&limit=1`);
-            const data = await res.json();
+            // Use fetchWithRetry to route Nominatim requests through the Worker
+            const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationName + ", Nederland")}&limit=1`;
+            logDebug(`Fetching coordinates for "${place}" via Worker proxy.`);
+            const contents = await fetchWithRetry(nominatimUrl); // Use fetchWithRetry
+            const data = JSON.parse(contents);
             if (data && data.length > 0) {
                 return { latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) };
             }
