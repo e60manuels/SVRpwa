@@ -72,7 +72,7 @@
         // We proxy requests to svr.nl. For local files (like CSV), we don't proxy.
         const isSvrRequest = url.includes('svr.nl');
         let fetchUrl = url;
-        const options = {};
+        const options = { headers: {} }; // Initialize options with an empty headers object
     
         if (isSvrRequest) {
             // Construct the URL to hit our proxy's forwarding endpoint
@@ -83,14 +83,23 @@
             fetchUrl = `${PROXY_BASE_URL}${pathForProxy}${originalUrl.search}`;
             logDebug(`Proxying SVR request: ${url} -> ${fetchUrl}`);
             
-            // Add credentials to SVR requests
-            options.credentials = 'include';
+            // Manually add session ID from localStorage
+            const sessionId = localStorage.getItem('svr_session_id');
+            if (sessionId) {
+                options.headers['X-SVR-Session'] = sessionId;
+                logDebug(`Adding X-SVR-Session header: ${sessionId.substring(0, 20)}...`);
+            } else {
+                logDebug('No session ID found in localStorage.');
+            }
+
+            // options.credentials = 'include'; // Removed, as we manually manage session via custom header
         } else {
             logDebug(`Fetching non-SVR request directly: ${url}`);
         }
     
         try {
             const res = await fetch(fetchUrl, options);
+
 
             // Check for 401 = sessie expired (only for SVR requests)
             if (isSvrRequest && res.status === 401) {
@@ -347,20 +356,33 @@ window.showHelp = function() {
 // === LOGIN FUNCTIONALITEIT VOOR SVR PWA ===
 async function checkSession() {
   try {
-    const response = await fetch('https://svr-proxy-worker.e60-manuels.workers.dev/api/objects?page=0&lat=52.1326&lng=5.2913&distance=1&limit=1', {
-      credentials: 'include'
-    });
+    const sessionId = localStorage.getItem('svr_session_id');
+    const options = { headers: {} };
+
+    if (sessionId) {
+      options.headers['X-SVR-Session'] = sessionId;
+      console.log('✅ Found session ID in localStorage, attempting to validate:', sessionId.substring(0, 20) + '...');
+    } else {
+      console.log('❌ No session ID found in localStorage.');
+      return false;
+    }
+    
+    const response = await fetch('https://svr-proxy-worker.e60-manuels.workers.dev/api/objects?page=0&lat=52.1326&lng=5.2913&distance=1&limit=1', options);
     
     if (response.ok) {
       console.log('✅ Bestaande sessie is nog geldig');
       return true;
     } else if (response.status === 401) {
-      console.log('❌ Geen geldige sessie, login vereist');
+      console.log('❌ Sessie verlopen (401), opnieuw inloggen vereist');
+      localStorage.removeItem('svr_session_id'); // Clear invalid session
       return false;
     }
+    console.log(`❌ Ongeldige sessie: Status ${response.status}`);
+    localStorage.removeItem('svr_session_id'); // Clear invalid session
     return false;
   } catch (error) {
     console.error('Session check failed:', error);
+    localStorage.removeItem('svr_session_id'); // Clear session on network error
     return false;
   }
 }
@@ -373,12 +395,18 @@ async function loginToSVR(email, password) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ email, password }),
-      credentials: 'include'
+      // credentials: 'include' // Removed, as we manually manage session via localStorage and custom header
     });
     
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ Login succesvol:', data.message);
+      if (data.session_id) {
+        localStorage.setItem('svr_session_id', data.session_id);
+        console.log('✅ Session ID stored in localStorage:', data.session_id.substring(0, 20) + '...');
+      } else {
+        console.warn('Login successful but no session_id received in response.');
+      }
+      console.log('✅ Login succesvol:', data.message || 'Geen bericht');
       return true;
     } else {
       let errorData;
