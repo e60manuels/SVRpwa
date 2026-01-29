@@ -119,25 +119,7 @@
 #detail-container .btn-svr-blue:hover { background-color: #006ebc; border-color: #006ebc; }
 
 
-/* Styling for the "Gele Veeg" background effect */
-#detail-container .veeg-yellow {
-    background: url('https://www.svr.nl/images/vegen/2.png') no-repeat center center; /* Updated URL */
-    background-size: 100% 100%;
-    width: 95% !important; /* Replicate width from outerHTML_detailpagina.txt */
-    max-width: 95% !important; /* Replicate max-width */
-    margin-left: auto;
-    margin-right: auto;
-    display: inline-block; /* Ensure it wraps content */
-    padding: 0.5rem; /* Add some padding around the text */
-    text-align: center;
-}
-#detail-container .veeg-yellow h1.befalow {
-    font-size: 2.2rem; /* Adjust font size to fit */
-    line-height: 1.2;
-    padding: 0;
-    margin: 0;
-    text-transform: capitalize;
-}
+
 
 /* Specific styling for the large Euro icons (SVG) */
 #detail-container svg[fill="currentColor"] {
