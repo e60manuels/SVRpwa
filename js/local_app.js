@@ -407,33 +407,18 @@ async function renderDetail(objectId) {
             // 3. Remove all <iframe> tags (DISABLED to allow videos)
             // tempDiv.querySelectorAll('iframe').forEach(iframe => iframe.remove());
 
-            // 1. Remove all <script> tags
-            tempDiv.querySelectorAll('script').forEach(script => script.remove());
+            // **START REPLICATING WEBACTIVITY BEHAVIOR**
+            // Re-enable inline 'style' attributes and 'on*' event handlers.
+            // The WebView app relies on JavaScript to set these, so we cannot aggressively remove them.
+            // (Previous cleaning for these is now removed)
 
-            // 2. Remove all <link> tags (especially stylesheets)
-            tempDiv.querySelectorAll('link').forEach(link => link.remove());
-
-            // 3. Keep <iframe> tags (removal disabled in previous step)
-
-            // 4. Remove all inline 'style' attributes (still aggressive for non-swiper elements)
-            tempDiv.querySelectorAll('[style]').forEach(element => element.removeAttribute('style'));
-
-            // 5. Remove all 'on*' event handler attributes (e.g., onclick, onload, onerror)
-            tempDiv.querySelectorAll('*').forEach(element => {
-                Array.from(element.attributes).forEach(attr => {
-                    if (attr.name.startsWith('on')) {
-                        element.removeAttribute(attr.name);
-                    }
-                });
-            });
-
-            // 6. Make images visible: Remove 'd-none' class and 'loading="lazy"' attribute
+            // Make images visible: Remove 'd-none' class and 'loading="lazy"' attribute
             tempDiv.querySelectorAll('img').forEach(img => {
                 img.classList.remove('d-none');
                 img.removeAttribute('loading');
             });
 
-            // 7. Rewrite relative URLs to absolute URLs pointing to svr.nl
+            // Rewrite relative URLs to absolute URLs pointing to svr.nl (still needed)
             const SVR_BASE = 'https://www.svr.nl';
             tempDiv.querySelectorAll('[src], [href]').forEach(element => {
                 const attr = element.hasAttribute('src') ? 'src' : 'href';
@@ -444,39 +429,194 @@ async function renderDetail(objectId) {
             });
             
             logDebug(`Processed HTML lengte na opschonen: ${tempDiv.innerHTML.length}`);
-            const closeBtn = `<div style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; align-items: center; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px;"><i class="fas fa-arrow-left"></i></button>
-                <h3 style="margin: 0; font-family: 'Befalow'; color: #333;">Camping Details</h3>
+            const closeBtn = `<div style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; align-items: center; justify-content: space-between; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px; color: #333;"><i class="fas fa-arrow-left"></i></button>
+                <h3 style="margin: 0; font-family: 'Befalow'; color: #333; font-size: 1.2rem;">Camping Details</h3>
             </div>`;
             $('#detail-container').empty().append(closeBtn + tempDiv.innerHTML);
             applyState({ view: 'detail' }); // Ensure the detail view is visible
 
-            // Initialize Swiper for the detail page carousel AFTER content is in DOM
-            const swiperElement = document.querySelector('#detail-container .swiper-container');
-            if (swiperElement) {
-                if (typeof Swiper !== 'undefined') {
-                    new Swiper(swiperElement, {
-                        loop: true,
-                        autoplay: {
-                            delay: 2500,
-                            disableOnInteraction: false,
-                        },
-                        pagination: {
-                            el: '.swiper-pagination',
-                            clickable: true,
-                        },
-                        navigation: {
-                            nextEl: '.swiper-button-next',
-                            prevEl: '.swiper-button-prev',
-                        },
-                    });
-                    logDebug("Swiper carousel initialized.");
-                } else {
-                    logDebug("Swiper library not loaded, cannot initialize carousel.");
+            // **START REPLICATING JAVASCRIPT INJECTIONS FROM WEBACTIVITY**
+
+            // 1. Inject custom styles for Swiper pagination bullets (from swiper_init.js)
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .svr-detail-swiper .swiper-pagination {
+                    bottom: 15px !important;
+                    z-index: 999999 !important;
+                    display: block !important;
+                    visibility: visible !important;
+                    pointer-events: auto !important;
                 }
-            } else {
-                logDebug("Swiper container not found in injected detail content.");
+                .svr-detail-swiper .swiper-pagination-bullet {
+                    background: #FFD800 !important;
+                    opacity: 0.5 !important;
+                    width: 10px;
+                    height: 10px;
+                    margin: 0 5px !important;
+                }
+                .svr-detail-swiper .swiper-pagination-bullet-active {
+                    background: #FFD800 !important;
+                    opacity: 1 !important;
+                }
+            `;
+            document.head.appendChild(style);
+            logDebug('SVR_MOD: Swiper Pagination CSS injected.');
+
+            // 2. Implement initializeSwiper logic (from swiper_init.js)
+            function initializeSwiper() {
+                logDebug('SVR_MOD_DEBUG: Initializing bulletproof Swiper...');
+                
+                // Find the original container of the images
+                // The mainImageContainer must be located within the injected tempDiv.innerHTML
+                const mainImageContainer = document.querySelector('#detail-container div.row.m-0.p-4.mt-0');
+
+                if (!mainImageContainer || mainImageContainer.dataset.swiperInitialized) {
+                    logDebug('SVR_MOD_DEBUG: Main image container not found or already initialized.');
+                    return;
+                }
+
+                let images = [];
+                const imageCards = mainImageContainer.querySelectorAll('div.card');
+                
+                imageCards.forEach(card => {
+                    const img = card.querySelector('img');
+                    if (img && img.src) {
+                        images.push(img.src);
+                    }
+                });
+
+                logDebug('SVR_MOD_DEBUG: Found images via DOM query:', images);
+
+                if (images.length > 0) {
+                    mainImageContainer.dataset.swiperInitialized = 'true';
+                    logDebug('SVR_MOD_DEBUG: Images found. Proceeding with robust Swiper setup.');
+                    
+                    // Create the Swiper container structure with a specific class for targeting
+                    const swiperContainer = document.createElement('div');
+                    swiperContainer.className = 'swiper-container svr-detail-swiper';
+                    swiperContainer.style.width = '100%';
+                    swiperContainer.style.height = '300px'; 
+                    swiperContainer.style.position = 'relative';
+                    swiperContainer.style.touchAction = 'pan-x';
+                    swiperContainer.style.overflow = 'hidden';
+
+                    const swiperWrapper = document.createElement('div');
+                    swiperWrapper.className = 'swiper-wrapper';
+
+                    images.forEach(src => {
+                        const swiperSlide = document.createElement('div');
+                        swiperSlide.className = 'swiper-slide';
+                        swiperSlide.style.display = 'flex';
+                        swiperSlide.style.alignItems = 'center';
+                        swiperSlide.style.justifyContent = 'center';
+                        
+                        const imgElement = document.createElement('img');
+                        imgElement.src = src;
+                        imgElement.style.width = '100%';
+                        imgElement.style.height = '100%';
+                        imgElement.style.objectFit = 'cover';
+                        
+                        swiperSlide.appendChild(imgElement);
+                        swiperWrapper.appendChild(swiperSlide);
+                    });
+
+                    swiperContainer.appendChild(swiperWrapper);
+
+                    const pagination = document.createElement('div');
+                    pagination.className = 'swiper-pagination';
+                    swiperContainer.appendChild(pagination);
+
+                    // Replace the original image container with the new Swiper container
+                    mainImageContainer.parentNode.replaceChild(swiperContainer, mainImageContainer);
+
+                    // Initialize Swiper with robust settings
+                    if (typeof Swiper !== 'undefined') {
+                        new Swiper(swiperContainer, {
+                            direction: 'horizontal',
+                            loop: true,
+                            speed: 400,
+                            roundLengths: true,
+                            observer: true,
+                            observeParents: true,
+                            observeSlideChildren: true,
+                            updateOnImagesReady: true,
+                            loopAdditionalSlides: 5,
+                            pagination: {
+                                el: '.swiper-pagination',
+                                clickable: true,
+                            },
+                            threshold: 10,
+                            followFinger: true,
+                            touchStartPreventDefault: true,
+                            touchMoveStopPropagation: true,
+                            centerInsufficientSlides: true,
+                            on: {
+                                init: function () {
+                                    const self = this;
+                                    setTimeout(function() {
+                                        self.update();
+                                        logDebug('SVR_MOD_DEBUG: Swiper forced update 1 (500ms).');
+                                    }, 500);
+                                    setTimeout(function() {
+                                        self.update();
+                                        logDebug('SVR_MOD_DEBUG: Swiper forced update 2 (1500ms).');
+                                    }, 1500);
+                                },
+                            },
+                        });
+                        logDebug('SVR_MOD_DEBUG: Robust Swiper initialized successfully.');
+                    } else {
+                        logDebug('SVR_MOD_DEBUG: Swiper library not loaded, cannot initialize.');
+                    }
+                } else {
+                    logDebug('SVR_MOD_DEBUG: No images found. Swiper not initialized.');
+                }
             }
+            // Delay initialization to ensure DOM and Swiper.js are ready
+            setTimeout(initializeSwiper, 600);
+            logDebug('SVR_MOD: Swiper initialization scheduled.');
+
+
+            // 3. Implement "Gele Veeg" JavaScript Styling (from DetailWebViewActivity.kt)
+            const veegScript = `
+                (function() {
+                    var veegCampings = document.querySelector('.veeg-campings');
+                    if (veegCampings) {
+                        // Override inline !important styles using setProperty
+                        veegCampings.style.setProperty('width', '95%', 'important');
+                        veegCampings.style.setProperty('max-width', '95%', 'important');
+                        veegCampings.style.setProperty('padding-left', 'auto'); // This was not in original but makes sense if you want to remove specific padding
+                        veegCampings.style.setProperty('padding-right', 'auto');
+                        veegCampings.style.setProperty('margin-left', 'auto');
+                        veegCampings.style.setProperty('margin-right', 'auto');
+                        veegCampings.style.setProperty('background', "url('https://svr.nl/static/images/veeg_geel.png') no-repeat center center", 'important');
+                        veegCampings.style.setProperty('background-size', '100% 100%', 'important');
+                        veegCampings.style.setProperty('text-transform', 'capitalize', 'important'); // From original inline style
+                        veegCampings.style.setProperty('display', 'inline-block', 'important'); // From original inline style
+                        veegCampings.style.setProperty('float', 'left', 'important'); // From original inline style
+                        veegCampings.style.setProperty('text-align', 'center', 'important'); // From original inline style
+                    }
+
+                    // Apply font-family to befalow class (from DetailWebViewActivity.kt, injected befalow-font-style)
+                    var befalowElements = document.querySelectorAll('.befalow');
+                    befalowElements.forEach(function(el) {
+                        el.style.setProperty('font-family', "'Befalow', sans-serif", 'important');
+                    });
+                })();
+            `;
+            // Execute this script after a small delay to ensure DOM is ready
+            setTimeout(() => {
+                const webViewContainer = document.querySelector('#detail-container'); // Assuming #detail-container is the root for our injected content
+                if (webViewContainer) {
+                    const scriptElement = document.createElement('script');
+                    scriptElement.textContent = veegScript;
+                    webViewContainer.appendChild(scriptElement);
+                    logDebug('SVR_MOD: Gele Veeg and Befalow font JS styling injected.');
+                }
+            }, 700);
+
+
         } else {
             const preview = htmlContent.substring(0, 500).replace(/</g, "&lt;");
             const closeBtn = `<div style="padding: 10px; background: #eee;">
