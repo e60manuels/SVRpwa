@@ -60,17 +60,19 @@
         // Replace with your deployed Cloudflare Worker URL
         const PROXY_BASE_URL = 'https://svr-proxy-worker.e60-manuels.workers.dev'; 
     
-        // Determine if the URL needs to be proxied.
-        // We proxy requests to svr.nl and nominatim.openstreetmap.org
         const originalUrl = new URL(url); // Parse original URL once
-        const isProxiedTarget = originalUrl.hostname === 'www.svr.nl' || originalUrl.hostname === 'nominatim.openstreetmap.org';
         let fetchUrl = url;
         const options = { headers: {} }; // Initialize options with an empty headers object
+
+        // Determine if we need to add X-SVR-Session.
+        // This is needed if the request is for www.svr.nl (to be proxied through worker)
+        // OR if the request is already directly to the PROXY_BASE_URL (meaning it's
+        // already going to the worker, and the worker needs the session).
+        const needsSVRSession = originalUrl.hostname === 'www.svr.nl' || originalUrl.hostname === new URL(PROXY_BASE_URL).hostname;
     
-        if (isProxiedTarget) {
+        // If the URL is originally for svr.nl or nominatim, construct the worker-proxied URL
+        if (originalUrl.hostname === 'www.svr.nl' || originalUrl.hostname === 'nominatim.openstreetmap.org') {
             // Construct the URL to hit our proxy's forwarding endpoint
-            
-            // For SVR.nl requests, we often need to map to /api/*
             let pathForProxy = originalUrl.pathname;
             if (originalUrl.hostname === 'www.svr.nl') {
                 pathForProxy = originalUrl.pathname.startsWith('/api/') ? originalUrl.pathname : `/api${originalUrl.pathname}`;
@@ -81,24 +83,28 @@
             }
 
             fetchUrl = `${PROXY_BASE_URL}/${pathForProxy}${originalUrl.search}`;
-            logDebug(`Proxying request: ${url} -> ${fetchUrl}`);
-            
-            // Manually add session ID from localStorage only for SVR requests
-            if (originalUrl.hostname === 'www.svr.nl') {
-                const sessionId = localStorage.getItem('svr_session_id');
-                if (sessionId) {
-                    options.headers['X-SVR-Session'] = sessionId;
-                    logDebug(`Adding X-SVR-Session header: ${sessionId.substring(0, 20)}...`);
-                } else {
-                    logDebug('No session ID found in localStorage.');
-                }
-            }
-
-
-            // options.credentials = 'include'; // Removed, as we manually manage session via custom header
+            logDebug(`Proxying original request: ${url} -> ${fetchUrl}`);
         } else {
-            logDebug(`Fetching non-proxied request directly: ${url}`);
+            // If the URL is ALREADY the proxy base URL, then we treat it as a direct proxy request
+            if (originalUrl.hostname === new URL(PROXY_BASE_URL).hostname) {
+                logDebug(`Direct request to Worker: ${url}`);
+                // No need to re-construct fetchUrl, it's already the target.
+            } else {
+                logDebug(`Fetching non-proxied request directly: ${url}`);
+            }
         }
+        
+        // Manually add session ID from localStorage only for SVR requests, if needed
+        if (needsSVRSession) {
+            const sessionId = localStorage.getItem('svr_session_id');
+            if (sessionId) {
+                options.headers['X-SVR-Session'] = sessionId;
+                logDebug(`Adding X-SVR-Session header: ${sessionId.substring(0, 20)}...`);
+            } else {
+                logDebug('No session ID found in localStorage for SVR request.');
+            }
+        }
+        // options.credentials = 'include'; // Removed, as we manually manage session via custom header
     
         try {
             const res = await fetch(fetchUrl, options);
