@@ -387,24 +387,39 @@ async function renderDetail(objectId) {
         const doc = parser.parseFromString(htmlContent, 'text/html');
         logDebug(`Geparsde pagina titel: ${doc.title}`);
 
-        // Try to find the main content area with multiple possible selectors
-        let mainContent = doc.querySelector('.details-campings'); 
+        // Try to find the main content area based on outerHTML_detailpagina.txt
+        let mainContent = doc.querySelector('.container-fluid.pt-0 .row'); 
         if (!mainContent) {
-             logDebug("Selector '.details-campings' niet gevonden, proberen met 'main'...");
-             mainContent = doc.querySelector('main');
-        }
-        if (!mainContent) {
-             logDebug("Selector 'main' ook niet gevonden, proberen met 'body'...");
-             // Fallback: take the body content but warn
+             logDebug("Selector '.container-fluid.pt-0 .row' niet gevonden, proberen met 'body'...");
              mainContent = doc.body;
         }
         
         if (mainContent && mainContent.innerHTML.trim().length > 0) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = mainContent.innerHTML;
+
+            // 1. Remove all <script> tags
+            tempDiv.querySelectorAll('script').forEach(script => script.remove());
+
+            // 2. Remove all <link> tags (especially stylesheets)
+            tempDiv.querySelectorAll('link').forEach(link => link.remove());
+
+            // 3. Rewrite relative URLs to absolute URLs pointing to svr.nl
+            const SVR_BASE = 'https://www.svr.nl';
+            tempDiv.querySelectorAll('[src], [href]').forEach(element => {
+                const attr = element.hasAttribute('src') ? 'src' : 'href';
+                let url = element.getAttribute(attr);
+                if (url && url.startsWith('/') && !url.startsWith('//')) {
+                    element.setAttribute(attr, SVR_BASE + url);
+                }
+            });
+            
+            logDebug(`Processed HTML lengte na opschonen: ${tempDiv.innerHTML.length}`);
             const closeBtn = `<div style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; align-items: center; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                 <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px;"><i class="fas fa-arrow-left"></i></button>
                 <h3 style="margin: 0; font-family: 'Befalow'; color: #333;">Camping Details</h3>
             </div>`;
-            $('#detail-container').empty().append(closeBtn + mainContent.innerHTML);
+            $('#detail-container').empty().append(closeBtn + tempDiv.innerHTML);
             applyState({ view: 'detail' }); // Ensure the detail view is visible
         } else {
             const preview = htmlContent.substring(0, 500).replace(/</g, "&lt;");
