@@ -417,7 +417,7 @@ function renderResults(objects, cLat, cLng) {
         const lat = g.coordinates[1], lng = g.coordinates[0], safeName = btoa(unescape(encodeURIComponent(p.name)));
         const marker = L.marker([lat, lng]);
         const popup = `<div style="min-width:200px;">
-            <h5 style="color:#008AD3;font-family:'Befalow';font-size:20px;margin:0;cursor:pointer;" onclick="window.openSVRDetailProxy('${obj.id}')">${p.name}</h5>
+            <h5 style="color:#008AD3;font-family:'Befalow';font-size:20px;margin:0;cursor:pointer;" onclick="window.showSVRDetailPage('${obj.id}')">${p.name}</h5>
             <div style="font-size:12px;color:#666;">${p.city}</div>
             <div style="margin-top:10px;display:flex;gap:10px;">
                 <button onclick="window.openNavHelper(${lat},${lng},'${safeName}')" style="flex:1;background:#FDCC01;border:none;padding:5px;border-radius:5px;font-weight:bold;">ROUTE</button>
@@ -435,7 +435,7 @@ function renderResults(objects, cLat, cLng) {
             <div class="camping-actions">
                 <a href="#" class="action-btn btn-kaart" onclick="map.setView([${lat},${lng}], 15); applyState({view:'map'}); return false;"><i class="fa-solid fa-map"></i> KAART</a>
                 <a href="#" class="action-btn btn-route" onclick="window.openNavHelper(${lat}, ${lng}, '${safeName}'); return false;"><i class="fa-solid fa-route"></i> ROUTE</a>
-                <a href="#" class="action-btn btn-info" onclick="window.openSVRDetailProxy('${obj.id}'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
+                <a href="#" class="action-btn btn-info" onclick="window.showSVRDetailPage('${obj.id}'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
             </div>
         </div>`;
         $('#resultsList').append(card);
