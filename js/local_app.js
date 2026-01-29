@@ -132,11 +132,9 @@
         } catch(e) { logDebug("Nav Fout: " + e.message); }
     };
 
-    window.openSVRDetailProxy = function(objectId) {
-        const PROXY_BASE_URL = 'https://svr-proxy-worker.e60-manuels.workers.dev';
-        // The worker will now correctly handle /object/{id} paths directly
-        const proxiedUrl = `${PROXY_BASE_URL}/object/${objectId}`;
-        window.open(proxiedUrl, '_blank');
+    window.showSVRDetailPage = function(objectId) {
+        history.pushState({ view: 'detail', objectId: objectId }, "", `#detail/${objectId}`);
+        renderDetail(objectId);
     };
 
     const css = `
@@ -257,12 +255,53 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 }
 
 function applyState(state) {
-    if (!state) return; isListView = (state.view === 'list');
-    if (isListView) { $('#map-container').hide(); $('#list-container').show(); $('#toggleView i').attr('class', 'fas fa-map'); } 
-    else { $('#map-container').show(); $('#list-container').hide(); $('#toggleView i').attr('class', 'fas fa-list'); setTimeout(() => map.invalidateSize(), 100); }
+    if (!state) return;
+
+    // Hide all containers initially
+    $('#map-container').hide();
+    $('#list-container').hide();
+    $('#detail-container').hide(); // New detail container
+
+    switch (state.view) {
+        case 'list':
+            isListView = true;
+            $('#list-container').show();
+            $('#toggleView i').attr('class', 'fas fa-map');
+            break;
+        case 'map':
+            isListView = false;
+            $('#map-container').show();
+            $('#toggleView i').attr('class', 'fas fa-list');
+            setTimeout(() => map.invalidateSize(), 100);
+            break;
+        case 'detail': // New case for detail view
+            isListView = false; // Detail view is not list view
+            $('#detail-container').show();
+            // No toggle view change needed for detail view, or perhaps a back button
+            break;
+        default:
+            isListView = false; // Default to map view if state is unclear
+            $('#map-container').show();
+            $('#toggleView i').attr('class', 'fas fa-list');
+            setTimeout(() => map.invalidateSize(), 100);
+            break;
+    }
 }
 
-window.onpopstate = (e) => applyState(e.state);
+window.onpopstate = (e) => {
+    if (e.state) {
+        applyState(e.state);
+        if (e.state.view === 'detail' && e.state.objectId) {
+            renderDetail(e.state.objectId);
+        } else if (e.state.view === 'list' || e.state.view === 'map') {
+            performSearch(); // Re-render list/map if needed
+        }
+    } else {
+        // Fallback if state is null (e.g., initial page load or unmanaged history entry)
+        applyState({ view: 'map' }); // Default to map view
+        performSearch();
+    }
+};
 $('#toggleView').on('click', () => { isListView = !isListView; applyState({ view: isListView ? 'list' : 'map' }); history.pushState({ view: isListView ? 'list' : 'map' }, ""); });
 
 const $searchInput = $('#searchInput'); const $suggestionsList = $('#suggestionsList');
@@ -323,6 +362,50 @@ async function performSearch() {
         setTimeout(() => map.invalidateSize(), 500);
     } catch (e) { logDebug("Search fout: " + e.message); }
     finally { $('#loading-overlay').hide(); isSearching = false; }
+}
+
+async function renderDetail(objectId) {
+    $('#loading-overlay').css('display', 'flex'); // Show loading spinner
+    try {
+        const PROXY_BASE_URL = 'https://svr-proxy-worker.e60-manuels.workers.dev';
+        const detailUrl = `${PROXY_BASE_URL}/object/${objectId}`;
+        
+        logDebug(`Fetching SVR detail page for ${objectId} via proxy: ${detailUrl}`);
+        const htmlContent = await fetchWithRetry(detailUrl);
+
+        if (!htmlContent || htmlContent.trim().startsWith("<!doctype") || htmlContent.trim().startsWith("<html") || htmlContent.includes("Internal Server Error")) {
+            const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
+            const title = doc.title || "Foutpagina";
+            logDebug("SVR meldt (Detail): " + title);
+            if (htmlContent.toLowerCase().includes("login") || htmlContent.toLowerCase().includes("inloggen")) {
+                logDebug("HINT: Inloggen op SVR.nl vereist!");
+            }
+            throw new Error("SVR stuurde HTML ipv verwachte detailpagina");
+        }
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, 'text/html');
+
+        // Find the main content area of the SVR detail page
+        // This might need adjustment based on the actual SVR page structure
+        const mainContent = doc.querySelector('.details-campings'); // Assuming .details-campings is the main container
+        
+        if (mainContent) {
+            $('#detail-container').empty().append(mainContent.innerHTML);
+            applyState({ view: 'detail' }); // Ensure the detail view is visible
+        } else {
+            $('#detail-container').empty().append('<div style="padding:20px;text-align:center;">Detailpagina niet gevonden of kon niet worden geparst.</div>');
+            applyState({ view: 'detail' });
+            logDebug(`Could not find '.details-campings' in fetched SVR HTML for ${objectId}.`);
+        }
+
+    } catch (e) {
+        logDebug("Detailpagina Fout: " + e.message);
+        $('#detail-container').empty().append(`<div style="padding:20px;text-align:center;">Fout bij laden detailpagina: ${e.message}</div>`);
+        applyState({ view: 'detail' });
+    } finally {
+        $('#loading-overlay').hide();
+    }
 }
 
 function renderResults(objects, cLat, cLng) {
