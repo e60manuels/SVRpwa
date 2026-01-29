@@ -407,20 +407,15 @@ async function renderDetail(objectId) {
             // 3. Remove all <iframe> tags (DISABLED to allow videos)
             // tempDiv.querySelectorAll('iframe').forEach(iframe => iframe.remove());
 
-            // Process Swiper Carousel separately before aggressive cleaning
-            let swiperImages = [];
-            const originalSwiperContainer = tempDiv.querySelector('.swiper-container');
-            if (originalSwiperContainer) {
-                originalSwiperContainer.querySelectorAll('.swiper-slide img').forEach(img => {
-                    const src = img.getAttribute('src');
-                    if (src) swiperImages.push(src);
-                });
-                // Remove the original Swiper HTML as we will reconstruct it cleanly
-                originalSwiperContainer.remove();
-                logDebug(`Extracted ${swiperImages.length} images for Swiper carousel.`);
-            }
+            // 1. Remove all <script> tags
+            tempDiv.querySelectorAll('script').forEach(script => script.remove());
 
-            // 4. Remove all inline 'style' attributes
+            // 2. Remove all <link> tags (especially stylesheets)
+            tempDiv.querySelectorAll('link').forEach(link => link.remove());
+
+            // 3. Keep <iframe> tags (removal disabled in previous step)
+
+            // 4. Remove all inline 'style' attributes (still aggressive for non-swiper elements)
             tempDiv.querySelectorAll('[style]').forEach(element => element.removeAttribute('style'));
 
             // 5. Remove all 'on*' event handler attributes (e.g., onclick, onload, onerror)
@@ -432,7 +427,13 @@ async function renderDetail(objectId) {
                 });
             });
 
-            // 6. Rewrite relative URLs to absolute URLs pointing to svr.nl
+            // 6. Make images visible: Remove 'd-none' class and 'loading="lazy"' attribute
+            tempDiv.querySelectorAll('img').forEach(img => {
+                img.classList.remove('d-none');
+                img.removeAttribute('loading');
+            });
+
+            // 7. Rewrite relative URLs to absolute URLs pointing to svr.nl
             const SVR_BASE = 'https://www.svr.nl';
             tempDiv.querySelectorAll('[src], [href]').forEach(element => {
                 const attr = element.hasAttribute('src') ? 'src' : 'href';
@@ -442,47 +443,39 @@ async function renderDetail(objectId) {
                 }
             });
             
-            // Construct Swiper HTML if images were found
-            let swiperHtml = '';
-            if (swiperImages.length > 0) {
-                const slides = swiperImages.map(src => `<div class="swiper-slide"><img src="${src}" alt="Camping foto"></div>`).join('');
-                swiperHtml = `<div class="swiper swiper-detail" style="width: 100%; height: 300px;">
-                                <div class="swiper-wrapper">${slides}</div>
-                                <div class="swiper-pagination"></div>
-                                <div class="swiper-button-prev"></div>
-                                <div class="swiper-button-next"></div>
-                              </div>`;
-            }
-
             logDebug(`Processed HTML lengte na opschonen: ${tempDiv.innerHTML.length}`);
             const closeBtn = `<div style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; align-items: center; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                 <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px;"><i class="fas fa-arrow-left"></i></button>
                 <h3 style="margin: 0; font-family: 'Befalow'; color: #333;">Camping Details</h3>
             </div>`;
-            // Prepend Swiper HTML before the rest of the content
-            $('#detail-container').empty().append(closeBtn + swiperHtml + tempDiv.innerHTML);
+            $('#detail-container').empty().append(closeBtn + tempDiv.innerHTML);
             applyState({ view: 'detail' }); // Ensure the detail view is visible
 
-            // Initialize Swiper for the detail page carousel
-            if (swiperImages.length > 0 && typeof Swiper !== 'undefined') {
-                new Swiper('.swiper-detail', {
-                    loop: true,
-                    autoplay: {
-                        delay: 2500,
-                        disableOnInteraction: false,
-                    },
-                    pagination: {
-                        el: '.swiper-pagination',
-                        clickable: true,
-                    },
-                    navigation: {
-                        nextEl: '.swiper-button-next',
-                        prevEl: '.swiper-button-prev',
-                    },
-                });
-                logDebug("Swiper carousel initialized.");
-            } else if (swiperImages.length > 0) {
-                logDebug("Swiper library not loaded, cannot initialize carousel.");
+            // Initialize Swiper for the detail page carousel AFTER content is in DOM
+            const swiperElement = document.querySelector('#detail-container .swiper-container');
+            if (swiperElement) {
+                if (typeof Swiper !== 'undefined') {
+                    new Swiper(swiperElement, {
+                        loop: true,
+                        autoplay: {
+                            delay: 2500,
+                            disableOnInteraction: false,
+                        },
+                        pagination: {
+                            el: '.swiper-pagination',
+                            clickable: true,
+                        },
+                        navigation: {
+                            nextEl: '.swiper-button-next',
+                            prevEl: '.swiper-button-prev',
+                        },
+                    });
+                    logDebug("Swiper carousel initialized.");
+                } else {
+                    logDebug("Swiper library not loaded, cannot initialize carousel.");
+                }
+            } else {
+                logDebug("Swiper container not found in injected detail content.");
             }
         } else {
             const preview = htmlContent.substring(0, 500).replace(/</g, "&lt;");
