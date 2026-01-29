@@ -382,21 +382,38 @@ async function renderDetail(objectId) {
         if (!htmlContent || htmlContent.includes("Internal Server Error")) {
             throw new Error("SVR response invalid or empty");
         }
+        
+        logDebug(`Ontvangen HTML lengte: ${htmlContent.length}`);
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
+        logDebug(`Geparsde pagina titel: ${doc.title}`);
 
-        // Find the main content area of the SVR detail page
-        // This might need adjustment based on the actual SVR page structure
-        const mainContent = doc.querySelector('.details-campings'); // Assuming .details-campings is the main container
+        // Try to find the main content area with multiple possible selectors
+        let mainContent = doc.querySelector('.details-campings'); 
+        if (!mainContent) {
+             logDebug("Selector '.details-campings' niet gevonden, proberen met 'main'...");
+             mainContent = doc.querySelector('main');
+        }
+        if (!mainContent) {
+             logDebug("Selector 'main' ook niet gevonden, proberen met 'body'...");
+             // Fallback: take the body content but warn
+             mainContent = doc.body;
+        }
         
-        if (mainContent) {
+        if (mainContent && mainContent.innerHTML.trim().length > 0) {
             $('#detail-container').empty().append(mainContent.innerHTML);
             applyState({ view: 'detail' }); // Ensure the detail view is visible
         } else {
-            $('#detail-container').empty().append('<div style="padding:20px;text-align:center;">Detailpagina niet gevonden of kon niet worden geparst.</div>');
+            const preview = htmlContent.substring(0, 200).replace(/</g, "&lt;");
+            $('#detail-container').empty().append(`<div style="padding:20px;text-align:center;">
+                <h3>Detailpagina kon niet worden geladen.</h3>
+                <p>Titel van ontvangen pagina: <b>${doc.title}</b></p>
+                <p>Mogelijk is de structuur van de SVR site veranderd.</p>
+                <pre style="text-align:left;background:#eee;padding:10px;overflow:auto;">${preview}...</pre>
+            </div>`);
             applyState({ view: 'detail' });
-            logDebug(`Could not find '.details-campings' in fetched SVR HTML for ${objectId}.`);
+            logDebug(`Could not find suitable content in fetched SVR HTML for ${objectId}.`);
         }
 
     } catch (e) {
