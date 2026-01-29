@@ -137,10 +137,70 @@
     };
 
     window.showSVRDetailPage = function(objectId) {
-        history.pushState({ view: 'detail', objectId: objectId }, "", `#detail/${objectId}`);
-        renderDetail(objectId);
+        const detailOverlay = document.getElementById('detail-container');
+        const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+
+        // Initially hide overlay and sheet, then make visible with animation
+        detailOverlay.style.display = 'block';
+        setTimeout(() => {
+            detailOverlay.classList.add('open'); // Trigger background fade in
+            detailSheet.classList.add('open'); // Trigger sheet slide up
+            // After animation, push state
+            setTimeout(() => {
+                history.pushState({ view: 'detail', objectId: objectId }, "", `#detail/${objectId}`);
+                renderDetail(objectId);
+            }, 400); // Match CSS transition duration
+        }, 10); // Small delay to allow 'display: block' to apply before transition
     };
 
+    // Modify the back handler to animate the sheet down before navigating back
+    window.handleDetailBack = function() {
+        const detailOverlay = document.getElementById('detail-container');
+        const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+
+        detailSheet.classList.remove('open'); // Trigger slide down
+        detailOverlay.classList.remove('open'); // Trigger background fade out
+
+        setTimeout(() => {
+            detailOverlay.style.display = 'none'; // Hide after animation
+            history.back(); // Navigate back in history
+        }, 400); // Match CSS transition duration
+    };
+
+
+    // Update onpopstate to handle the sheet animation on history changes
+    window.onpopstate = (e) => {
+        const detailOverlay = document.getElementById('detail-container');
+        const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+
+        if (e.state) {
+            applyState(e.state);
+            if (e.state.view === 'detail' && e.state.objectId) {
+                detailOverlay.style.display = 'block';
+                setTimeout(() => {
+                    detailOverlay.classList.add('open');
+                    detailSheet.classList.add('open');
+                    renderDetail(e.state.objectId);
+                }, 10);
+            } else if (e.state.view === 'list' || e.state.view === 'map') {
+                detailSheet.classList.remove('open');
+                detailOverlay.classList.remove('open');
+                setTimeout(() => {
+                    detailOverlay.style.display = 'none';
+                    performSearch(); // Re-render list/map if needed
+                }, 400);
+            }
+        } else {
+            // Fallback if state is null (e.g., initial page load or unmanaged history entry)
+            applyState({ view: 'map' }); // Default to map view
+            detailSheet.classList.remove('open');
+            detailOverlay.classList.remove('open');
+            setTimeout(() => {
+                detailOverlay.style.display = 'none';
+                performSearch();
+            }, 400);
+        }
+    };
     const css = `
         #svr-filter-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2147483640; display: none; opacity: 0; transition: opacity 0.3s ease; }
         #svr-filter-backdrop.open { display: block; opacity: 1; }
@@ -292,20 +352,73 @@ function applyState(state) {
     }
 }
 
+// Function to handle showing the detail page with bottom-up animation
+window.showSVRDetailPage = function(objectId) {
+    const detailOverlay = document.getElementById('detail-container');
+    const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+
+    // Initially hide overlay and sheet, then make visible with animation
+    detailOverlay.style.display = 'block';
+    setTimeout(() => {
+        detailOverlay.classList.add('open'); // Trigger background fade in
+        detailSheet.classList.add('open'); // Trigger sheet slide up
+        // After animation, push state
+        setTimeout(() => {
+            history.pushState({ view: 'detail', objectId: objectId }, "", `#detail/${objectId}`);
+            renderDetail(objectId);
+        }, 400); // Match CSS transition duration
+    }, 10); // Small delay to allow 'display: block' to apply before transition
+};
+
+// Function to handle the back action for the detail sheet
+window.handleDetailBack = function() {
+    const detailOverlay = document.getElementById('detail-container');
+    const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+
+    detailSheet.classList.remove('open'); // Trigger slide down
+    detailOverlay.classList.remove('open'); // Trigger background fade out
+
+    setTimeout(() => {
+        detailOverlay.style.display = 'none'; // Hide after animation
+        history.back(); // Navigate back in history
+    }, 400); // Match CSS transition duration
+};
+
+
+// Update onpopstate to handle the sheet animation on history changes
 window.onpopstate = (e) => {
+    const detailOverlay = document.getElementById('detail-container');
+    const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+
     if (e.state) {
         applyState(e.state);
         if (e.state.view === 'detail' && e.state.objectId) {
-            renderDetail(e.state.objectId);
+            detailOverlay.style.display = 'block';
+            setTimeout(() => {
+                detailOverlay.classList.add('open');
+                detailSheet.classList.add('open');
+                renderDetail(e.state.objectId);
+            }, 10);
         } else if (e.state.view === 'list' || e.state.view === 'map') {
-            performSearch(); // Re-render list/map if needed
+            detailSheet.classList.remove('open');
+            detailOverlay.classList.remove('open');
+            setTimeout(() => {
+                detailOverlay.style.display = 'none';
+                performSearch(); // Re-render list/map if needed
+            }, 400);
         }
     } else {
         // Fallback if state is null (e.g., initial page load or unmanaged history entry)
         applyState({ view: 'map' }); // Default to map view
-        performSearch();
+        detailSheet.classList.remove('open');
+        detailOverlay.classList.remove('open');
+        setTimeout(() => {
+            detailOverlay.style.display = 'none';
+            performSearch();
+        }, 400);
     }
 };
+
 $('#toggleView').on('click', () => { isListView = !isListView; applyState({ view: isListView ? 'list' : 'map' }); history.pushState({ view: isListView ? 'list' : 'map' }, ""); });
 
 const $searchInput = $('#searchInput'); const $suggestionsList = $('#suggestionsList');
@@ -404,13 +517,7 @@ async function renderDetail(objectId) {
             // 2. Remove all <link> tags (especially stylesheets)
             tempDiv.querySelectorAll('link').forEach(link => link.remove());
 
-            // 3. Remove all <iframe> tags (DISABLED to allow videos)
-            // tempDiv.querySelectorAll('iframe').forEach(iframe => iframe.remove());
-
-            // **START REPLICATING WEBACTIVITY BEHAVIOR**
-            // Re-enable inline 'style' attributes and 'on*' event handlers.
-            // The WebView app relies on JavaScript to set these, so we cannot aggressively remove them.
-            // (Previous cleaning for these is now removed)
+            // 3. Keep <iframe> tags (removal disabled in previous step)
 
             // Make images visible: Remove 'd-none' class and 'loading="lazy"' attribute
             tempDiv.querySelectorAll('img').forEach(img => {
@@ -430,10 +537,10 @@ async function renderDetail(objectId) {
             
             logDebug(`Processed HTML lengte na opschonen: ${tempDiv.innerHTML.length}`);
             const closeBtn = `<div style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; align-items: center; justify-content: space-between; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px; color: #333;"><i class="fas fa-arrow-left"></i></button>
+                <button onclick="window.handleDetailBack()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px; color: #333;"><i class="fas fa-arrow-left"></i></button>
                 <h3 style="margin: 0; font-family: 'Befalow'; color: #333; font-size: 1.2rem;">Camping Details</h3>
             </div>`;
-            $('#detail-container').empty().append(closeBtn + tempDiv.innerHTML);
+            $('#detail-container .detail-sheet-content').empty().append(closeBtn + tempDiv.innerHTML); // Append to sheet content
             applyState({ view: 'detail' }); // Ensure the detail view is visible
 
             // **START REPLICATING JAVASCRIPT INJECTIONS FROM WEBACTIVITY**
@@ -617,24 +724,7 @@ async function renderDetail(objectId) {
             }, 700);
 
 
-        } else {
-            const preview = htmlContent.substring(0, 500).replace(/</g, "&lt;");
-            const closeBtn = `<div style="padding: 10px; background: #eee;">
-                <button onclick="history.back()" style="padding: 5px 15px; border-radius: 5px; border: 1px solid #ccc; cursor: pointer;"> < Terug</button>
-            </div>`;
-            $('#detail-container').empty().append(closeBtn + `<div style="padding:20px;text-align:center;">
-                <h3>Detailpagina kon niet worden geladen.</h3>
-                <p>Titel van ontvangen pagina: <b>${doc.title}</b></p>
-                <p>Mogelijk is de structuur van de SVR site veranderd of bent u uitgelogd.</p>
-                <div style="text-align:left;background:#333;color:#0f0;padding:10px;overflow:auto;font-family:monospace;font-size:11px;max-height:300px;">
-                    ${preview}...
-                </div>
-            </div>`);
-            applyState({ view: 'detail' });
-            logDebug(`Could not find suitable content in fetched SVR HTML for ${objectId}.`);
-        }
-
-    } catch (e) {
+        } catch (e) {
         logDebug("Detailpagina Fout: " + e.message);
         $('#detail-container').empty().append(`<div style="padding:20px;text-align:center;">Fout bij laden detailpagina: ${e.message}</div>`);
         applyState({ view: 'detail' });
