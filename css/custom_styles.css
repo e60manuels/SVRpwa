@@ -1,654 +1,182 @@
-/* --- NEW SVR UI SHELL STYLES --- */
-.svr-ui-shell {
-    position: fixed;
-    top: 95px; /* Added 10px margin below the yellow navbar */
-    left: 0;
-    right: 0;
-    z-index: 999990;
-    pointer-events: none; /* Let clicks pass through to content unless on a button */
+/* --- Detail Page Styling (Injected SVR Content) --- */
+#detail-container {
+    background-color: #f8f9fa; /* Light background for the detail page */
+    color: #212529; /* Standard text color */
+    font-family: Arial, Helvetica, sans-serif; /* Default font */
+}
+
+#detail-container .container-fluid {
+    width: 100%;
+    padding-right: var(--bs-gutter-x, 0.75rem);
+    padding-left: var(--bs-gutter-x, 0.75rem);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+#detail-container .row {
+    --bs-gutter-x: 1.5rem;
+    --bs-gutter-y: 0;
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: calc(var(--bs-gutter-y) * -1);
+    margin-right: calc(var(--bs-gutter-x) * -0.5);
+    margin-left: calc(var(--bs-gutter-x) * -0.5);
+}
+#detail-container .row > * {
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 100%;
+    padding-right: calc(var(--bs-gutter-x) * 0.5);
+    padding-left: calc(var(--bs-gutter-x) * 0.5);
+    margin-top: var(--bs-gutter-y);
+}
+
+/* Basic col-sm styling for mobile-first */
+#detail-container .col-sm-8 { flex: 0 0 auto; width: 100%; }
+#detail-container .col-sm-4 { flex: 0 0 auto; width: 100%; }
+
+/* Responsive columns for larger screens */
+@media (min-width: 576px) {
+    #detail-container .col-sm-8 { width: 66.66666667%; }
+    #detail-container .col-sm-4 { width: 33.33333333%; }
+}
+
+#detail-container .p-0 { padding: 0 !important; }
+#detail-container .p-2 { padding: 0.5rem !important; }
+#detail-container .p-3 { padding: 1rem !important; }
+#detail-container .p-4 { padding: 1.5rem !important; }
+#detail-container .pt-0 { padding-top: 0 !important; }
+#detail-container .pt-2 { padding-top: 0.5rem !important; }
+#detail-container .pt-4 { padding-top: 1.5rem !important; }
+#detail-container .pt-5 { padding-top: 3rem !important; }
+#detail-container .mt-X { margin-top: auto !important; } /* Generic for dynamic mt-* */
+#detail-container .mb-X { margin-bottom: auto !important; } /* Generic for dynamic mb-* */
+#detail-container .mt-3 { margin-top: 1rem !important; }
+#detail-container .mt-4 { margin-top: 1.5rem !important; }
+#detail-container .mt-5 { margin-top: 3rem !important; }
+
+#detail-container .card {
+    position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 2px; /* Substantially reduced gap between search and filter bar */
-    padding: 0 12px;
-}
-
-.svr-top-bar {
-    pointer-events: auto;
-    background: #fff;
-    width: 100%;
-    max-width: 600px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    border-radius: 25px; /* Pill shape */
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-    border: 1px solid #eee;
-}
-
-.svr-search-wrapper {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    height: 100%;
-    min-width: 0; /* Allow shrinking */
-}
-
-.svr-search-wrapper .search-icon-prefix {
-    background: transparent !important;
-    border: none !important;
-    color: #c0392b;
-    padding: 0 4px 0 4px !important;
-    flex-shrink: 0;
-}
-
-.svr-search-wrapper #query_input {
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 8px !important;
-    height: 100% !important;
-    font-size: 16.8px !important;
-    flex: 1;
     min-width: 0;
-    background: transparent !important;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: border-box;
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+}
+#detail-container .card.p-2 { padding: 0.5rem !important; }
+#detail-container .card.p-3 { padding: 1rem !important; }
+
+#detail-container h1, #detail-container h2, #detail-container h3, #detail-container h4, #detail-container h5, #detail-container h6 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
+#detail-container h1 { font-size: 2.5rem; }
+#detail-container h2 { font-size: 2rem; }
+#detail-container h3 { font-size: 1.75rem; }
+#detail-container h4 { font-size: 1.5rem; }
+#detail-container h5 { font-size: 1.25rem; }
+#detail-container h6 { font-size: 1rem; }
+
+#detail-container .text-center { text-align: center !important; }
+#detail-container .mx-auto { margin-right: auto !important; margin-left: auto !important; }
+#detail-container .d-inline-block { display: inline-block !important; }
+#detail-container .float-left { float: left !important; }
+#detail-container .float-right { float: right !important; }
+#detail-container .d-none { display: none !important; }
+#detail-container .d-lg-inline-block { display: none !important; }
+@media (min-width: 992px) {
+    #detail-container .d-lg-inline-block { display: inline-block !important; }
 }
 
-.svr-search-wrapper #search_button {
-    border: none !important;
-    background: transparent !important;
-    color: #0d6efd !important; /* Blue color for search icon */
-    padding: 0 8px !important;
-    font-size: 20px !important;
-    flex-shrink: 0;
-    box-shadow: none !important;
-    margin: 0 !important;
-    height: 100% !important;
-}
-
-.svr-toggle-wrapper {
-    border-left: 1px solid #ddd;
-    margin-left: 4px;
-    padding-left: 4px;
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.svr-toggle-wrapper #map_view {
-    border: none !important;
-    background: transparent !important;
-    font-weight: 600 !important;
-    color: #333 !important;
-    padding: 0 8px !important;
-    font-size: 16.8px !important;
-    white-space: nowrap;
-    box-shadow: none !important;
-    margin: 0 !important;
-}
-
-.svr-filter-bar {
-    pointer-events: auto;
-    width: auto;
-    display: flex;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.svr-filter-bar.unlocked {
-    position: relative;
-    top: 0;
-    margin-bottom: 10px;
-    z-index: 1;
-}
-
-.svr-filter-bar button[onclick="toggle_filters()"] {
-    margin-top: 0 !important; /* Force reset of old 50px margin */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-    border-radius: 20px !important;
-    padding: 6px 20px !important;
-    font-weight: 600 !important;
-    background: #fff !important;
-    font-size: 16.8px !important;
-}
-
-/* Hide the original SVR containers that we are replacing */
-.search-section-container,
-div.search-section-container[style*="position: fixed"],
-button[onclick="toggle_filters()"]:not(.svr-filter-bar *) {
-    display: none !important;
-}
-
-/* --- END NEW SVR UI SHELL STYLES --- */
-
-/* CSS voor de hamburger-naar-X transformatie */
-* {
-    box-sizing: border-box;
-}
-
-.navbar-toggler .navbar-toggler-icon {
-    background-image: none;
-    position: relative;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    transition: transform 0.3s ease-in-out;
-}
-
-.navbar-toggler .navbar-toggler-icon::before,
-.navbar-toggler .navbar-toggler-icon::after {
-    content: '';
-    display: block;
-    background-color: #343a40; /* Kleur van de streepjes */
-    height: 2px;
-    border-radius: 1px;
-    transition: transform 0.3s ease-in-out, top 0.3s ease-in-out;
-    position: absolute;
-    left: 0;
-    width: 100%;
-}
-
-.navbar-toggler .navbar-toggler-icon::before {
-    top: 6px; /* Positie van de bovenste streep */
-}
-
-.navbar-toggler .navbar-toggler-icon::after {
-    top: 16px; /* Positie van de onderste streep */
-}
-
-/* Middenstreep (optioneel, als je 3 strepen wilt) */
-.navbar-toggler .navbar-toggler-icon span {
-    display: block;
-    background-color: #343a40;
-    height: 2px;
-    border-radius: 1px;
-    transition: opacity 0.3s ease-in-out;
-    position: absolute;
-    left: 0;
-    top: 11px; /* Precieze midden */
-    width: 100%;
-}
-
-
-/* Staat wanneer het menu geopend is (X-vorm) */
-.navbar-toggler[aria-expanded="true"] .navbar-toggler-icon {
-    transform: rotate(45deg);
-}
-
-.navbar-toggler[aria-expanded="true"] .navbar-toggler-icon::before {
-    top: 11px;
-    transform: rotate(90deg);
-}
-
-.navbar-toggler[aria-expanded="true"] .navbar-toggler-icon::after {
-    top: 11px;
-    transform: rotate(0deg); /* De ::after wordt de andere poot van de X */
-}
-
-.navbar-toggler[aria-expanded="true"] .navbar-toggler-icon span {
-    opacity: 0; /* Verberg de middenstreep */
-}
-
-/* Fix voor de titel van het reserveringsformulier */
-#aanvraag .befalow {
-    font-size: 28px !important;
-    padding-left: 1.5rem !important;
-    padding-right: 1.5rem !important;
-}
-
-/* Swiper styles */
-.swiper {
-  width: 100%;
-  height: 350px; /* Adjusted height */
-  margin-bottom: 20px; /* Add some space below the swiper */
-}
-
-.swiper-slide {
-  text-align: center;
-  font-size: 18px;
-  background: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px; /* Add padding around each slide */
-  box-sizing: border-box; /* Include padding in the element's total width and height */
-}
-
-.swiper-slide img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Changed to cover to fill the slide */
-}
-
-/*
-  Dynamically positions the search bar when the input is focused.
-  This is used to move the search bar up and make space for the suggestion list.
-*/
-.search-section-container {
-  /* Add a transition for smooth movement */
-  transition: top 0.3s ease-in-out, bottom 0.3s ease-in-out;
-  padding-top: 8px !important;  /* Verlaag van standaard naar 8px */
-  padding-bottom: 8px !important;  /* Verlaag van standaard naar 8px */
-}
-
-/* Verwijder onnodige marge van de laatste rij */
-.search-section-container .row.mt-2.mb-2 {
-  margin-top: 2px !important;
-  margin-bottom: 0px !important;
-}
-
-/* Verwijder de afbreektags effect */
-.search-section-container br {
-  display: none !important;
-}
-
-/* Compacte input styling */
-.search-section-container .search-input,
-.search-section-container .btn {
-  padding: 6px 10px !important;  /* Verminder padding voor compactere layout */
-  font-size: 0.9rem !important;
-}
-
-/* Verlaag de line-height van tekst-elementen */
-.search-section-container small {
-  line-height: 1.2 !important;
-}
-
-/* Specifieke regels om inline styles van JavaScript te overrulen */
-div.search-section-container[style*="background-color: rgb(255, 255, 255)"][style*="position: fixed"] {
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
-  margin-bottom: 30px !important; /* Reduce the margin that positions it above the nav bar */
-}
-
-body.search-active .search-section-container {
-  /* Move the search bar to be further down when focused, below any potential header content */
-  top: 100px; /* Adjusted to provide more space when input is focused */
-  /* Ensure no bottom property interferes */
-  bottom: auto !important;
-}
-
-/* Force the search input to be flexible and not take up 100% width */
-.input-group #query_input.form-control {
-    flex: 1 1 auto;
-    border-left: none; /* Verwijder de linkerrand */
-    border-color: #FDCC01 !important; /* Nieuwe randkleur */
-}
-
-/* Hide the specific text above the search field */
-.search-section-container .col-sm-12.my-auto small.text-start {
-    display: none !important;
-}
-
-.search-icon-prefix {
-    color: #c0392b; /* Roodachtige kleur voor de marker */
-    padding-right: 2px; /* Ruimte tussen icoon en tekst verder verminderd */
-    padding-left: 2px; /* Ook padding links verder verminderd */
-    min-width: unset; /* Bootstrap's min-width overschrijven */
-    background-color: #fff; /* Achtergrond wit maken */
-    border-color: #FDCC01 !important; /* Nieuwe randkleur */
-    border-right: none; /* Verwijder de rechterrand */
-    display: flex !important; /* Ensure proper alignment */
-    align-items: center !important; /* Vertically center the icon */
-    justify-content: center !important; /* Horizontally center the icon */
-}
-
-/* Styling voor de toggle-knop */
-#map_view {
-    border-color: #FDCC01 !important; /* Nieuwe randkleur */
-}
-
-/* Verwijder de lijn onder de zoekbalk */
-.search-section-container {
-    border-bottom: none !important;
-    box-shadow: none !important;
-}
-
-/* Force remove bottom space from search container */
-.search-section-container.container-fluid {
-    height: auto !important;
-    padding-bottom: 0px !important;
-}
-
-/* Ensure search elements stay in a single row when positioned fixed at top */
-.search-section-container[style*="position: fixed"] {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    flex-wrap: nowrap !important;
-    min-height: 50px !important; /* Ensure minimum height for interaction */
-    padding-top: 4px !important; /* Reduce vertical padding */
-    padding-bottom: 4px !important;
-}
-
-.search-section-container[style*="position: fixed"] > div,
-.search-section-container[style*="position: fixed"] .row {
-    display: flex !important;
-    align-items: center !important;
-    width: 100% !important;
-    flex-wrap: nowrap !important;
-}
-
-.search-section-container[style*="position: fixed"] .input-group {
-    flex: 1 !important;
-    margin-right: 10px !important;
-    margin-left: 4px !important; /* Reduced left margin for better balance */
-    min-width: 0 !important; /* Allow flex item to shrink below content size */
-    height: 38px !important; /* Standard Bootstrap input height */
-    display: flex !important; /* Ensure flex layout */
-    align-items: center !important; /* Vertically align items */
-}
-
-.search-section-container[style*="position: fixed"] #map_view {
-    margin-left: 10px !important;
-    margin-right: 8px !important; /* Add right margin between toggle button and screen edge */
-    flex-shrink: 0 !important;
-}
-
-.search-section-container[style*="position: fixed"] .input-group-text,
-.search-section-container[style*="position: fixed"] #search_button {
-    flex-shrink: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: 38px !important; /* Match standard Bootstrap input height */
-    padding-top: 0 !important; /* Reset any extra padding */
-    padding-bottom: 0 !important;
-}
-
-/* Ensure proper input field display when in fixed container */
-.search-section-container[style*="position: fixed"] #query_input {
-    min-width: 0 !important;
-    flex: 1 !important;
-    height: 38px !important; /* Match the height of other elements */
-    padding-top: 6px !important; /* Adjust padding to align properly */
-    padding-bottom: 6px !important;
-    display: flex !important; /* Use flex to center content */
-    align-items: center !important; /* Vertically center text */
-}
-
-/* Reduce space between the filter button and the content below (map/list) */
-#view_map {
-    padding-top: 0px !important; /* Remove top padding for map to avoid white gap */
-    padding-bottom: 0px !important; /* Ensure no bottom padding inside the yellow frame */
-}
-
-#view_tegels,
-#view_list {
-    /* Padding is handled dynamically by applySvrTopPadding in JS */
-    padding-top: 10px !important;
-}
-
-/* Styling for the container holding both filter button and active filters */
-.filter-controls-container {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 10px !important;
-    flex-wrap: wrap !important;
-}
-
-/* CSS for filter controls container and related elements */
-
-/* Remove or hide the colored lines next to each tile in list view */
-.card-0,
-.card-1,
-.card-2 {
-    box-shadow: none !important;
-    border-left: none !important;
-}
-
-/* Alternative approach - if the colored line is an inset box-shadow */
-.camping-card {
-    box-shadow: none !important;
-}
-
-/* Add thin yellow border to map marker popups */
-.leaflet-popup-content-wrapper {
-    border: 2px solid #FDCC01 !important;
-    border-radius: 2px !important;
-}
-
-.leaflet-popup-tip-container {
-    left: 50% !important;
-    width: 40px !important;
-    margin-left: 12px !important; /* Fixed offset to the right */
-}
-
-.leaflet-popup-tip {
-    background-color: #FDCC01 !important;
-    width: 14px !important;
-    height: 14px !important;
-    margin-left: -7px !important;
-    transform: rotate(45deg) !important;
-}
-
-/* Styling for search suggestions dropdown - WIDER */
-#svr_search_results {
-    min-width: 300px !important; 
-    width: auto !important;     
-    max-width: 90vw !important;  
-}
-
-#svr_search_results .dropdown-item {
-    white-space: nowrap !important;
-    padding: 10px 15px !important;
-}
-#search_results {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    display: none;
-    max-height: 300px;
-    overflow-y: auto;
-    margin: 0.125rem 0 0;
-    font-size: 0.875rem;
+#detail-container .btn {
+    display: inline-block;
+    font-weight: 400;
+    line-height: 1.5;
     color: #212529;
-    text-align: left;
-    list-style: none;
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    border-radius: 0.25rem;
+    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+#detail-container .btn-light { color: #000; background-color: #f8f9fa; border-color: #f8f9fa; }
+#detail-container .btn-light:hover { background-color: #e2e6ea; border-color: #dae0e5; }
+#detail-container .btn-svr-blue { color: #fff; background-color: #008AD3; border-color: #008AD3; }
+#detail-container .btn-svr-blue:hover { background-color: #006ebc; border-color: #006ebc; }
+
+
+/* Specific styling for the large Euro icons (SVG) */
+#detail-container svg[fill="currentColor"] {
+    width: 24px; /* Default size as seen in original HTML inline style */
+    height: 24px;
+    display: inline;
+    fill: var(--svr-yellow); /* Using PWA's SVR yellow */
+    vertical-align: middle; /* Align with text */
+}
+
+/* Befalow font for injected content */
+#detail-container .befalow {
+    font-family: 'Befalow', sans-serif;
+}
+
+/* Basic Form control styling */
+#detail-container .form-control {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
     background-color: #fff;
     background-clip: padding-box;
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    border: 1px solid #ced4da;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
     border-radius: 0.25rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
 }
-
-#search_results .dropdown-item {
+#detail-container .form-select {
     display: block;
     width: 100%;
-    padding: 0.25rem 1rem;
-    clear: both;
+    padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+    -moz-padding-start: calc(0.75rem - 3px);
+    font-size: 1rem;
     font-weight: 400;
+    line-height: 1.5;
     color: #212529;
-    text-align: inherit;
-    white-space: nowrap;
-    background-color: transparent;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+#detail-container hr {
+    margin: 1rem 0;
+    color: inherit;
+    background-color: currentColor;
     border: 0;
-}
-
-#search_results .dropdown-item:hover {
-    color: #1e2125;
-    text-decoration: none;
-    background-color: #f8f9fa;
-}
-
-/* Specific override for card body padding to reduce left padding */
-.card-body.py-2.ps-0.pe-2 {
-    padding-left: 2px !important;  /* Minimal left padding (instead of the original 0.5rem from ps-2) */
-    padding-right: 0.5rem !important; /* Keep original right padding */
-    overflow: hidden; /* Ensure rounded corners are visible */
-}
-
-/* Ensure the camping card has visible rounded corners */
-.camping-card {
-    border-radius: 8px !important; /* Make rounded corners more visible */
-    overflow: hidden; /* Ensure the border-radius is applied properly */
-}
-
-/* Styling for the camping tile action strip */
-.camping-actions {
-    font-size: 12px;
-    background: #f8f9fa;
-    border-top: 1px solid #ddd; /* Add a subtle border above the action strip to maintain visual separation */
-    border-top-left-radius: 0 !important; /* Ensure action strip doesn't have top rounded corners */
-    border-top-right-radius: 0 !important; /* Ensure action strip doesn't have top rounded corners */
-}
-
-/* Round the bottom-left corner of the first button in the action strip (Kaart button) */
-.camping-actions > a:first-child {
-    border-bottom-left-radius: 8px !important; /* Match the card body radius */
-}
-
-.camping-action-info {
-    color: #0d6efd; /* Blue text for Info button */
-    border-radius: 0; /* Remove rounded corners */
-    text-decoration: none;
-    background: #ffffff; /* White background */
-    padding: 4px 0 !important; /* Explicitly reduced vertical padding */
-    line-height: 1.1; /* Tighter line height to reduce height */
-    min-height: 24px; /* Explicitly set a reduced height */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.camping-action-kaart {
-    color: #c0392b; /* Red text for Kaart button */
-    border-radius: 0; /* Remove rounded corners */
-    text-decoration: none;
-    background: #ffffff; /* White background */
-    border-left: 1px solid #ddd; /* Add border between buttons */
-    padding: 4px 0 !important; /* Explicitly reduced vertical padding */
-    line-height: 1.1; /* Tighter line height to reduce height */
-    min-height: 24px; /* Explicitly set a reduced height */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.camping-action-info:hover, .camping-action-kaart:hover {
-    color: #0d6efd; /* Keep blue text for Info button on hover */
-    text-decoration: none;
-    background: #f8f9fa; /* Light gray background on hover */
-}
-
-/* Special rule for Kaart button hover */
-.camping-action-kaart:hover {
-    color: #c0392b; /* Keep red text for Kaart button on hover */
-    background: #f8f9fa; /* Light gray background on hover */
-}
-
-/* --- SCROLL TO TOP BUTTON --- */
-.svr-scroll-top {
-    position: fixed;
-    bottom: 20px;
-    right: 12px;
-    width: 40px;
-    height: 40px;
-    background-color: #FDCC01;
-    color: #333;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    z-index: 10000;
-    cursor: pointer;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s;
-    border: none;
-    pointer-events: auto;
-}
-
-.svr-scroll-top.visible {
-    opacity: 1;
-    visibility: visible;
-}
-
-.svr-scroll-top i {
-    font-size: 20px;
-}
-
-/* Verberg de knop in kaart-weergave via JS weergave state */
-body.view-map .svr-scroll-top {
-    display: none !important;
-}
-
-/* --- FILTER OVERLAY VISUALS --- */
-
-/* The scroll container background */
-#svr-filter-overlay-content {
-    background-color: #f4f4f4 !important; /* Subtle contrast behind the card */
-    padding: 0 !important;
-}
-
-/* The actual filter card with yellow border */
-#svr-filter-card {
-    border: 1.5px solid #FDCC01 !important; /* Yellow border matching map */
-    border-radius: 12px !important;       /* Rounded corners */
-    padding: 15px !important;             /* Inner spacing makes elements narrower */
-    background-color: #fff !important;
-    margin: 15px 15px 100px 15px !important; /* Margin around, bottom margin for button clearance */
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15) !important;
-    display: block !important;
-}
-
-/* Style the yellow header bars (Zoek op land, etc.) */
-.section-toggle-header {
-    border-radius: 8px !important;
-    margin-bottom: 10px !important;
-    border: none !important;
-    width: 100% !important; /* Fill the card width */
-}
-
-/* Style the Active Filters / Reset bar */
-#active-filters-holder {
-    border-radius: 8px !important;
-    margin-bottom: 15px !important;
-    width: 100% !important;
-}
-
-/* Style the Apply button container to float it nicely */
-.svr-overlay-footer {
-    background: #fff !important;
-    border-top: 1px solid #ddd !important;
-    padding: 15px !important;
-    z-index: 99999999 !important;
-}
-
-#svr-filter-apply-btn {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-    border-radius: 20px !important;
-    padding: 6px 20px !important;
-    font-weight: 600 !important;
-    background: #fff !important;
-    font-size: 16.8px !important;
-    width: auto !important;
-    min-width: 120px !important;
-    color: #333 !important;
-    border: 1px solid #eee !important;
-}
-
-/* --- CUSTOM SVR MARKERS --- */
-.leaflet-marker-icon[src*="marker-icon"] {
-    /* Replace the default Leaflet image with our custom SVG via Data URI */
-    /* VARIANT: Half-Split. Top=5 Segments (Yellow start), Bottom=Blue, Heart=White, Thin Blue Border, LARGE POINTER (WIDER BASE) */
-    /* ViewBox 100 160 */
-    content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 160'%3E%3Cdefs%3E%3Cfilter id='shadow' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeDropShadow dx='0' dy='2' stdDeviation='2' flood-opacity='0.3'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shadow)'%3E%3C!-- Wide Base Pointer (Blue) --%3E%3Cpath d='M22 80 L50 155 L78 80 Z' fill='%23008AD3' stroke='%23008AD3' stroke-width='2'/%3E%3C!-- Main Circle Background (With thin blue border) --%3E%3Ccircle cx='50' cy='50' r='46' fill='%23fff' stroke='%23008AD3' stroke-width='1.5'/%3E%3C!-- TOP HALF: 5 Zebra Segments (36 deg each) --%3E%3C!-- Seg 1 (Left): Yellow --%3E%3Cpath d='M50 50 L4 50 A46 46 0 0 1 12.8 23 Z' fill='%23FDCC01'/%3E%3C!-- Seg 2: Blue --%3E%3Cpath d='M50 50 L12.8 23 A46 46 0 0 1 35.8 6.3 Z' fill='%23008AD3'/%3E%3C!-- Seg 3 (Top): Yellow --%3E%3Cpath d='M50 50 L35.8 6.3 A46 46 0 0 1 64.2 6.3 Z' fill='%23FDCC01'/%3E%3C!-- Seg 4: Blue --%3E%3Cpath d='M50 50 L64.2 6.3 A46 46 0 0 1 87.2 23 Z' fill='%23008AD3'/%3E%3C!-- Seg 5 (Right): Yellow --%3E%3Cpath d='M50 50 L87.2 23 A46 46 0 0 1 96 50 Z' fill='%23FDCC01'/%3E%3C!-- BOTTOM HALF: Solid Blue --%3E%3Cpath d='M4 50 A46 46 0 0 0 96 50 Z' fill='%23008AD3'/%3E%3C!-- Inner White Heart --%3E%3Ccircle cx='50' cy='50' r='16' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E");
-    
-    width: 28px !important;
-    height: 45px !important; /* Increased height for larger pointer */
-    
-    margin-left: -14px !important;
-    margin-top: -43.6px !important; /* Mathematically centered on the tip (155/160 * 45) */
-    
-    filter: none !important;
-    background: none !important;
-    border: none !important;
+    opacity: 0.25;
+    height: 1px;
 }
