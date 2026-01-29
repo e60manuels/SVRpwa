@@ -46,23 +46,29 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - network first for API, cache for assets
+// Fetch event - network first for dynamic content, cache for static assets
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+  const PROXY_BASE_URL_HOSTNAME = 'svr-proxy-worker.e60-manuels.workers.dev'; // Replace with your actual worker hostname
 
-  // Skip API caching
-  if (url.pathname.includes('/api/')) {
+  // Skip Service Worker for requests to the Cloudflare Worker proxy or any API endpoint
+  if (url.hostname === PROXY_BASE_URL_HOSTNAME || url.pathname.includes('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request).catch(() => {
-        // Fallback to offline page for navigation requests
+      // Cache-first strategy for static assets
+      return response || fetch(event.request).catch((error) => {
+        // Fallback to offline page for navigation requests that fail
         if (event.request.mode === 'navigate') {
+          console.log('SW: Network failed for navigation, serving offline page', error);
           return caches.match('./offline.html');
         }
+        // For other failed requests (e.g., images, scripts), just re-throw the error
+        // so the browser's default error handling applies (e.g., broken image icon)
+        throw error;
       });
     })
   );
