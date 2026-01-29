@@ -379,14 +379,8 @@ async function renderDetail(objectId) {
         logDebug(`Fetching SVR detail page for ${objectId} via proxy: ${detailUrl}`);
         const htmlContent = await fetchWithRetry(detailUrl);
 
-        if (!htmlContent || htmlContent.trim().startsWith("<!doctype") || htmlContent.trim().startsWith("<html") || htmlContent.includes("Internal Server Error")) {
-            const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
-            const title = doc.title || "Foutpagina";
-            logDebug("SVR meldt (Detail): " + title);
-            if (htmlContent.toLowerCase().includes("login") || htmlContent.toLowerCase().includes("inloggen")) {
-                logDebug("HINT: Inloggen op SVR.nl vereist!");
-            }
-            throw new Error("SVR stuurde HTML ipv verwachte detailpagina");
+        if (!htmlContent || htmlContent.includes("Internal Server Error")) {
+            throw new Error("SVR response invalid or empty");
         }
 
         const parser = new DOMParser();

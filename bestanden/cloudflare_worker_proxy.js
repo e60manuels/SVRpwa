@@ -254,36 +254,16 @@ async function handleRequest(request) {
     }
 
 
-    // 4. PROXY SVR.NL REQUESTS
-    // Determine the target URL based on the worker's path
-    let targetUrl;
+    // 4. PROXY SVR.NL REQUESTS (Simplified)
+    let targetPath = url.pathname;
     let svrHostname = 'https://www.svr.nl';
 
-    if (url.pathname.startsWith('/object/')) {
-        // Direct SVR object page navigation (e.g., /object/UUID)
-        // No /api prefix here, as svr.nl web pages are not under /api
-        targetUrl = `${svrHostname}${url.pathname}${url.search}`;
-        console.log(`[${requestId}] Proxying direct SVR object page: ${targetUrl}`);
-    } else {
-        // Handle other API proxy requests (e.g., /api/objects, /api/auth)
-        let targetPath = url.pathname;
-        // Clean up potential double slashes or hostname in path from client-side construction
-        if (targetPath.startsWith('//api/')) {
-            targetPath = '/api/' + targetPath.substring('//api/'.length);
-        } else if (targetPath.startsWith('/www.svr.nl/')) {
-            targetPath = targetPath.substring('/www.svr.nl'.length);
-            if (!targetPath.startsWith('/')) targetPath = '/' + targetPath;
-        }
-
-        if (!targetPath.startsWith('/api/') && targetPath !== '/login') { // Only prepend /api for actual API endpoints, not /login or direct object pages
-             targetPath = `/api${targetPath}`;
-        }
-        
-        if (url.search) targetPath += url.search;
-        targetUrl = `${svrHostname}${targetPath}`;
-        console.log(`[${requestId}] Proxying SVR API request: ${targetUrl}`);
-    }
-    console.log(`[${requestId}] Proxying request for ${targetUrl}`);
+    // No special path manipulation here. The PWA's fetchWithRetry already correctly
+    // transforms www.svr.nl API paths to /api/* when needed, and direct SVR object
+    // page navigation is now /object/*
+    // The worker should simply forward its incoming path directly to svr.nl.
+    const targetUrl = `${svrHostname}${targetPath}${url.search}`;
+    console.log(`[${requestId}] Proxying SVR content: ${targetUrl}`);
     console.log(`[${requestId}] PWA Cookie header for proxied request: ${headers.get('Cookie')}`); // Log PWA's cookie header
 
 
