@@ -134,8 +134,8 @@
 
     window.openSVRDetailProxy = function(objectId) {
         const PROXY_BASE_URL = 'https://svr-proxy-worker.e60-manuels.workers.dev';
-        // The worker will prepend /api if it's an SVR.nl path that doesn't start with /api
-        const proxiedUrl = `${PROXY_BASE_URL}/api/object/${objectId}`;
+        // The worker will now correctly handle /object/{id} paths directly
+        const proxiedUrl = `${PROXY_BASE_URL}/object/${objectId}`;
         window.open(proxiedUrl, '_blank');
     };
 
