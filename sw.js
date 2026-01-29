@@ -16,7 +16,9 @@ const ASSETS_TO_CACHE = [
   'https://code.jquery.com/jquery-3.6.0.min.js',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css'
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css',
+  'https://unpkg.com/swiper/swiper-bundle.min.css',
+  'https://unpkg.com/swiper/swiper-bundle.min.js'
 ];
 
 // Install event - caching assets
