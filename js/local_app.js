@@ -404,7 +404,22 @@ async function renderDetail(objectId) {
             // 2. Remove all <link> tags (especially stylesheets)
             tempDiv.querySelectorAll('link').forEach(link => link.remove());
 
-            // 3. Rewrite relative URLs to absolute URLs pointing to svr.nl
+            // 3. Remove all <iframe> tags
+            tempDiv.querySelectorAll('iframe').forEach(iframe => iframe.remove());
+
+            // 4. Remove all inline 'style' attributes
+            tempDiv.querySelectorAll('[style]').forEach(element => element.removeAttribute('style'));
+
+            // 5. Remove all 'on*' event handler attributes (e.g., onclick, onload, onerror)
+            tempDiv.querySelectorAll('*').forEach(element => {
+                Array.from(element.attributes).forEach(attr => {
+                    if (attr.name.startsWith('on')) {
+                        element.removeAttribute(attr.name);
+                    }
+                });
+            });
+
+            // 6. Rewrite relative URLs to absolute URLs pointing to svr.nl
             const SVR_BASE = 'https://www.svr.nl';
             tempDiv.querySelectorAll('[src], [href]').forEach(element => {
                 const attr = element.hasAttribute('src') ? 'src' : 'href';
