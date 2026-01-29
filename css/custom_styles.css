@@ -121,7 +121,7 @@
 
 /* Styling for the "Gele Veeg" background effect */
 #detail-container .veeg-yellow {
-    background: url('https://s003-do-cdn.ams3.digitaloceanspaces.com/svr/vegen/2.png') no-repeat center center;
+    background: url('https://www.svr.nl/images/vegen/2.png') no-repeat center center; /* Updated URL */
     background-size: 100% 100%;
     width: 95% !important; /* Replicate width from outerHTML_detailpagina.txt */
     max-width: 95% !important; /* Replicate max-width */
