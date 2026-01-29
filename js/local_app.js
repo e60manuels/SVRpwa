@@ -74,12 +74,10 @@
         if (originalUrl.hostname === 'www.svr.nl' || originalUrl.hostname === 'nominatim.openstreetmap.org') {
             // Construct the URL to hit our proxy's forwarding endpoint
             let pathForProxy = originalUrl.pathname;
-            if (originalUrl.hostname === 'www.svr.nl') {
-                pathForProxy = originalUrl.pathname.startsWith('/api/') ? originalUrl.pathname : `/api${originalUrl.pathname}`;
-            }
+            
             // For Nominatim, use the full path and hostname directly
             if (originalUrl.hostname === 'nominatim.openstreetmap.org') {
-                pathForProxy = originalUrl.hostname + originalUrl.pathname; // Send hostname as part of the path for worker routing
+                pathForProxy = originalUrl.hostname + originalUrl.pathname; 
             }
 
             fetchUrl = `${PROXY_BASE_URL}/${pathForProxy}${originalUrl.search}`;
@@ -402,15 +400,24 @@ async function renderDetail(objectId) {
         }
         
         if (mainContent && mainContent.innerHTML.trim().length > 0) {
-            $('#detail-container').empty().append(mainContent.innerHTML);
+            const closeBtn = `<div style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; align-items: center; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px;"><i class="fas fa-arrow-left"></i></button>
+                <h3 style="margin: 0; font-family: 'Befalow'; color: #333;">Camping Details</h3>
+            </div>`;
+            $('#detail-container').empty().append(closeBtn + mainContent.innerHTML);
             applyState({ view: 'detail' }); // Ensure the detail view is visible
         } else {
-            const preview = htmlContent.substring(0, 200).replace(/</g, "&lt;");
-            $('#detail-container').empty().append(`<div style="padding:20px;text-align:center;">
+            const preview = htmlContent.substring(0, 500).replace(/</g, "&lt;");
+            const closeBtn = `<div style="padding: 10px; background: #eee;">
+                <button onclick="history.back()" style="padding: 5px 15px; border-radius: 5px; border: 1px solid #ccc; cursor: pointer;"> < Terug</button>
+            </div>`;
+            $('#detail-container').empty().append(closeBtn + `<div style="padding:20px;text-align:center;">
                 <h3>Detailpagina kon niet worden geladen.</h3>
                 <p>Titel van ontvangen pagina: <b>${doc.title}</b></p>
-                <p>Mogelijk is de structuur van de SVR site veranderd.</p>
-                <pre style="text-align:left;background:#eee;padding:10px;overflow:auto;">${preview}...</pre>
+                <p>Mogelijk is de structuur van de SVR site veranderd of bent u uitgelogd.</p>
+                <div style="text-align:left;background:#333;color:#0f0;padding:10px;overflow:auto;font-family:monospace;font-size:11px;max-height:300px;">
+                    ${preview}...
+                </div>
             </div>`);
             applyState({ view: 'detail' });
             logDebug(`Could not find suitable content in fetched SVR HTML for ${objectId}.`);

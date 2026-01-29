@@ -294,8 +294,14 @@ async function handleRequest(request) {
       }
     }
     if (!proxyHeaders.has('user-agent')) {
-      proxyHeaders.set('user-agent', 'SVR-PWA-Proxy/1.0')
+      proxyHeaders.set('user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
     }
+    
+    // Ensure we ask for HTML if we are fetching a detail page
+    if (targetPath.startsWith('/object/')) {
+        proxyHeaders.set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8');
+    }
+
     proxyHeaders.set('Origin', 'https://www.svr.nl') // Ensure origin is svr.nl for requests to svr.nl
     proxyHeaders.set('Referer', 'https://www.svr.nl/') // Ensure referer is svr.nl for requests to svr.nl
 
