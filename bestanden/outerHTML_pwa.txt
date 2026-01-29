@@ -1,0 +1,178 @@
+<html lang="nl"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SVR Campings POC</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#008AD3">
+    
+    <!-- iOS support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SVR Campings">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <!-- Assets -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="css/MarkerCluster.css">
+    <link rel="stylesheet" href="css/MarkerCluster.Default.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="css/local_style.css">
+    <link rel="stylesheet" href="css/custom_styles.css">
+<style>
+        #svr-filter-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2147483640; display: none; opacity: 0; transition: opacity 0.3s ease; }
+        #svr-filter-backdrop.open { display: block; opacity: 1; }
+        #svr-filter-overlay { 
+            position: fixed; top: 88px; left: 0; width: 100%; height: calc(100% - 88px); 
+            background-color: #f0f0f0; z-index: 2147483647; display: flex; flex-direction: column; 
+            box-sizing: border-box; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+            border-top-left-radius: 12px; border-top-right-radius: 12px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        #svr-filter-overlay.open { transform: translateY(0); }
+        .svr-overlay-header { background-color: #f0f0f0; padding: 8px 15px 12px 15px; display: flex; flex-direction: column; align-items: flex-start; border-top-left-radius: 12px; border-top-right-radius: 12px; }
+        .svr-overlay-title { font-size: 1.2rem; font-weight: bold; margin: 0; color: #008AD3; font-family: 'Befalow', sans-serif; text-align: left; padding-left: 15px; }
+        #svr-filter-overlay-content { flex-grow: 1; overflow-y: auto; width: 100%; background-color: #f0f0f0; padding: 15px; box-sizing: border-box; scroll-behavior: smooth; }
+        #active-filters-holder { background: #FDCC01; border-radius: 12px; padding: 12px 15px; margin-bottom: 15px; display: none; box-sizing: border-box; width: 100%; position: sticky; top: 0; z-index: 100; }
+        .active-filter-tag { display: inline-flex; align-items: center; background: white; padding: 4px 10px; border-radius: 15px; margin: 4px; font-size: 12px; font-weight: bold; color: #008AD3; border: 1px solid #ddd; }
+        .filter-section-card { background: white; border-radius: 12px; margin-bottom: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .filter-section-header { padding: 12px 15px; background: #FDCC01; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .filter-section-header h4 { margin: 0; font-size: 22px; color: #333; font-family: 'Befalow', sans-serif; }
+        .filter-section-body { padding: 0 15px; display: none; }
+        .filter-section-body.show { display: block; padding-bottom: 10px; }
+        .svr-overlay-footer { padding: 12px 15px; border-top: 1px solid #ddd; display: flex; gap: 15px; background: #f0f0f0; }
+        .svr-footer-btn { flex: 1; height: 40px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        #svr-filter-apply-btn { background-color: #FDCC01; color: #333; }
+        #svr-filter-reset-btn { background-color: white; color: #c0392b; border: 1px solid #ddd; }
+        .filter-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f9f9f9; }
+    </style></head>
+<body>
+
+    <div id="loading-overlay" style="display: none;"><i class="fas fa-spinner fa-spin fa-2x" style="color: var(--svr-blue);"></i></div>
+
+    <!-- HELP OVERLAY POC -->
+    <div id="help-overlay" onclick="this.style.display='none'">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 80%;">
+            <p style="font-weight: bold; font-size: 16px; text-shadow: 0 1px 4px rgba(0,0,0,0.5);">Klik ergens om te sluiten</p>
+        </div>
+
+        <!-- Search Help (Links) -->
+        <div class="help-item" style="top: 105px; left: 15px; flex-direction: column; align-items: flex-start;">
+            <div class="help-arrow arrow-up" style="margin-left: 10px;"></div>
+            <div class="help-text">Zoek op plaatsnaam naar campings</div>
+        </div>
+
+        <!-- Info Help (Rechts) -->
+        <div class="help-item" style="top: 125px; right: 15px; flex-direction: column; align-items: flex-end;">
+            <div class="help-arrow arrow-up" style="margin-right: 10px; height: 25px; border-bottom: 25px solid white; border-top: 0; margin-top: -21px;"></div>
+            <div class="help-text">Info over de icoontjes</div>
+        </div>
+
+        <!-- SVR Website -->
+        <div class="help-item" style="bottom: 188px; right: 65px;">
+            <div class="help-text">Bekijk de SVR website</div>
+            <div class="help-arrow arrow-right"></div>
+        </div>
+
+        <!-- Locate / Scroll -->
+        <div class="help-item" style="bottom: 132px; right: 65px;">
+            <div class="help-text" id="dynamic-help-text">Toon jouw huidige locatie</div>
+            <div class="help-arrow arrow-right"></div>
+        </div>
+
+        <!-- Filter -->
+        <div class="help-item" style="bottom: 76px; right: 65px;">
+            <div class="help-text">Filter op landen, faciliteiten en tarieven</div>
+            <div class="help-arrow arrow-right"></div>
+        </div>
+
+        <!-- Toggle -->
+        <div class="help-item" style="bottom: 20px; right: 65px;">
+            <div class="help-text">Wissel tussen Lijst en Kaart weergave</div>
+            <div class="help-arrow arrow-right"></div>
+        </div>
+    </div>
+
+    <header class="svr-header">
+        <div class="svr-top-row">
+            <div class="search-container" style="position: relative;">
+                <i class="fas fa-search" id="searchIcon"></i>
+                <input type="text" id="searchInput" placeholder="Zoek een SVR camping" autocomplete="off">
+                <span id="infoBtn" onclick="window.showHelp()">i</span>
+                <ul id="suggestionsList" class="suggestions-list"></ul>
+            </div>
+        </div>
+    </header>
+
+    <div id="map-container" style="display: none;">
+        <div id="map" style="width: 100%; height: 100%; position: relative;" class="leaflet-container leaflet-touch leaflet-retina leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" tabindex="0"><div class="leaflet-pane leaflet-map-pane" style="transform: translate3d(0px, 0px, 0px);"><div class="leaflet-pane leaflet-tile-pane"><div class="leaflet-layer " style="z-index: 1; opacity: 1;"><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 17; transform: translate3d(-194px, -292px, 0px) scale(2);"></div><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 18; transform: translate3d(-194px, -292px, 0px) scale(1);"><img alt="" src="https://c.tile.openstreetmap.org/9/263/168.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(226px, 336px, 0px); opacity: 1;"><img alt="" src="https://b.tile.openstreetmap.org/9/263/167.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(226px, 80px, 0px); opacity: 1;"><img alt="" src="https://b.tile.openstreetmap.org/9/262/168.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-30px, 336px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/9/264/168.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(482px, 336px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/9/263/169.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(226px, 592px, 0px); opacity: 1;"><img alt="" src="https://a.tile.openstreetmap.org/9/262/167.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-30px, 80px, 0px); opacity: 1;"><img alt="" src="https://c.tile.openstreetmap.org/9/264/167.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(482px, 80px, 0px); opacity: 1;"><img alt="" src="https://c.tile.openstreetmap.org/9/262/169.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-30px, 592px, 0px); opacity: 1;"><img alt="" src="https://b.tile.openstreetmap.org/9/264/169.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(482px, 592px, 0px); opacity: 1;"></div></div></div><div class="leaflet-pane leaflet-overlay-pane"></div><div class="leaflet-pane leaflet-shadow-pane"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png" class="leaflet-marker-shadow leaflet-zoom-animated" alt="" style="margin-left: -12px; margin-top: -41px; width: 41px; height: 41px; transform: translate3d(115px, 241px, 0px);"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png" class="leaflet-marker-shadow leaflet-zoom-animated" alt="" style="margin-left: -12px; margin-top: -41px; width: 41px; height: 41px; transform: translate3d(107px, 242px, 0px);"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png" class="leaflet-marker-shadow leaflet-zoom-animated" alt="" style="margin-left: -12px; margin-top: -41px; width: 41px; height: 41px; transform: translate3d(214px, 301px, 0px);"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png" class="leaflet-marker-shadow leaflet-zoom-animated" alt="" style="margin-left: -12px; margin-top: -41px; width: 41px; height: 41px; transform: translate3d(222px, 202px, 0px);"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png" class="leaflet-marker-shadow leaflet-zoom-animated" alt="" style="margin-left: -12px; margin-top: -41px; width: 41px; height: 41px; transform: translate3d(244px, 239px, 0px);"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png" class="leaflet-marker-shadow leaflet-zoom-animated" alt="" style="margin-left: -12px; margin-top: -41px; width: 41px; height: 41px; transform: translate3d(224px, 307px, 0px);"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png" class="leaflet-marker-shadow leaflet-zoom-animated" alt="" style="margin-left: -12px; margin-top: -41px; width: 41px; height: 41px; transform: translate3d(248px, 264px, 0px);"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png" class="leaflet-marker-shadow leaflet-zoom-animated" alt="" style="margin-left: -12px; margin-top: -41px; width: 41px; height: 41px; transform: translate3d(170px, 342px, 0px);"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png" class="leaflet-marker-shadow leaflet-zoom-animated" alt="" style="margin-left: -12px; margin-top: -41px; width: 41px; height: 41px; transform: translate3d(246px, 300px, 0px);"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png" class="leaflet-marker-shadow leaflet-zoom-animated" alt="" style="margin-left: -12px; margin-top: -41px; width: 41px; height: 41px; transform: translate3d(252px, 218px, 0px);"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png" class="leaflet-marker-shadow leaflet-zoom-animated" alt="" style="margin-left: -12px; margin-top: -41px; width: 41px; height: 41px; transform: translate3d(188px, 110px, 0px); opacity: 1;"></div><div class="leaflet-pane leaflet-marker-pane"><div class="leaflet-marker-icon search-marker leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -15px; margin-top: -30px; width: 30px; height: 30px; transform: translate3d(167px, 253px, 0px); z-index: 253;"><i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i></div><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png" class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" alt="Marker" tabindex="0" role="button" style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(115px, 241px, 0px); z-index: 241;"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png" class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" alt="Marker" tabindex="0" role="button" style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(107px, 242px, 0px); z-index: 242;"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png" class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" alt="Marker" tabindex="0" role="button" style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(214px, 301px, 0px); z-index: 301;"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png" class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" alt="Marker" tabindex="0" role="button" style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(222px, 202px, 0px); z-index: 202;"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png" class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" alt="Marker" tabindex="0" role="button" style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(244px, 239px, 0px); z-index: 239;"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png" class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" alt="Marker" tabindex="0" role="button" style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(224px, 307px, 0px); z-index: 307;"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png" class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" alt="Marker" tabindex="0" role="button" style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(248px, 264px, 0px); z-index: 264;"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png" class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" alt="Marker" tabindex="0" role="button" style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(170px, 342px, 0px); z-index: 342;"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png" class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" alt="Marker" tabindex="0" role="button" style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(246px, 300px, 0px); z-index: 300;"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png" class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" alt="Marker" tabindex="0" role="button" style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(252px, 218px, 0px); z-index: 218;"><div class="leaflet-marker-icon marker-cluster marker-cluster-medium leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(141px, 570px, 0px); z-index: 570; opacity: 1;"><div><span>16</span></div></div><div class="leaflet-marker-icon marker-cluster marker-cluster-small leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(418px, -44px, 0px); z-index: -44; opacity: 1;"><div><span>7</span></div></div><div class="leaflet-marker-icon marker-cluster marker-cluster-medium leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(-4px, -22px, 0px); z-index: -22; opacity: 1;"><div><span>12</span></div></div><div class="leaflet-marker-icon marker-cluster marker-cluster-small leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(242px, 533px, 0px); z-index: 533; opacity: 1;"><div><span>5</span></div></div><div class="leaflet-marker-icon marker-cluster marker-cluster-medium leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(359px, 516px, 0px); z-index: 516; opacity: 1;"><div><span>13</span></div></div><div class="leaflet-marker-icon marker-cluster marker-cluster-small leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(301px, 391px, 0px); z-index: 391; opacity: 1;"><div><span>7</span></div></div><div class="leaflet-marker-icon marker-cluster marker-cluster-small leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(5px, 426px, 0px); z-index: 426; opacity: 1;"><div><span>8</span></div></div><div class="leaflet-marker-icon marker-cluster marker-cluster-small leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(110px, 467px, 0px); z-index: 467; opacity: 1;"><div><span>9</span></div></div><div class="leaflet-marker-icon marker-cluster marker-cluster-small leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(-3px, 231px, 0px); z-index: 231; opacity: 1;"><div><span>6</span></div></div><div class="leaflet-marker-icon marker-cluster marker-cluster-medium leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(53px, 365px, 0px); z-index: 365; opacity: 1;"><div><span>14</span></div></div><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png" class="leaflet-marker-icon leaflet-zoom-animated leaflet-interactive" alt="Marker" tabindex="0" role="button" style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(188px, 110px, 0px); z-index: 110; opacity: 1;"><div class="leaflet-marker-icon marker-cluster marker-cluster-medium leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(379px, 133px, 0px); z-index: 133; opacity: 1;"><div><span>14</span></div></div><div class="leaflet-marker-icon marker-cluster marker-cluster-medium leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(289px, 301px, 0px); z-index: 301; opacity: 1;"><div><span>22</span></div></div><div class="leaflet-marker-icon marker-cluster marker-cluster-medium leaflet-zoom-animated leaflet-interactive" tabindex="0" role="button" style="margin-left: -20px; margin-top: -20px; width: 40px; height: 40px; transform: translate3d(295px, 179px, 0px); z-index: 179; opacity: 1;"><div><span>17</span></div></div></div><div class="leaflet-pane leaflet-tooltip-pane"></div><div class="leaflet-pane leaflet-popup-pane"></div><div class="leaflet-proxy leaflet-zoom-animated" style="transform: translate3d(67475.8px, 43236.3px, 0px) scale(256);"></div></div><div class="leaflet-control-container"><div class="leaflet-top leaflet-left"></div><div class="leaflet-top leaflet-right"></div><div class="leaflet-bottom leaflet-left"></div><div class="leaflet-bottom leaflet-right"><div class="leaflet-control-attribution leaflet-control"><a href="https://leafletjs.com" title="A JavaScript library for interactive maps"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" class="leaflet-attribution-flag"><path fill="#4C7BE1" d="M0 0h12v4H0z"></path><path fill="#FFD500" d="M0 4h12v3H0z"></path><path fill="#E0BC00" d="M0 7h12v1H0z"></path></svg> Leaflet</a> <span aria-hidden="true">|</span> © OSM</div></div></div></div>
+    </div>
+    <div id="list-container" style="display: block;"><div id="resultsList"><div class="camping-card" style="padding:15px;background:white;margin-bottom:10px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+            <h3 style="margin:0;color:#008AD3;font-family:'Befalow';">camping hofstede de twaalf gaarden</h3>
+            <p style="margin:5px 0;font-size:14px;">WESTBROEK - 9.8 km</p>
+            <div style="display:flex;gap:10px;margin-top:10px;">
+                <button onclick="map.setView([52.1514,5.1505], 15); applyState({view:'map'});" style="flex:1;background:#eee;border:none;padding:8px;border-radius:20px;">KAART</button>
+                <button onclick="window.location.href='https://www.svr.nl/object/6c8fd1e7-abfe-4f6c-82c5-60ab2bdde2a6'" style="flex:1;background:#008AD3;color:white;border:none;padding:8px;border-radius:20px;">INFO</button>
+            </div>
+        </div><div class="camping-card" style="padding:15px;background:white;margin-bottom:10px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+            <h3 style="margin:0;color:#008AD3;font-family:'Befalow';">poldercamping de kooi</h3>
+            <p style="margin:5px 0;font-size:14px;">WESTBROEK - 11.3 km</p>
+            <div style="display:flex;gap:10px;margin-top:10px;">
+                <button onclick="map.setView([52.1496,5.1286], 15); applyState({view:'map'});" style="flex:1;background:#eee;border:none;padding:8px;border-radius:20px;">KAART</button>
+                <button onclick="window.location.href='https://www.svr.nl/object/e7e5033d-1ede-4704-93e5-5afc6068795f'" style="flex:1;background:#008AD3;color:white;border:none;padding:8px;border-radius:20px;">INFO</button>
+            </div>
+        </div><div class="camping-card" style="padding:15px;background:white;margin-bottom:10px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+            <h3 style="margin:0;color:#008AD3;font-family:'Befalow';">monte rosa</h3>
+            <p style="margin:5px 0;font-size:14px;">BARÃO DE SÃO JOÃO - 1996.3 km</p>
+            <div style="display:flex;gap:10px;margin-top:10px;">
+                <button onclick="map.setView([37.1369,-8.7573], 15); applyState({view:'map'});" style="flex:1;background:#eee;border:none;padding:8px;border-radius:20px;">KAART</button>
+                <button onclick="window.location.href='https://www.svr.nl/object/b86e3266-e0a0-41a1-8be9-99e6cee737d4'" style="flex:1;background:#008AD3;color:white;border:none;padding:8px;border-radius:20px;">INFO</button>
+            </div>
+        </div></div></div>
+
+    <div class="map-actions-stack">
+        <button class="map-stack-btn" onclick="window.location.href='https://www.svr.nl';">
+            <i class="fas fa-globe"></i>
+        </button>
+        <button class="map-stack-btn" id="scroll_top_btn">
+            <i class="fas fa-chevron-up"></i>
+        </button>
+        <button class="map-stack-btn" id="locateBtn">
+            <i class="fas fa-location-crosshairs"></i>
+        </button>
+        <button class="map-stack-btn" id="filterBtn" onclick="window.toggle_filters()">
+            <i class="fas fa-sliders"></i>
+        </button>
+        <button class="map-stack-btn" id="toggleView">
+            <i class="fas fa-map"></i>
+        </button>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/leaflet.markercluster.js"></script>
+    <script src="js/local_app.js?v=2"></script><div id="svr-filter-backdrop"></div><div id="svr-filter-overlay">
+        <div class="svr-overlay-header" id="filter-drag-header">
+            <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 10px; pointer-events: none;"><div style="width: 40px; height: 5px; background: #BBB; border-radius: 3px;"></div></div>
+            <h3 class="svr-overlay-title">Filters</h3>
+        </div>
+        <div id="svr-filter-overlay-content">
+            <div id="active-filters-holder"><div id="active-tags-container"></div></div>
+            <div id="filter-loading" style="text-align:center; padding: 40px;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#008AD3"></i><p>Filters ophalen...</p></div>
+            <div id="filter-container"></div>
+        </div>
+        <div class="svr-overlay-footer">
+            <button id="svr-filter-reset-btn" class="svr-footer-btn">Wis filters</button>
+            <button id="svr-filter-apply-btn" class="svr-footer-btn">Toepassen</button>
+        </div>
+    </div>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker geregistreerd', reg))
+                    .catch(err => console.log('Service Worker registratie mislukt', err));
+            });
+        }
+    </script>
+
+</body></html>
