@@ -726,7 +726,13 @@ async function renderDetail(objectId) {
 
         } catch (e) {
         logDebug("Detailpagina Fout: " + e.message);
-        $('#detail-container').empty().append(`<div style="padding:20px;text-align:center;">Fout bij laden detailpagina: ${e.message}</div>`);
+        $('#loading-overlay').hide();
+        // Append error details to the detail sheet content
+        $('#detail-container .detail-sheet-content').empty().append(`<div style="padding:20px;text-align:center;">
+            <h3>Fout bij laden detailpagina:</h3>
+            <p>${e.message}</p>
+            <p>Controleer de console voor meer details.</p>
+        </div>`);
         applyState({ view: 'detail' });
     } finally {
         $('#loading-overlay').hide();
