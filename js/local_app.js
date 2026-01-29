@@ -404,8 +404,8 @@ async function renderDetail(objectId) {
             // 2. Remove all <link> tags (especially stylesheets)
             tempDiv.querySelectorAll('link').forEach(link => link.remove());
 
-            // 3. Remove all <iframe> tags
-            tempDiv.querySelectorAll('iframe').forEach(iframe => iframe.remove());
+            // 3. Remove all <iframe> tags (DISABLED to allow videos)
+            // tempDiv.querySelectorAll('iframe').forEach(iframe => iframe.remove());
 
             // 4. Remove all inline 'style' attributes
             tempDiv.querySelectorAll('[style]').forEach(element => element.removeAttribute('style'));
@@ -436,6 +436,35 @@ async function renderDetail(objectId) {
             </div>`;
             $('#detail-container').empty().append(closeBtn + tempDiv.innerHTML);
             applyState({ view: 'detail' }); // Ensure the detail view is visible
+
+            // Initialize Swiper for the detail page carousel
+            const swiperElement = document.querySelector('#detail-container .swiper-container');
+            if (swiperElement) {
+                // Check if Swiper is loaded and the element exists
+                if (typeof Swiper !== 'undefined') {
+                    new Swiper(swiperElement, {
+                        // Optional parameters
+                        loop: true,
+                        autoplay: {
+                            delay: 2500,
+                            disableOnInteraction: false,
+                        },
+                        pagination: {
+                            el: '.swiper-pagination',
+                            clickable: true,
+                        },
+                        navigation: {
+                            nextEl: '.swiper-button-next',
+                            prevEl: '.swiper-button-prev',
+                        },
+                    });
+                    logDebug("Swiper carousel initialized.");
+                } else {
+                    logDebug("Swiper library not loaded, cannot initialize carousel.");
+                }
+            } else {
+                logDebug("Swiper container not found in injected detail content.");
+            }
         } else {
             const preview = htmlContent.substring(0, 500).replace(/</g, "&lt;");
             const closeBtn = `<div style="padding: 10px; background: #eee;">
