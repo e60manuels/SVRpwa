@@ -336,12 +336,16 @@ function renderResults(objects, cLat, cLng) {
         marker.bindPopup(popup);
         if (index < 10) { top10Layer.addLayer(marker); bounds.extend([lat, lng]); } else markerCluster.addLayer(marker);
         
-        const card = `<div class="camping-card" style="padding:15px;background:white;margin-bottom:10px;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-            <h3 style="margin:0;color:#008AD3;font-family:'Befalow';">${p.name}</h3>
-            <p style="margin:5px 0;font-size:14px;">${p.city} - ${(obj.distM/1000).toFixed(1)} km</p>
-            <div style="display:flex;gap:10px;margin-top:10px;">
-                <button onclick="map.setView([${lat},${lng}], 15); applyState({view:'map'});" style="flex:1;background:#eee;border:none;padding:8px;border-radius:20px;">KAART</button>
-                <button onclick="window.location.href='https://www.svr.nl/object/${obj.id}'" style="flex:1;background:#008AD3;color:white;border:none;padding:8px;border-radius:20px;">INFO</button>
+        const card = `<div class="camping-card">
+            <div class="card-body">
+                <h3>${p.name}</h3>
+                <div class="card-location"><i class="fa-solid fa-map-pin"></i> ${p.city}</div>
+                <div class="card-distance"><i class="fa-solid fa-map-pin"></i> Afstand: ${(obj.distM/1000).toFixed(1)} km</div>
+            </div>
+            <div class="camping-actions">
+                <a href="#" class="action-btn btn-kaart" onclick="map.setView([${lat},${lng}], 15); applyState({view:'map'}); return false;"><i class="fa-solid fa-map"></i> KAART</a>
+                <a href="#" class="action-btn btn-route" onclick="window.openNavHelper(${lat}, ${lng}, '${safeName}'); return false;"><i class="fa-solid fa-route"></i> ROUTE</a>
+                <a href="#" class="action-btn btn-info" onclick="window.location.href='https://www.svr.nl/object/${obj.id}'; return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
             </div>
         </div>`;
         $('#resultsList').append(card);
