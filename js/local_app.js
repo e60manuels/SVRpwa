@@ -407,6 +407,19 @@ async function renderDetail(objectId) {
             // 3. Remove all <iframe> tags (DISABLED to allow videos)
             // tempDiv.querySelectorAll('iframe').forEach(iframe => iframe.remove());
 
+            // Process Swiper Carousel separately before aggressive cleaning
+            let swiperImages = [];
+            const originalSwiperContainer = tempDiv.querySelector('.swiper-container');
+            if (originalSwiperContainer) {
+                originalSwiperContainer.querySelectorAll('.swiper-slide img').forEach(img => {
+                    const src = img.getAttribute('src');
+                    if (src) swiperImages.push(src);
+                });
+                // Remove the original Swiper HTML as we will reconstruct it cleanly
+                originalSwiperContainer.remove();
+                logDebug(`Extracted ${swiperImages.length} images for Swiper carousel.`);
+            }
+
             // 4. Remove all inline 'style' attributes
             tempDiv.querySelectorAll('[style]').forEach(element => element.removeAttribute('style'));
 
@@ -429,41 +442,47 @@ async function renderDetail(objectId) {
                 }
             });
             
+            // Construct Swiper HTML if images were found
+            let swiperHtml = '';
+            if (swiperImages.length > 0) {
+                const slides = swiperImages.map(src => `<div class="swiper-slide"><img src="${src}" alt="Camping foto"></div>`).join('');
+                swiperHtml = `<div class="swiper swiper-detail" style="width: 100%; height: 300px;">
+                                <div class="swiper-wrapper">${slides}</div>
+                                <div class="swiper-pagination"></div>
+                                <div class="swiper-button-prev"></div>
+                                <div class="swiper-button-next"></div>
+                              </div>`;
+            }
+
             logDebug(`Processed HTML lengte na opschonen: ${tempDiv.innerHTML.length}`);
             const closeBtn = `<div style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; align-items: center; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                 <button onclick="history.back()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px;"><i class="fas fa-arrow-left"></i></button>
                 <h3 style="margin: 0; font-family: 'Befalow'; color: #333;">Camping Details</h3>
             </div>`;
-            $('#detail-container').empty().append(closeBtn + tempDiv.innerHTML);
+            // Prepend Swiper HTML before the rest of the content
+            $('#detail-container').empty().append(closeBtn + swiperHtml + tempDiv.innerHTML);
             applyState({ view: 'detail' }); // Ensure the detail view is visible
 
             // Initialize Swiper for the detail page carousel
-            const swiperElement = document.querySelector('#detail-container .swiper-container');
-            if (swiperElement) {
-                // Check if Swiper is loaded and the element exists
-                if (typeof Swiper !== 'undefined') {
-                    new Swiper(swiperElement, {
-                        // Optional parameters
-                        loop: true,
-                        autoplay: {
-                            delay: 2500,
-                            disableOnInteraction: false,
-                        },
-                        pagination: {
-                            el: '.swiper-pagination',
-                            clickable: true,
-                        },
-                        navigation: {
-                            nextEl: '.swiper-button-next',
-                            prevEl: '.swiper-button-prev',
-                        },
-                    });
-                    logDebug("Swiper carousel initialized.");
-                } else {
-                    logDebug("Swiper library not loaded, cannot initialize carousel.");
-                }
-            } else {
-                logDebug("Swiper container not found in injected detail content.");
+            if (swiperImages.length > 0 && typeof Swiper !== 'undefined') {
+                new Swiper('.swiper-detail', {
+                    loop: true,
+                    autoplay: {
+                        delay: 2500,
+                        disableOnInteraction: false,
+                    },
+                    pagination: {
+                        el: '.swiper-pagination',
+                        clickable: true,
+                    },
+                    navigation: {
+                        nextEl: '.swiper-button-next',
+                        prevEl: '.swiper-button-prev',
+                    },
+                });
+                logDebug("Swiper carousel initialized.");
+            } else if (swiperImages.length > 0) {
+                logDebug("Swiper library not loaded, cannot initialize carousel.");
             }
         } else {
             const preview = htmlContent.substring(0, 500).replace(/</g, "&lt;");
