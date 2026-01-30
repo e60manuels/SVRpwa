@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 5; // Increment this number with each commit
+window.SVR_PWA_VERSION = 6; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -65,7 +65,7 @@ window.SVR_PWA_VERSION = 5; // Increment this number with each commit
     
         const originalUrl = new URL(url); // Parse original URL once
         let fetchUrl = url;
-        const options = { headers: {} }; // Initialize options with an empty headers object
+        const options = { headers: {}, credentials: 'include' }; // Initialize options with credentials: 'include'
 
         // Determine if we need to add X-SVR-Session.
         // This is needed if the request is for www.svr.nl (to be proxied through worker)
@@ -106,20 +106,10 @@ window.SVR_PWA_VERSION = 5; // Increment this number with each commit
             }
         }
 
-        // Add cookies for SVR requests to ensure filters are applied
-        if (originalUrl.hostname === 'www.svr.nl') {
-            const allCookies = document.cookie;
-            if (allCookies) {
-                options.headers['Cookie'] = allCookies;
-                logDebug(`Adding cookies to request: ${allCookies.substring(0, 100)}...`);
-            }
-        }
-
         // options.credentials = 'include'; // Removed, as we manually manage session via custom header
 
         try {
             const res = await fetch(fetchUrl, options);
-
 
             // Check for 401 = sessie expired (only for SVR requests)
             if (originalUrl.hostname === 'www.svr.nl' && res.status === 401) { // Fixed: used originalUrl.hostname
@@ -133,6 +123,16 @@ window.SVR_PWA_VERSION = 5; // Increment this number with each commit
                 const errorText = await res.text();
                 throw new Error(`HTTP error! Status: ${res.status}, Response: ${errorText}`);
             }
+
+            // Handle Set-Cookie headers from the response
+            // This is important for filters and other server-side state
+            const setCookieHeaders = res.headers.get('Set-Cookie');
+            if (setCookieHeaders && originalUrl.hostname === 'www.svr.nl') {
+                // In a real browser, these would be automatically stored and sent with future requests
+                // For our PWA, we need to handle them manually
+                logDebug(`Received Set-Cookie headers: ${setCookieHeaders.substring(0, 100)}...`);
+            }
+
             return await res.text();
         } catch (e) {
             logDebug("Fetch via Proxy mislukt: " + e.message);
