@@ -1,4 +1,4 @@
-const CACHE_NAME = 'svr-pwa-cache-v2';
+const CACHE_NAME = 'svr-pwa-cache-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -13,7 +13,6 @@ const ASSETS_TO_CACHE = [
   './assets/Woonplaatsen_in_Nederland.csv',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  'https://svr.nl/static/images/veeg_geel.png', // Added for Gele Veeg
   'https://code.jquery.com/jquery-3.6.0.min.js',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
