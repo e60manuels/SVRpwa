@@ -697,8 +697,15 @@ window.showSVRDetailPage = function(objectId) {
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
 
-    // CRITICAL FIX: Clear any inline styles (like transform) left over from a previous swipe-to-close
-    detailSheet.style.transform = ''; 
+    // CRITICAL FIX: Explicitly remove transform property and force reflow
+    // This ensures any previous swipe-to-close inline styles (translateY) are gone
+    detailSheet.style.removeProperty('transform');
+    detailSheet.style.transition = 'none'; // Disable transition to prevent flying
+    
+    // Force reflow
+    void detailSheet.offsetWidth; 
+
+    // Restore transition
     detailSheet.style.transition = '';
 
     // Clear previous content immediately
