@@ -151,6 +151,7 @@
             display: none; /* Hidden by default */
             opacity: 0;
             transition: opacity 0.3s ease;
+            overscroll-behavior: none; /* Prevent background scrolling when overlay is open */
         }
         .detail-overlay.open {
             display: block;
@@ -164,7 +165,8 @@
             max-height: 100%;
             border-top-left-radius: 12px;
             border-top-right-radius: 12px;
-            overflow: hidden; /* Content scrolls inside */
+            overflow-y: auto; /* Allow scrolling inside the sheet */
+            -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on iOS */
             transform: translateY(100%); /* Start off-screen */
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
             display: flex; /* For the close button header */
@@ -176,4 +178,10 @@
         .detail-sheet-content iframe {
             flex-grow: 1; /* Make iframe take remaining height */
             height: 100%; /* Ensure iframe fills its parent height */
+        }
+
+        /* Improve scroll performance */
+        #map-container, #list-container, .detail-sheet-content {
+            will-change: transform;
+            transform: translateZ(0); /* Enable hardware acceleration */
         }
