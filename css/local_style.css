@@ -191,3 +191,15 @@
             will-change: transform;
             transform: translateZ(0); /* Enable hardware acceleration */
         }
+
+        /* --- PORTRAIT LOCK OVERLAY --- */
+        #portrait-lock {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #FDCC01; z-index: 99999;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; color: #333;
+        }
+        
+        @media screen and (orientation: landscape) and (max-width: 900px) {
+            #portrait-lock { display: flex; }
+        }

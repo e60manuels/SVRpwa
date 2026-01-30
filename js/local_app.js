@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 8; // Increment this number with each commit
+window.SVR_PWA_VERSION = 9; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -169,17 +169,25 @@ window.SVR_PWA_VERSION = 8; // Increment this number with each commit
         const detailOverlay = document.getElementById('detail-container');
         const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
 
+        // Clear previous content immediately to avoid showing stale data or white screen glitches
+        // Show a loading state inside the sheet
+        $(detailSheet).empty().append('<div style="display:flex;justify-content:center;align-items:center;height:100%;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#008AD3"></i></div>');
+
         // Initially hide overlay and sheet, then make visible with animation
         detailOverlay.style.display = 'block';
+        
+        // Ensure we remove the 'open' class first to trigger the transition
+        detailOverlay.classList.remove('open');
+        
         setTimeout(() => {
             detailOverlay.classList.add('open'); // Trigger background fade in
-            detailSheet.classList.add('open'); // Trigger sheet slide up
-            // After animation, push state
+            
+            // Push state and fetch content
             setTimeout(() => {
                 history.pushState({ view: 'detail', objectId: objectId }, "", `#detail/${objectId}`);
                 renderDetail(objectId);
-            }, 400); // Match CSS transition duration
-        }, 10); // Small delay to allow 'display: block' to apply before transition
+            }, 300); 
+        }, 10);
     };
 
     // Modify the back handler to animate the sheet down before navigating back
@@ -187,13 +195,14 @@ window.SVR_PWA_VERSION = 8; // Increment this number with each commit
         const detailOverlay = document.getElementById('detail-container');
         const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
 
-        detailSheet.classList.remove('open'); // Trigger slide down
         detailOverlay.classList.remove('open'); // Trigger background fade out
         detailSheet.style.transform = ''; // Clear inline transform from swipe
 
         setTimeout(() => {
             detailOverlay.style.display = 'none'; // Hide after animation
-            history.back(); // Navigate back in history
+            if (history.state && history.state.view === 'detail') {
+                history.back(); // Navigate back in history
+            }
         }, 400); // Match CSS transition duration
     };
 
@@ -857,7 +866,6 @@ async function performSearch() {
 }
 
 async function renderDetail(objectId) {
-    $('#loading-overlay').css('display', 'flex'); // Show loading spinner
     try {
         const PROXY_BASE_URL = 'https://svr-proxy-worker.e60-manuels.workers.dev';
         const detailUrl = `${PROXY_BASE_URL}/object/${objectId}`;
@@ -869,38 +877,33 @@ async function renderDetail(objectId) {
             throw new Error("SVR response invalid or empty");
         }
 
-        logDebug(`Ontvangen HTML lengte: ${htmlContent.length}`);
-
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
-        logDebug(`Geparsde pagina titel: ${doc.title}`);
-
-        // Try to find the main content area based on outerHTML_detailpagina.txt
+        
+        // Try to find the main content area
         let mainContent = doc.querySelector('.container-fluid.pt-0 .row');
         if (!mainContent) {
              logDebug("Selector '.container-fluid.pt-0 .row' niet gevonden, proberen met 'body'...");
              mainContent = doc.body;
         }
 
+        const detailOverlay = document.getElementById('detail-container');
+        const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+
         if (mainContent && mainContent.innerHTML.trim().length > 0) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = mainContent.innerHTML;
 
-            // 1. Remove all <script> tags
-            tempDiv.querySelectorAll('script').forEach(script => script.remove());
+            // 1. Clean up HTML
+            tempDiv.querySelectorAll('script, link').forEach(el => el.remove());
 
-            // 2. Remove all <link> tags (especially stylesheets)
-            tempDiv.querySelectorAll('link').forEach(link => link.remove());
-
-            // 3. Keep <iframe> tags (removal disabled in previous step)
-
-            // Make images visible: Remove 'd-none' class and 'loading="lazy"' attribute
+            // 2. Make images visible
             tempDiv.querySelectorAll('img').forEach(img => {
                 img.classList.remove('d-none');
                 img.removeAttribute('loading');
             });
 
-            // Rewrite relative URLs to absolute URLs pointing to svr.nl (still needed)
+            // 3. Rewrite relative URLs
             const SVR_BASE = 'https://www.svr.nl';
             tempDiv.querySelectorAll('[src], [href]').forEach(element => {
                 const attr = element.hasAttribute('src') ? 'src' : 'href';
@@ -910,247 +913,78 @@ async function renderDetail(objectId) {
                 }
             });
 
-            // Force mobile-friendly width on the container and its children
+            // 4. Force mobile layout via style tag
             const containerStyle = document.createElement('style');
             containerStyle.innerHTML = `
-                /* Force container to fit screen */
-                #detail-container .container, 
-                #detail-container .container-fluid,
-                #detail-container .row,
-                #detail-container .col-md-8,
-                #detail-container .col-md-4 {
-                    width: 100% !important;
-                    max-width: 100vw !important;
-                    margin-left: 0 !important;
-                    margin-right: 0 !important;
-                    padding-left: 15px !important; 
-                    padding-right: 15px !important;
+                #detail-container .container, #detail-container .container-fluid, #detail-container .row,
+                #detail-container .col-md-8, #detail-container .col-md-4 {
+                    width: 100% !important; max-width: 100vw !important;
+                    margin: 0 !important; padding: 0 15px !important;
                     box-sizing: border-box !important;
                 }
-                
-                /* Ensure images don't overflow */
-                #detail-container img {
-                    max-width: 100% !important;
-                    height: auto !important;
-                }
-
-                /* Fix specific SVR layout quirks */
-                #detail-container .row {
-                    display: flex !important;
-                    flex-direction: column !important;
-                }
+                #detail-container img { max-width: 100% !important; height: auto !important; }
+                #detail-container .row { display: flex !important; flex-direction: column !important; }
             `;
             tempDiv.prepend(containerStyle);
 
-            logDebug(`Processed HTML lengte na opschonen: ${tempDiv.innerHTML.length}`);
             const closeBtn = `<div class="detail-header" style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: grab;">
                 <div style="width: 40px; height: 5px; background: #BBB; border-radius: 3px; margin-bottom: 8px;"></div>
                 <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
                     <button onclick="window.handleDetailBack()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: #333;"><i class="fas fa-arrow-left"></i></button>
                     <h3 style="margin: 0; font-family: 'Befalow'; color: #333; font-size: 1.2rem;">Camping Details</h3>
-                    <div style="width: 30px;"></div> <!-- Spacer for centering -->
+                    <div style="width: 30px;"></div>
                 </div>
             </div>`;
-            const $sheetContent = $('#detail-container .detail-sheet-content');
-            $sheetContent.empty().append(closeBtn + tempDiv.innerHTML); // Append to sheet content
             
-            // Enable swipe for detail overlay
-            window.enableSwipeToClose($sheetContent[0], window.handleDetailBack, '.detail-header');
+            // Render
+            $(detailSheet).empty().append(closeBtn);
+            detailSheet.appendChild(tempDiv);
+            
+            // Re-enable swipe
+            window.enableSwipeToClose(detailSheet, window.handleDetailBack, '.detail-header');
 
-            applyState({ view: 'detail' }); // Ensure the detail view is visible
-
-            // **START REPLICATING JAVASCRIPT INJECTIONS FROM WEBACTIVITY**
-
-            // 1. Inject custom styles for Swiper pagination bullets (from swiper_init.js)
-            const style = document.createElement('style');
-            style.innerHTML = `
-                .svr-detail-swiper .swiper-pagination {
-                    bottom: 15px !important;
-                    z-index: 999999 !important;
-                    display: block !important;
-                    visibility: visible !important;
-                    pointer-events: auto !important;
-                }
-                .svr-detail-swiper .swiper-pagination-bullet {
-                    background: #FFD800 !important;
-                    opacity: 0.5 !important;
-                    width: 10px;
-                    height: 10px;
-                    margin: 0 5px !important;
-                }
-                .svr-detail-swiper .swiper-pagination-bullet-active {
-                    background: #FFD800 !important;
-                    opacity: 1 !important;
-                }
-            `;
-            document.head.appendChild(style);
-            logDebug('SVR_MOD: Swiper Pagination CSS injected.');
-
-            // 2. Implement initializeSwiper logic (from swiper_init.js)
-            function initializeSwiper() {
-                logDebug('SVR_MOD_DEBUG: Initializing bulletproof Swiper...');
-
-                // Find the original container of the images
-                // The mainImageContainer must be located within the injected tempDiv.innerHTML
-                const mainImageContainer = document.querySelector('#detail-container div.row.m-0.p-4.mt-0');
-
-                if (!mainImageContainer || mainImageContainer.dataset.swiperInitialized) {
-                    logDebug('SVR_MOD_DEBUG: Main image container not found or already initialized.');
-                    return;
-                }
-
-                let images = [];
-                const imageCards = mainImageContainer.querySelectorAll('div.card');
-
-                imageCards.forEach(card => {
-                    const img = card.querySelector('img');
-                    if (img && img.src) {
-                        images.push(img.src);
-                    }
-                });
-
-                logDebug('SVR_MOD_DEBUG: Found images via DOM query:', images);
-
-                if (images.length > 0) {
-                    mainImageContainer.dataset.swiperInitialized = 'true';
-                    logDebug('SVR_MOD_DEBUG: Images found. Proceeding with robust Swiper setup.');
-
-                    // Create the Swiper container structure with a specific class for targeting
-                    const swiperContainer = document.createElement('div');
-                    swiperContainer.className = 'swiper-container svr-detail-swiper';
-                    swiperContainer.style.width = '100%';
-                    swiperContainer.style.height = '300px';
-                    swiperContainer.style.position = 'relative';
-                    swiperContainer.style.touchAction = 'pan-x';
-                    swiperContainer.style.overflow = 'hidden';
-
-                    const swiperWrapper = document.createElement('div');
-                    swiperWrapper.className = 'swiper-wrapper';
-
-                    images.forEach(src => {
-                        const swiperSlide = document.createElement('div');
-                        swiperSlide.className = 'swiper-slide';
-                        swiperSlide.style.display = 'flex';
-                        swiperSlide.style.alignItems = 'center';
-                        swiperSlide.style.justifyContent = 'center';
-
-                        const imgElement = document.createElement('img');
-                        imgElement.src = src;
-                        imgElement.style.width = '100%';
-                        imgElement.style.height = '100%';
-                        imgElement.style.objectFit = 'cover';
-
-                        swiperSlide.appendChild(imgElement);
-                        swiperWrapper.appendChild(swiperSlide);
-                    });
-
-                    swiperContainer.appendChild(swiperWrapper);
-
-                    const pagination = document.createElement('div');
-                    pagination.className = 'swiper-pagination';
-                    swiperContainer.appendChild(pagination);
-
-                    // Replace the original image container with the new Swiper container
-                    mainImageContainer.parentNode.replaceChild(swiperContainer, mainImageContainer);
-
-                    // Initialize Swiper with robust settings
-                    if (typeof Swiper !== 'undefined') {
-                        new Swiper(swiperContainer, {
-                            direction: 'horizontal',
-                            loop: true,
-                            speed: 400,
-                            roundLengths: true,
-                            observer: true,
-                            observeParents: true,
-                            observeSlideChildren: true,
-                            updateOnImagesReady: true,
-                            loopAdditionalSlides: 5,
-                            pagination: {
-                                el: '.swiper-pagination',
-                                clickable: true,
-                            },
-                            threshold: 10,
-                            followFinger: true,
-                            touchStartPreventDefault: true,
-                            touchMoveStopPropagation: true,
-                            centerInsufficientSlides: true,
-                            on: {
-                                init: function () {
-                                    const self = this;
-                                    setTimeout(function() {
-                                        self.update();
-                                        logDebug('SVR_MOD_DEBUG: Swiper forced update 1 (500ms).');
-                                    }, 500);
-                                    setTimeout(function() {
-                                        self.update();
-                                        logDebug('SVR_MOD_DEBUG: Swiper forced update 2 (1500ms).');
-                                    }, 1500);
-                                },
-                            },
-                        });
-                        logDebug('SVR_MOD_DEBUG: Robust Swiper initialized successfully.');
-                    } else {
-                        logDebug('SVR_MOD_DEBUG: Swiper library not loaded, cannot initialize.');
-                    }
-                } else {
-                    logDebug('SVR_MOD_DEBUG: No images found. Swiper not initialized.');
-                }
-            }
-            // Delay initialization to ensure DOM and Swiper.js are ready
-            setTimeout(initializeSwiper, 600);
-            logDebug('SVR_MOD: Swiper initialization scheduled.');
-
-
-            // 3. Implement "Gele Veeg" JavaScript Styling (from DetailWebViewActivity.kt)
-            const veegScript = `
-                (function() {
-                    var veegCampings = document.querySelector('.veeg-campings');
-                    if (veegCampings) {
-                        // Override inline !important styles using setProperty
-                        veegCampings.style.setProperty('width', '95%', 'important');
-                        veegCampings.style.setProperty('max-width', '95%', 'important');
-                        veegCampings.style.setProperty('padding-left', 'auto'); // This was not in original but makes sense if you want to remove specific padding
-                        veegCampings.style.setProperty('padding-right', 'auto');
-                        veegCampings.style.setProperty('margin-left', 'auto');
-                        veegCampings.style.setProperty('margin-right', 'auto');
-                        veegCampings.style.setProperty('background', "url('https://svr.nl/static/images/veeg_geel.png') no-repeat center center", 'important');
-                        veegCampings.style.setProperty('background-size', '100% 100%', 'important');
-                        veegCampings.style.setProperty('text-transform', 'capitalize', 'important'); // From original inline style
-                        veegCampings.style.setProperty('display', 'inline-block', 'important'); // From original inline style
-                        veegCampings.style.setProperty('float', 'left', 'important'); // From original inline style
-                        veegCampings.style.setProperty('text-align', 'center', 'important'); // From original inline style
-                    }
-
-                    // Apply font-family to befalow class (from DetailWebViewActivity.kt, injected befalow-font-style)
-                    var befalowElements = document.querySelectorAll('.befalow');
-                    befalowElements.forEach(function(el) {
-                        el.style.setProperty('font-family', "'Befalow', sans-serif", 'important');
-                    });
-                })();
-            `;
-            // Execute this script after a small delay to ensure DOM is ready
+            // Inject scripts
             setTimeout(() => {
-                const webViewContainer = document.querySelector('#detail-container'); // Assuming #detail-container is the root for our injected content
-                if (webViewContainer) {
-                    const scriptElement = document.createElement('script');
-                    scriptElement.textContent = veegScript;
-                    webViewContainer.appendChild(scriptElement);
-                    logDebug('SVR_MOD: Gele Veeg and Befalow font JS styling injected.');
-                }
-            }, 700);
-        }
+                try {
+                    // Swiper Logic
+                    const mainImageContainer = document.querySelector('#detail-container div.row.m-0.p-4.mt-0');
+                    if (mainImageContainer && !mainImageContainer.dataset.swiperInitialized) {
+                        let images = [];
+                        mainImageContainer.querySelectorAll('div.card img').forEach(img => { if(img.src) images.push(img.src); });
+                        if (images.length > 0) {
+                            mainImageContainer.dataset.swiperInitialized = 'true';
+                            const swiperContainer = document.createElement('div');
+                            swiperContainer.className = 'swiper-container svr-detail-swiper';
+                            swiperContainer.style.width = '100%'; swiperContainer.style.height = '300px';
+                            swiperContainer.style.position = 'relative'; swiperContainer.style.overflow = 'hidden';
+                            const wrapper = document.createElement('div'); wrapper.className = 'swiper-wrapper';
+                            images.forEach(src => {
+                                const slide = document.createElement('div'); slide.className = 'swiper-slide';
+                                slide.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;">`;
+                                wrapper.appendChild(slide);
+                            });
+                            swiperContainer.appendChild(wrapper);
+                            const pg = document.createElement('div'); pg.className = 'swiper-pagination';
+                            swiperContainer.appendChild(pg);
+                            mainImageContainer.parentNode.replaceChild(swiperContainer, mainImageContainer);
+                            if (typeof Swiper !== 'undefined') new Swiper(swiperContainer, { loop: true, pagination: { el: '.swiper-pagination', clickable: true } });
+                        }
+                    }
+                    // Styling
+                    const veeg = document.querySelector('.veeg-campings');
+                    if (veeg) {
+                        veeg.style.setProperty('width', '95%', 'important');
+                        veeg.style.setProperty('max-width', '95%', 'important');
+                        veeg.style.setProperty('background', "url('https://svr.nl/static/images/veeg_geel.png') no-repeat center center", 'important');
+                        veeg.style.setProperty('background-size', '100% 100%', 'important');
+                    }
+                    document.querySelectorAll('.befalow').forEach(el => el.style.setProperty('font-family', "'Befalow', sans-serif", 'important'));
+                } catch(err) { console.error(err); }
+            }, 600);
+        } else { throw new Error("Geen detailinhoud gevonden."); }
     } catch (e) {
-        logDebug("Detailpagina Fout: " + e.message);
-        $('#loading-overlay').hide();
-        // Append error details to the detail sheet content
-        $('#detail-container .detail-sheet-content').empty().append(`<div style="padding:20px;text-align:center;">
-            <h3>Fout bij laden detailpagina:</h3>
-            <p>${e.message}</p>
-            <p>Controleer de console voor meer details.</p>
-        </div>`);
-        applyState({ view: 'detail' });
-    } finally {
-        $('#loading-overlay').hide();
+        logDebug("Detail Fout: " + e.message);
+        $('#detail-container .detail-sheet-content').empty().append(`<div style="padding:40px;text-align:center;"><h3>Fout</h3><p>${e.message}</p><button onclick="window.handleDetailBack()">Terug</button></div>`);
     }
 }
 
