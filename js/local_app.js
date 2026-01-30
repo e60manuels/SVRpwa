@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 2; // Increment this number with each commit
+window.SVR_PWA_VERSION = 3; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -991,6 +991,17 @@ function renderResults(objects, cLat, cLng) {
     const bounds = L.latLngBounds([cLat, cLng]);
     objects.forEach((obj, index) => {
         const p = obj.properties, g = obj.geometry; if (!g) return;
+
+        // Check the type_camping field - we should only include campsites where
+        // type_camping is 0, 1, or 2
+        // type_camping = 3 indicates the campsite does not apply to the current filters
+        const typeCamping = p.type_camping !== undefined ? p.type_camping : -1; // Default to -1 if not found
+
+        if (typeCamping === 3) {
+            // Skip this campsite as it doesn't match the current filters
+            return;
+        }
+
         const lat = g.coordinates[1], lng = g.coordinates[0], safeName = btoa(unescape(encodeURIComponent(p.name)));
         const marker = L.marker([lat, lng]);
         const popup = `<div style="min-width:200px;">
@@ -1002,7 +1013,7 @@ function renderResults(objects, cLat, cLng) {
         </div>`;
         marker.bindPopup(popup);
         if (index < 10) { top10Layer.addLayer(marker); bounds.extend([lat, lng]); } else markerCluster.addLayer(marker);
-        
+
         const card = `<div class="camping-card">
             <div class="card-body">
                 <h3>${p.name}</h3>
