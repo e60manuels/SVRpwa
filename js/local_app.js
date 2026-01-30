@@ -267,6 +267,7 @@
         try {
             logDebug("Filters ophalen...");
             const contents = await fetchWithRetry('https://www.svr.nl/objects');
+
             if (contents.includes("<!doctype") || contents.includes("<html")) {
                 const doc = new DOMParser().parseFromString(contents, 'text/html');
 
@@ -282,37 +283,112 @@
                     return;
                 }
 
-                // Parse the filter sections from the HTML
-                const filterSections = doc.querySelectorAll('.filter-section'); // Assuming these are the filter containers
-
                 loading.style.display = 'none';
                 content.innerHTML = '';
 
-                // Process and display the filters
-                if (filterSections.length > 0) {
-                    filterSections.forEach(section => {
-                        const sectionClone = section.cloneNode(true);
-                        content.appendChild(sectionClone);
-                    });
-                } else {
-                    // Alternative: try to find filter elements by other selectors
-                    const filterGroups = doc.querySelectorAll('[data-filter-group], .filter-group, .filter-item, .checkbox, .radio');
+                // Zoek alle koppen met de klasse 'befalow' zoals in de originele Android app
+                const befalowElements = Array.from(doc.querySelectorAll('.befalow')).filter(el => {
+                    const txt = el.innerText.trim();
+                    // We pakken alle koppen met tekst, behalve de hele korte
+                    return txt.length > 2 && !txt.includes('Kamperen bij de boer');
+                });
 
-                    if (filterGroups.length > 0) {
-                        const container = document.createElement('div');
-                        container.className = 'filter-container';
+                befalowElements.forEach((headerEl) => {
+                    const title = headerEl.innerText.trim().replace(/:$/, '');
+                    // De header-container op de site is de div die de befalow bevat
+                    const headerContainer = headerEl.closest('div.w-100') || headerEl.parentElement;
 
-                        filterGroups.forEach(group => {
-                            const groupClone = group.cloneNode(true);
-                            container.appendChild(groupClone);
-                        });
+                    const sectionCard = document.createElement('div');
+                    sectionCard.className = 'filter-section-card';
 
-                        content.appendChild(container);
-                    } else {
-                        logDebug("Geen filter secties gevonden in de HTML");
-                        content.innerHTML = '<div style="padding:20px;text-align:center;">Geen filters beschikbaar</div>';
+                    const header = document.createElement('div');
+                    header.className = 'filter-section-header';
+                    header.innerHTML = `<h4>${title}</h4><i class="fas fa-chevron-down"></i>`;
+
+                    const body = document.createElement('div');
+                    body.className = 'filter-section-body';
+
+                    header.onclick = () => {
+                        const isOpening = !header.classList.contains('active');
+                        header.classList.toggle('active');
+                        body.classList.toggle('show');
+                        if (isOpening) {
+                            setTimeout(() => sectionCard.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                        }
+                    };
+
+                    // Lineaire collectie van siblings vanaf de header-container
+                    let itemsAdded = 0;
+                    let nextSib = headerContainer.nextElementSibling;
+
+                    while (nextSib) {
+                        // Stop als we de volgende header tegenkomen
+                        if (nextSib.querySelector('.befalow') || nextSib.tagName === 'HR') break;
+
+                        // Case 1: Directe checkbox
+                        if (nextSib.classList.contains('form-check')) {
+                            const item = createFilterItem(nextSib);
+                            if (item) { body.appendChild(item); itemsAdded++; }
+                        }
+
+                        // Case 2: Sub-dropdown trigger (A) en bijbehorende content (DIV.collapse)
+                        else if (nextSib.tagName === 'A' && (nextSib.classList.contains('btn') || nextSib.hasAttribute('data-bs-toggle'))) {
+                            const subTitle = nextSib.innerText.trim();
+                            const collapseDiv = nextSib.nextElementSibling;
+
+                            if (collapseDiv && collapseDiv.classList.contains('collapse') && subTitle) {
+                                const subToggle = document.createElement('div');
+                                subToggle.className = 'filter-sub-toggle';
+                                subToggle.innerHTML = `<span>${subTitle}</span><i class="fas fa-caret-right"></i>`;
+
+                                const subBody = document.createElement('div');
+                                subBody.className = 'filter-sub-content';
+
+                                subToggle.onclick = (e) => {
+                                    e.stopPropagation();
+                                    subToggle.classList.toggle('active');
+                                    subBody.classList.toggle('show');
+                                };
+
+                                // Vul sub-body met checkboxes uit de collapse div
+                                let subItemsCount = 0;
+                                collapseDiv.querySelectorAll('.form-check').forEach(subCheck => {
+                                    const subFilterItem = createFilterItem(subCheck);
+                                    if (subFilterItem) {
+                                        subBody.appendChild(subFilterItem);
+                                        subItemsCount++;
+                                    }
+                                });
+
+                                if (subItemsCount > 0) {
+                                    body.appendChild(subToggle);
+                                    body.appendChild(subBody);
+                                    itemsAdded++;
+                                }
+                            }
+                        }
+
+                        // Case 3: Sub-titels (zoals Laagseizoen/Hoogseizoen)
+                        else if (nextSib.innerText.trim().length > 1 && nextSib.innerText.trim().length < 50 && !nextSib.querySelector('input')) {
+                            const txt = nextSib.innerText.trim();
+                            const subTitle = document.createElement('div');
+                            subTitle.style.fontWeight = 'bold';
+                            subTitle.style.marginTop = '10px';
+                            subTitle.style.fontSize = '14px';
+                            subTitle.style.color = '#666';
+                            subTitle.textContent = txt;
+                            body.appendChild(subTitle);
+                        }
+
+                        nextSib = nextSib.nextElementSibling;
                     }
-                }
+
+                    if (itemsAdded > 0) {
+                        sectionCard.appendChild(header);
+                        sectionCard.appendChild(body);
+                        content.appendChild(sectionCard);
+                    }
+                });
 
                 logDebug("Filters succesvol verwerkt");
             } else {
@@ -325,6 +401,23 @@
             loading.style.display = 'none';
             content.innerHTML = '<div style="padding:20px;text-align:center;">Fout bij ophalen filters</div>';
         }
+    }
+
+    // Hulpfunctie om filteritems te maken zoals in de originele Android app
+    function createFilterItem(webNode) {
+        const input = webNode.querySelector('input');
+        if (!input) return null;
+        const guid = input.getAttribute('data-filter-id') || input.id;
+        const name = webNode.querySelector('label')?.innerText.trim() || "Onbekend";
+
+        if (!guid || guid === "null") return null;
+
+        const checked = (window.currentFilters || []).includes(guid) ? 'checked' : '';
+
+        const div = document.createElement('div');
+        div.className = 'filter-item';
+        div.innerHTML = `<input type="checkbox" value="${guid}" ${checked} onchange="window.onFilterChange()"><label style="flex-grow: 1; cursor: pointer;" onclick="this.previousElementSibling.click()">${name}</label>`;
+        return div;
     }
 
     overlay.querySelector('#svr-filter-apply-btn').onclick = function() {
