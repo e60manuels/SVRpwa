@@ -15,7 +15,7 @@ function handleOptions(request) {
     headers: {
       'Access-Control-Allow-Origin': allowOrigin,
       'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie, X-Requested-With, X-SVR-Session', // Added X-SVR-Session
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie, X-Requested-With, X-SVR-Session, X-SVR-Filters, X-SVR-Config', // Added Custom Headers
       'Access-Control-Allow-Credentials': 'true',
     }
   })
@@ -83,7 +83,7 @@ async function handleRequest(request) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie, X-Requested-With, X-SVR-Session', // Added X-SVR-Session
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie, X-Requested-With, X-SVR-Session, X-SVR-Filters, X-SVR-Config', // Added Custom Headers
     'Access-Control-Allow-Credentials': 'true',
   }
 
@@ -271,27 +271,44 @@ async function handleRequest(request) {
     corsHeaders['X-Debug-Target-Url'] = targetUrl
 
     // Filter headers to forward
-    const allowedHeaders = ['accept', 'content-type', 'cookie', 'user-agent', 'x-requested-with', 'accept-language', 'x-svr-session'] // Add custom header
+    const allowedHeaders = ['accept', 'content-type', 'cookie', 'user-agent', 'x-requested-with', 'accept-language', 'x-svr-session', 'x-svr-filters', 'x-svr-config'] // Add custom headers
     const proxyHeaders = new Headers()
-    let pwaCookieHeader = headers.get('Cookie'); // Keep original PWA cookie header for logging
-    let customSessionHeader = headers.get('X-SVR-Session'); // Get custom session header
-
+    
+    // Base headers copy - skip cookie for manual handling to avoid duplication
     for (const [key, value] of headers) {
-      if (allowedHeaders.includes(key.toLowerCase())) {
+      if (allowedHeaders.includes(key.toLowerCase()) && key.toLowerCase() !== 'cookie') {
         proxyHeaders.set(key, value)
       }
     }
+
+    // Construct Cookie Header from various sources
+    let cookieParts = [];
     
-    // Override or set the 'Cookie' header for svr.nl if a custom session is provided
-    if (customSessionHeader) {
-      proxyHeaders.set('Cookie', `session=${customSessionHeader}`);
-      console.log(`[${requestId}] Constructed Cookie header for SVR from X-SVR-Session: session=${customSessionHeader.substring(0, 20)}...`);
+    // 1. Existing PWA cookies (if any, though usually blocked cross-origin)
+    const pwaCookieHeader = headers.get('Cookie');
+    if (pwaCookieHeader) cookieParts.push(pwaCookieHeader);
+
+    // 2. Custom Session Header
+    const customSessionHeader = headers.get('X-SVR-Session');
+    if (customSessionHeader) cookieParts.push(`session=${customSessionHeader}`);
+
+    // 3. Custom Filter Headers
+    const customFilters = headers.get('X-SVR-Filters');
+    if (customFilters) cookieParts.push(`filters=${customFilters}`);
+
+    const customConfig = headers.get('X-SVR-Config');
+    if (customConfig) cookieParts.push(`config=${customConfig}`);
+
+    // 4. Default cookies expected by SVR (mimic Android behavior)
+    cookieParts.push('cookies=1'); 
+    cookieParts.push('view_mode=map');
+
+    if (cookieParts.length > 0) {
+        const fullCookieString = cookieParts.join('; ');
+        proxyHeaders.set('Cookie', fullCookieString);
+        console.log(`[${requestId}] Constructed Cookie header for SVR: ${fullCookieString.substring(0, 150)}...`);
     } else {
-      console.log(`[${requestId}] No custom X-SVR-Session header found. Using PWA Cookie header: ${pwaCookieHeader}`);
-      // Fallback to original PWA cookie header if no custom session, but it will likely be null
-      if (pwaCookieHeader) {
-        proxyHeaders.set('Cookie', pwaCookieHeader);
-      }
+        console.log(`[${requestId}] No Cookies to send to SVR`);
     }
     if (!proxyHeaders.has('user-agent')) {
       proxyHeaders.set('user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
@@ -308,7 +325,12 @@ async function handleRequest(request) {
     const fetchOptions = {
       method: request.method,
       headers: proxyHeaders,
-      redirect: 'follow' // Allow fetch to automatically follow redirects
+      redirect: 'follow', // Allow fetch to automatically follow redirects
+      // Ensure cache settings don't interfere with filtering
+      cf: {
+        cacheTtl: 0,
+        cacheEverything: false
+      }
     };
 
     // Conditionally include body for methods that support it

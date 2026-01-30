@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 6; // Increment this number with each commit
+window.SVR_PWA_VERSION = 7; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -95,14 +95,30 @@ window.SVR_PWA_VERSION = 6; // Increment this number with each commit
             }
         }
 
-        // Manually add session ID from localStorage only for SVR requests, if needed
+        // Manually add session ID and Filters from state/localStorage only for SVR requests
         if (needsSVRSession) {
+            // 1. Session
             const sessionId = localStorage.getItem('svr_session_id');
             if (sessionId) {
                 options.headers['X-SVR-Session'] = sessionId;
                 logDebug(`Adding X-SVR-Session header: ${sessionId.substring(0, 20)}...`);
             } else {
                 logDebug('No session ID found in localStorage for SVR request.');
+            }
+
+            // 2. Filters & Config (Headers instead of Cookies)
+            if (window.currentFilters && window.currentFilters.length > 0) {
+                const filtersJson = JSON.stringify(window.currentFilters);
+                const configJson = JSON.stringify({
+                    filters: window.currentFilters,
+                    geo: {},
+                    search_free: {},
+                    favorite: "0"
+                });
+                
+                options.headers['X-SVR-Filters'] = filtersJson;
+                options.headers['X-SVR-Config'] = configJson;
+                logDebug(`Adding Filter headers. Count: ${window.currentFilters.length}`);
             }
         }
 
@@ -503,13 +519,17 @@ window.SVR_PWA_VERSION = 6; // Increment this number with each commit
             btn.style.color = '#333';
         }
 
-        // Stel cookies in zoals in de originele Android app
+        // --- COOKIE LOGIC REPLACED BY HEADER INJECTION IN FETCHWITHRETRY ---
+        // The original logic tried to set cookies on the wrong domain (PWA origin vs SVR origin).
+        // Instead, we now send X-SVR-Filters and X-SVR-Config headers which the Worker converts to cookies.
+        /*
         const expires = "; expires=" + new Date(Date.now() + 86400e3).toUTCString();
         document.cookie = "filters=" + JSON.stringify(selectedGuids) + expires + "; path=/; domain=svr.nl";
         document.cookie = "config=" + JSON.stringify({filters: selectedGuids, geo:{}, search_free:{}, favorite:"0"}) + expires + "; path=/; domain=svr.nl";
         document.cookie = "cookies=1" + expires + "; path=/; domain=svr.nl";
         document.cookie = "view_mode=map" + expires + "; path=/; domain=svr.nl";
         document.cookie = "current_page=0" + expires + "; path=/; domain=svr.nl";
+        */
 
         window.closeFilterOverlay();
         window.performSearch();
