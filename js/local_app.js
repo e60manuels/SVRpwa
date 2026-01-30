@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 4; // Increment this number with each commit
+window.SVR_PWA_VERSION = 5; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -72,15 +72,15 @@ window.SVR_PWA_VERSION = 4; // Increment this number with each commit
         // OR if the request is already directly to the PROXY_BASE_URL (meaning it's
         // already going to the worker, and the worker needs the session).
         const needsSVRSession = originalUrl.hostname === 'www.svr.nl' || originalUrl.hostname === new URL(PROXY_BASE_URL).hostname;
-    
+
         // If the URL is originally for svr.nl or nominatim, construct the worker-proxied URL
         if (originalUrl.hostname === 'www.svr.nl' || originalUrl.hostname === 'nominatim.openstreetmap.org') {
             // Construct the URL to hit our proxy's forwarding endpoint
             let pathForProxy = originalUrl.pathname;
-            
+
             // For Nominatim, use the full path and hostname directly
             if (originalUrl.hostname === 'nominatim.openstreetmap.org') {
-                pathForProxy = originalUrl.hostname + originalUrl.pathname; 
+                pathForProxy = originalUrl.hostname + originalUrl.pathname;
             }
 
             fetchUrl = `${PROXY_BASE_URL}/${pathForProxy}${originalUrl.search}`;
@@ -94,7 +94,7 @@ window.SVR_PWA_VERSION = 4; // Increment this number with each commit
                 logDebug(`Fetching non-proxied request directly: ${url}`);
             }
         }
-        
+
         // Manually add session ID from localStorage only for SVR requests, if needed
         if (needsSVRSession) {
             const sessionId = localStorage.getItem('svr_session_id');
@@ -105,8 +105,18 @@ window.SVR_PWA_VERSION = 4; // Increment this number with each commit
                 logDebug('No session ID found in localStorage for SVR request.');
             }
         }
+
+        // Add cookies for SVR requests to ensure filters are applied
+        if (originalUrl.hostname === 'www.svr.nl') {
+            const allCookies = document.cookie;
+            if (allCookies) {
+                options.headers['Cookie'] = allCookies;
+                logDebug(`Adding cookies to request: ${allCookies.substring(0, 100)}...`);
+            }
+        }
+
         // options.credentials = 'include'; // Removed, as we manually manage session via custom header
-    
+
         try {
             const res = await fetch(fetchUrl, options);
 
