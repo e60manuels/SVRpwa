@@ -1,10 +1,13 @@
+// VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
+window.SVR_PWA_VERSION = 1; // Increment this number with each commit
+
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
     window.SVR_FILTER_OVERLAY_INJECTED = true;
 
     // --- DEBUG LOGGING ---
     function logDebug(msg) {
-        console.log(msg);
+        console.log(`[v${window.SVR_PWA_VERSION}] ${msg}`);
         // Removed on-screen debug console as requested
     }
     window.logDebug = logDebug;
@@ -272,9 +275,16 @@
                 const doc = new DOMParser().parseFromString(contents, 'text/html');
 
                 // Check if it's an error page by looking for common error indicators
+                // Only consider it an error if it contains error indicators AND it's not the expected page
                 const errorIndicators = ['login', 'inloggen', 'error', '404', 'not found', 'access denied', 'forbidden', 'sessie verlopen', 'session expired'];
                 const lowerContents = contents.toLowerCase();
-                const isErrorPage = errorIndicators.some(indicator => lowerContents.includes(indicator));
+                const titleText = doc.title ? doc.title.toLowerCase() : '';
+
+                // Consider it an error page only if it contains error indicators but NOT the expected page content
+                const hasErrorIndicators = errorIndicators.some(indicator => lowerContents.includes(indicator));
+                const hasExpectedContent = titleText.includes('camping') || lowerContents.includes('zoeker') || lowerContents.includes('filter');
+
+                const isErrorPage = hasErrorIndicators && !hasExpectedContent;
 
                 if (isErrorPage) {
                     logDebug("Foutpagina ontvangen: " + (doc.title || "Onbekende fout"));
