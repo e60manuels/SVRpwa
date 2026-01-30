@@ -536,7 +536,7 @@ async function renderDetail(objectId) {
             });
 
             logDebug(`Processed HTML lengte na opschonen: ${tempDiv.innerHTML.length}`);
-            const closeBtn = `<div style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; align-items: center; justify-content: space-between; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            const closeBtn = `<div class="detail-header" style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; align-items: center; justify-content: space-between; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                 <button onclick="window.handleDetailBack()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px; color: #333;"><i class="fas fa-arrow-left"></i></button>
                 <h3 style="margin: 0; font-family: 'Befalow'; color: #333; font-size: 1.2rem;">Camping Details</h3>
             </div>`;

@@ -182,3 +182,29 @@
     opacity: 0.25;
     height: 1px;
 }
+
+/* Hide SVR back button and improve layout */
+#detail-container a.btn[href="/objects"], .btn-light:has(.fa-arrow-left) {
+    display: none !important;
+}
+
+/* Adjust header width to match content containers */
+#detail-container .detail-header {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 10px 15px;
+}
+
+/* Improve spacing and layout for content after "Gele Veeg" */
+#detail-container .veeg-campings + div,
+#detail-container .veeg-campings ~ div {
+    margin-top: 15px;
+}
+
+/* Better container styling */
+#detail-container .container-fluid {
+    padding-left: 15px;
+    padding-right: 15px;
+}
