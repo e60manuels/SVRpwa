@@ -142,3 +142,38 @@
         }
         /* Scroll-top moet iets hoger staan als de locate-btn er ook is */
         .svr-scroll-top { bottom: 75px !important; }
+
+        /* --- DETAIL BOTTOM SHEET --- */
+        .detail-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); /* Dimmed background */
+            z-index: 9999;
+            display: none; /* Hidden by default */
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .detail-overlay.open {
+            display: block;
+            opacity: 1;
+        }
+
+        .detail-sheet-content {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: white;
+            min-height: 50%; /* Start with some visible height */
+            max-height: 100%;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            overflow: hidden; /* Content scrolls inside */
+            transform: translateY(100%); /* Start off-screen */
+            transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+            display: flex; /* For the close button header */
+            flex-direction: column;
+        }
+        .detail-overlay.open .detail-sheet-content {
+            transform: translateY(0%); /* Slide into view */
+        }
+        .detail-sheet-content iframe {
+            flex-grow: 1; /* Make iframe take remaining height */
+            height: 100%; /* Ensure iframe fills its parent height */
+        }
