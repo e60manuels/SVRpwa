@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 9; // Increment this number with each commit
+window.SVR_PWA_VERSION = 10; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -657,10 +657,15 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 function applyState(state) {
     if (!state) return;
 
-    // Hide all containers initially
+    // Only hide detail container if the new state is NOT a detail view
+    // This prevents the hide/show flash when updating detail content
+    if (state.view !== 'detail') {
+        $('#detail-container').hide().removeClass('open');
+    }
+
+    // Hide main containers
     $('#map-container').hide();
     $('#list-container').hide();
-    $('#detail-container').hide(); // New detail container
 
     switch (state.view) {
         case 'list':
@@ -674,13 +679,12 @@ function applyState(state) {
             $('#toggleView i').attr('class', 'fas fa-list');
             setTimeout(() => map.invalidateSize(), 100);
             break;
-        case 'detail': // New case for detail view
-            isListView = false; // Detail view is not list view
-            $('#detail-container').show();
-            // No toggle view change needed for detail view, or perhaps a back button
+        case 'detail':
+            isListView = false;
+            $('#detail-container').show(); // Ensure visible, but showSVRDetailPage handles the 'open' class
             break;
         default:
-            isListView = false; // Default to map view if state is unclear
+            isListView = false;
             $('#map-container').show();
             $('#toggleView i').attr('class', 'fas fa-list');
             setTimeout(() => map.invalidateSize(), 100);
@@ -693,17 +697,26 @@ window.showSVRDetailPage = function(objectId) {
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
 
-    // Initially hide overlay and sheet, then make visible with animation
+    // CRITICAL FIX: Clear any inline styles (like transform) left over from a previous swipe-to-close
+    detailSheet.style.transform = ''; 
+    detailSheet.style.transition = '';
+
+    // Clear previous content immediately
+    $(detailSheet).empty().append('<div style="display:flex;justify-content:center;align-items:center;height:100%;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#008AD3"></i></div>');
+
+    // Initially show overlay, then animate
     detailOverlay.style.display = 'block';
+    
+    // Tiny delay to ensure browser picks up the display:block before adding the 'open' class for transition
     setTimeout(() => {
-        detailOverlay.classList.add('open'); // Trigger background fade in
-        detailSheet.classList.add('open'); // Trigger sheet slide up
-        // After animation, push state
+        detailOverlay.classList.add('open');
+        
+        // Push state and fetch content
         setTimeout(() => {
             history.pushState({ view: 'detail', objectId: objectId }, "", `#detail/${objectId}`);
             renderDetail(objectId);
-        }, 400); // Match CSS transition duration
-    }, 10); // Small delay to allow 'display: block' to apply before transition
+        }, 300); 
+    }, 10);
 };
 
 // Function to handle the back action for the detail sheet
