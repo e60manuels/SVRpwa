@@ -189,6 +189,7 @@ window.SVR_PWA_VERSION = 7; // Increment this number with each commit
 
         detailSheet.classList.remove('open'); // Trigger slide down
         detailOverlay.classList.remove('open'); // Trigger background fade out
+        detailSheet.style.transform = ''; // Clear inline transform from swipe
 
         setTimeout(() => {
             detailOverlay.style.display = 'none'; // Hide after animation
@@ -280,11 +281,60 @@ window.SVR_PWA_VERSION = 7; // Increment this number with each commit
     const content = overlay.querySelector('#filter-container');
     const loading = overlay.querySelector('#filter-loading');
 
+    // Generic Swipe-to-Close Logic
+    window.enableSwipeToClose = function(element, closeCallback, dragHandleSelector) {
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+        const dragHandle = element.querySelector(dragHandleSelector || '.svr-overlay-header, .detail-header');
+
+        if (!dragHandle) return;
+
+        dragHandle.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            isDragging = true;
+            element.style.transition = 'none'; // Disable transition for direct tracking
+        }, {passive: true});
+
+        dragHandle.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            currentY = e.touches[0].clientY;
+            const deltaY = currentY - startY;
+
+            if (deltaY > 0) { // Only allow dragging downwards
+                e.preventDefault(); // Prevent scrolling
+                element.style.transform = `translateY(${deltaY}px)`;
+            }
+        }, {passive: false});
+
+        dragHandle.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            element.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)'; // Restore transition
+            
+            const deltaY = currentY - startY;
+            const threshold = 100; // Pixel threshold to close
+
+            if (deltaY > threshold) {
+                closeCallback(); // Trigger close
+                element.style.transform = 'translateY(100%)'; // Visual close immediately
+            } else {
+                element.style.transform = 'translateY(0)'; // Snap back
+            }
+            startY = 0;
+            currentY = 0;
+        });
+    };
+
     window.closeFilterOverlay = function() { 
         overlay.classList.remove('open'); backdrop.classList.remove('open');
+        overlay.style.transform = ''; // Clear inline transform from swipe
         setTimeout(() => { if (!overlay.classList.contains('open')) backdrop.style.display = 'none'; }, 300);
     };
     backdrop.onclick = window.closeFilterOverlay;
+
+    // Enable swipe for filter overlay
+    window.enableSwipeToClose(overlay, window.closeFilterOverlay, '.svr-overlay-header');
 
     window.toggle_filters = async function() {
         backdrop.style.display = 'block';
@@ -699,6 +749,18 @@ window.onpopstate = (e) => {
 $('#toggleView').on('click', () => { isListView = !isListView; applyState({ view: isListView ? 'list' : 'map' }); history.pushState({ view: isListView ? 'list' : 'map' }, ""); });
 
 const $searchInput = $('#searchInput'); const $suggestionsList = $('#suggestionsList');
+
+// Clear search input on click if it has a value
+$searchInput.on('click', function() {
+    if ($(this).val().length > 0) {
+        $(this).val('');
+        $suggestionsList.hide();
+        // Optional: Reset search to default state or keep current results? 
+        // Usually clearing the search box implies wanting to start a new search.
+        // For now, just clear the text.
+    }
+});
+
 $searchInput.on('input', function() {
     const q = $(this).val(); if (q.length < 2) { $suggestionsList.hide(); return; }
     const suggestions = window.getSuggestionsLocal(q);
@@ -848,12 +910,53 @@ async function renderDetail(objectId) {
                 }
             });
 
+            // Force mobile-friendly width on the container and its children
+            const containerStyle = document.createElement('style');
+            containerStyle.innerHTML = `
+                /* Force container to fit screen */
+                #detail-container .container, 
+                #detail-container .container-fluid,
+                #detail-container .row,
+                #detail-container .col-md-8,
+                #detail-container .col-md-4 {
+                    width: 100% !important;
+                    max-width: 100vw !important;
+                    margin-left: 0 !important;
+                    margin-right: 0 !important;
+                    padding-left: 15px !important; 
+                    padding-right: 15px !important;
+                    box-sizing: border-box !important;
+                }
+                
+                /* Ensure images don't overflow */
+                #detail-container img {
+                    max-width: 100% !important;
+                    height: auto !important;
+                }
+
+                /* Fix specific SVR layout quirks */
+                #detail-container .row {
+                    display: flex !important;
+                    flex-direction: column !important;
+                }
+            `;
+            tempDiv.prepend(containerStyle);
+
             logDebug(`Processed HTML lengte na opschonen: ${tempDiv.innerHTML.length}`);
-            const closeBtn = `<div class="detail-header" style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; align-items: center; justify-content: space-between; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                <button onclick="window.handleDetailBack()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px; color: #333;"><i class="fas fa-arrow-left"></i></button>
-                <h3 style="margin: 0; font-family: 'Befalow'; color: #333; font-size: 1.2rem;">Camping Details</h3>
+            const closeBtn = `<div class="detail-header" style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: grab;">
+                <div style="width: 40px; height: 5px; background: #BBB; border-radius: 3px; margin-bottom: 8px;"></div>
+                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
+                    <button onclick="window.handleDetailBack()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: #333;"><i class="fas fa-arrow-left"></i></button>
+                    <h3 style="margin: 0; font-family: 'Befalow'; color: #333; font-size: 1.2rem;">Camping Details</h3>
+                    <div style="width: 30px;"></div> <!-- Spacer for centering -->
+                </div>
             </div>`;
-            $('#detail-container .detail-sheet-content').empty().append(closeBtn + tempDiv.innerHTML); // Append to sheet content
+            const $sheetContent = $('#detail-container .detail-sheet-content');
+            $sheetContent.empty().append(closeBtn + tempDiv.innerHTML); // Append to sheet content
+            
+            // Enable swipe for detail overlay
+            window.enableSwipeToClose($sheetContent[0], window.handleDetailBack, '.detail-header');
+
             applyState({ view: 'detail' }); // Ensure the detail view is visible
 
             // **START REPLICATING JAVASCRIPT INJECTIONS FROM WEBACTIVITY**

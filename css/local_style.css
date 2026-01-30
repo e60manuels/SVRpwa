@@ -162,15 +162,21 @@
             position: absolute; bottom: 0; left: 0; right: 0;
             background: white;
             min-height: 50%; /* Start with some visible height */
-            max-height: 100%;
+            height: calc(100% - 88px); /* Same as filter overlay */
+            max-height: calc(100% - 88px);
             border-top-left-radius: 12px;
             border-top-right-radius: 12px;
-            overflow-y: auto; /* Allow scrolling inside the sheet */
-            -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on iOS */
+            overflow: hidden; /* Prevent body scroll, use inner scroll */
             transform: translateY(100%); /* Start off-screen */
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
             display: flex; /* For the close button header */
             flex-direction: column;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        .detail-sheet-content > div:not(.detail-header) {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            flex-grow: 1;
         }
         .detail-overlay.open .detail-sheet-content {
             transform: translateY(0%); /* Slide into view */
