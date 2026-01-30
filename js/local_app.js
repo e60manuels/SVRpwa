@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 1; // Increment this number with each commit
+window.SVR_PWA_VERSION = 2; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -430,11 +430,104 @@ window.SVR_PWA_VERSION = 1; // Increment this number with each commit
         return div;
     }
 
-    overlay.querySelector('#svr-filter-apply-btn').onclick = function() {
-        const selected = []; overlay.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => selected.push(cb.value));
-        window.currentFilters = selected;
-        window.closeFilterOverlay(); window.performSearch();
+    // Functie om de actieve filters UI bij te werken zoals in de originele Android app
+    function updateActiveFiltersUI(selectedItems) {
+        const tagsContainer = overlay.querySelector('#active-tags-container');
+        const activeHolder = overlay.querySelector('#active-filters-holder');
+        const overlayContent = overlay.querySelector('#svr-filter-overlay-content');
+
+        tagsContainer.innerHTML = '';
+        const oldHeight = activeHolder.style.display !== 'none' ? activeHolder.offsetHeight : 0;
+
+        if (selectedItems.length > 0) {
+            activeHolder.style.display = 'block';
+            selectedItems.forEach(item => {
+                const tag = document.createElement('span');
+                tag.className = 'active-filter-tag';
+                tag.innerText = item.name;
+                tagsContainer.appendChild(tag);
+            });
+        } else {
+            activeHolder.style.display = 'none';
+        }
+
+        // Gebruik een kleine delay om de browser de nieuwe hoogte te laten berekenen
+        setTimeout(() => {
+            const newHeight = activeHolder.style.display !== 'none' ? activeHolder.offsetHeight : 0;
+            const diff = newHeight - oldHeight;
+
+            if (newHeight > 0) {
+                overlayContent.style.scrollPaddingTop = (newHeight + 15) + 'px';
+            } else {
+                overlayContent.style.scrollPaddingTop = '15px';
+            }
+
+            // Als de hoogte is veranderd en we zijn niet helemaal bovenaan,
+            // pas dan de scrollpositie aan zodat de content "meezakt"
+            if (diff !== 0 && overlayContent.scrollTop > 0) {
+                overlayContent.scrollBy({ top: -diff, behavior: 'instant' });
+            }
+        }, 1);
+    }
+
+    // Functie die wordt aangeroepen wanneer een filter verandert
+    window.onFilterChange = function() {
+        const selected = [];
+        overlay.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+            selected.push({ guid: cb.value, name: cb.parentElement.querySelector('label').innerText });
+        });
+        updateActiveFiltersUI(selected);
     };
+
+    overlay.querySelector('#svr-filter-apply-btn').onclick = function() {
+        const selectedGuids = [];
+        overlay.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => selectedGuids.push(cb.value));
+        window.currentFilters = selectedGuids;
+
+        const btn = document.getElementById('filterBtn');
+        if (selectedGuids.length > 0) {
+            btn.style.background = 'var(--svr-blue)';
+            btn.style.color = 'white';
+        } else {
+            btn.style.background = 'white';
+            btn.style.color = '#333';
+        }
+
+        // Stel cookies in zoals in de originele Android app
+        const expires = "; expires=" + new Date(Date.now() + 86400e3).toUTCString();
+        document.cookie = "filters=" + JSON.stringify(selectedGuids) + expires + "; path=/; domain=svr.nl";
+        document.cookie = "config=" + JSON.stringify({filters: selectedGuids, geo:{}, search_free:{}, favorite:"0"}) + expires + "; path=/; domain=svr.nl";
+        document.cookie = "cookies=1" + expires + "; path=/; domain=svr.nl";
+        document.cookie = "view_mode=map" + expires + "; path=/; domain=svr.nl";
+        document.cookie = "current_page=0" + expires + "; path=/; domain=svr.nl";
+
+        window.closeFilterOverlay();
+        window.performSearch();
+    };
+
+    // Wis filters functionaliteit
+    window.resetFilters = function() {
+        overlay.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        window.currentFilters = [];
+        const btn = document.getElementById('filterBtn');
+        btn.style.background = 'white';
+        btn.style.color = '#333';
+
+        // Leeg de actieve filters UI
+        const activeHolder = overlay.querySelector('#active-filters-holder');
+        activeHolder.style.display = 'none';
+        overlay.querySelector('#active-tags-container').innerHTML = '';
+
+        // Verwijder cookies zoals in de originele Android app
+        const expires = "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "filters=[]; expires=" + expires + "; path=/; domain=svr.nl";
+
+        window.closeFilterOverlay();
+        window.performSearch();
+    };
+
+    // Voeg click handler toe aan de reset knop
+    overlay.querySelector('#svr-filter-reset-btn').onclick = window.resetFilters;
 
 })();
 
