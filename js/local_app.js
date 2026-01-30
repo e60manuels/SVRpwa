@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 3; // Increment this number with each commit
+window.SVR_PWA_VERSION = 4; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -718,8 +718,44 @@ async function performSearch() {
         }
 
         const data = JSON.parse(contents);
-        const objects = (data.objects || []).filter(o => o.properties && o.properties.type_camping !== 3);
-        logDebug("Gevonden: " + objects.length);
+        const allObjects = data.objects || [];
+
+        // Debug: log some sample objects to see type_camping values
+        if (allObjects.length > 0) {
+            logDebug("Totaal aantal objecten ontvangen: " + allObjects.length);
+            logDebug("Voorbeeld van eerste 5 objecten:");
+            for (let i = 0; i < Math.min(5, allObjects.length); i++) {
+                const obj = allObjects[i];
+                const typeCamping = obj.properties ? obj.properties.type_camping : 'undefined';
+                logDebug(`  Object ${i}: id=${obj.id}, type_camping=${typeCamping}, name=${obj.properties ? obj.properties.name : 'no props'}`);
+            }
+
+            // Count objects by type_camping value
+            const counts = {0: 0, 1: 0, 2: 0, 3: 0, other: 0};
+            allObjects.forEach(obj => {
+                const tc = obj.properties ? obj.properties.type_camping : 'undefined';
+                if (tc === 0 || tc === 1 || tc === 2 || tc === 3) {
+                    counts[tc]++;
+                } else {
+                    counts.other++;
+                }
+            });
+            logDebug(`Verdeling type_camping: 0=${counts[0]}, 1=${counts[1]}, 2=${counts[2]}, 3=${counts[3]}, other=${counts.other}`);
+        }
+
+        // Filter out objects where type_camping === 3 (these don't match the filters)
+        const objects = allObjects.filter(o => {
+            const props = o.properties;
+            // Only include objects that have properties and where type_camping is not 3
+            // type_camping === 3 means the object doesn't match the applied filters
+            if (props) {
+                const typeCamping = props.type_camping !== undefined ? props.type_camping : -1;
+                return typeCamping !== 3;
+            }
+            return true; // If no properties, include the object
+        });
+
+        logDebug("Gefilterd aantal: " + objects.length);
         objects.forEach(o => { o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; });
         objects.sort((a, b) => a.distM - b.distM);
         renderResults(objects, sLat, sLng);
