@@ -722,6 +722,7 @@ async function renderDetail(objectId) {
                     logDebug('SVR_MOD: Gele Veeg and Befalow font JS styling injected.');
                 }
             }, 700);
+        }
     } catch (e) {
         logDebug("Detailpagina Fout: " + e.message);
         $('#loading-overlay').hide();
