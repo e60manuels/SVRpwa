@@ -271,7 +271,7 @@
                 const doc = new DOMParser().parseFromString(contents, 'text/html');
 
                 // Check if it's an error page by looking for common error indicators
-                const errorIndicators = ['login', 'inloggen', 'error', 'fout', '404', 'not found'];
+                const errorIndicators = ['login', 'inloggen', 'error', '404', 'not found', 'access denied', 'forbidden', 'sessie verlopen', 'session expired'];
                 const lowerContents = contents.toLowerCase();
                 const isErrorPage = errorIndicators.some(indicator => lowerContents.includes(indicator));
 
