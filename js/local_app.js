@@ -269,11 +269,62 @@
             const contents = await fetchWithRetry('https://www.svr.nl/objects');
             if (contents.includes("<!doctype") || contents.includes("<html")) {
                 const doc = new DOMParser().parseFromString(contents, 'text/html');
-                logDebug("Filter HTML: " + (doc.title || "Foutpagina"));
-                return;
+
+                // Check if it's an error page by looking for common error indicators
+                const errorIndicators = ['login', 'inloggen', 'error', 'fout', '404', 'not found'];
+                const lowerContents = contents.toLowerCase();
+                const isErrorPage = errorIndicators.some(indicator => lowerContents.includes(indicator));
+
+                if (isErrorPage) {
+                    logDebug("Foutpagina ontvangen: " + (doc.title || "Onbekende fout"));
+                    loading.style.display = 'none';
+                    content.innerHTML = '<div style="padding:20px;text-align:center;">Fout bij ophalen filters</div>';
+                    return;
+                }
+
+                // Parse the filter sections from the HTML
+                const filterSections = doc.querySelectorAll('.filter-section'); // Assuming these are the filter containers
+
+                loading.style.display = 'none';
+                content.innerHTML = '';
+
+                // Process and display the filters
+                if (filterSections.length > 0) {
+                    filterSections.forEach(section => {
+                        const sectionClone = section.cloneNode(true);
+                        content.appendChild(sectionClone);
+                    });
+                } else {
+                    // Alternative: try to find filter elements by other selectors
+                    const filterGroups = doc.querySelectorAll('[data-filter-group], .filter-group, .filter-item, .checkbox, .radio');
+
+                    if (filterGroups.length > 0) {
+                        const container = document.createElement('div');
+                        container.className = 'filter-container';
+
+                        filterGroups.forEach(group => {
+                            const groupClone = group.cloneNode(true);
+                            container.appendChild(groupClone);
+                        });
+
+                        content.appendChild(container);
+                    } else {
+                        logDebug("Geen filter secties gevonden in de HTML");
+                        content.innerHTML = '<div style="padding:20px;text-align:center;">Geen filters beschikbaar</div>';
+                    }
+                }
+
+                logDebug("Filters succesvol verwerkt");
+            } else {
+                logDebug("Geen HTML ontvangen voor filters");
+                loading.style.display = 'none';
+                content.innerHTML = '<div style="padding:20px;text-align:center;">Geen filters beschikbaar</div>';
             }
-            loading.style.display = 'none'; content.innerHTML = '';
-        } catch (e) { logDebug("Filter Fout: " + e.message); }
+        } catch (e) {
+            logDebug("Filter Fout: " + e.message);
+            loading.style.display = 'none';
+            content.innerHTML = '<div style="padding:20px;text-align:center;">Fout bij ophalen filters</div>';
+        }
     }
 
     overlay.querySelector('#svr-filter-apply-btn').onclick = function() {
