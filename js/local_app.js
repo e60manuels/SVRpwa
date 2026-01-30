@@ -486,14 +486,14 @@ async function renderDetail(objectId) {
     try {
         const PROXY_BASE_URL = 'https://svr-proxy-worker.e60-manuels.workers.dev';
         const detailUrl = `${PROXY_BASE_URL}/object/${objectId}`;
-        
+
         logDebug(`Fetching SVR detail page for ${objectId} via proxy: ${detailUrl}`);
         const htmlContent = await fetchWithRetry(detailUrl);
 
         if (!htmlContent || htmlContent.includes("Internal Server Error")) {
             throw new Error("SVR response invalid or empty");
         }
-        
+
         logDebug(`Ontvangen HTML lengte: ${htmlContent.length}`);
 
         const parser = new DOMParser();
@@ -501,12 +501,12 @@ async function renderDetail(objectId) {
         logDebug(`Geparsde pagina titel: ${doc.title}`);
 
         // Try to find the main content area based on outerHTML_detailpagina.txt
-        let mainContent = doc.querySelector('.container-fluid.pt-0 .row'); 
+        let mainContent = doc.querySelector('.container-fluid.pt-0 .row');
         if (!mainContent) {
              logDebug("Selector '.container-fluid.pt-0 .row' niet gevonden, proberen met 'body'...");
              mainContent = doc.body;
         }
-        
+
         if (mainContent && mainContent.innerHTML.trim().length > 0) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = mainContent.innerHTML;
@@ -534,7 +534,7 @@ async function renderDetail(objectId) {
                     element.setAttribute(attr, SVR_BASE + url);
                 }
             });
-            
+
             logDebug(`Processed HTML lengte na opschonen: ${tempDiv.innerHTML.length}`);
             const closeBtn = `<div style="position: sticky; top: 0; background: #FDCC01; padding: 10px; display: flex; align-items: center; justify-content: space-between; z-index: 10001; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                 <button onclick="window.handleDetailBack()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 15px; color: #333;"><i class="fas fa-arrow-left"></i></button>
@@ -573,7 +573,7 @@ async function renderDetail(objectId) {
             // 2. Implement initializeSwiper logic (from swiper_init.js)
             function initializeSwiper() {
                 logDebug('SVR_MOD_DEBUG: Initializing bulletproof Swiper...');
-                
+
                 // Find the original container of the images
                 // The mainImageContainer must be located within the injected tempDiv.innerHTML
                 const mainImageContainer = document.querySelector('#detail-container div.row.m-0.p-4.mt-0');
@@ -585,7 +585,7 @@ async function renderDetail(objectId) {
 
                 let images = [];
                 const imageCards = mainImageContainer.querySelectorAll('div.card');
-                
+
                 imageCards.forEach(card => {
                     const img = card.querySelector('img');
                     if (img && img.src) {
@@ -598,12 +598,12 @@ async function renderDetail(objectId) {
                 if (images.length > 0) {
                     mainImageContainer.dataset.swiperInitialized = 'true';
                     logDebug('SVR_MOD_DEBUG: Images found. Proceeding with robust Swiper setup.');
-                    
+
                     // Create the Swiper container structure with a specific class for targeting
                     const swiperContainer = document.createElement('div');
                     swiperContainer.className = 'swiper-container svr-detail-swiper';
                     swiperContainer.style.width = '100%';
-                    swiperContainer.style.height = '300px'; 
+                    swiperContainer.style.height = '300px';
                     swiperContainer.style.position = 'relative';
                     swiperContainer.style.touchAction = 'pan-x';
                     swiperContainer.style.overflow = 'hidden';
@@ -617,13 +617,13 @@ async function renderDetail(objectId) {
                         swiperSlide.style.display = 'flex';
                         swiperSlide.style.alignItems = 'center';
                         swiperSlide.style.justifyContent = 'center';
-                        
+
                         const imgElement = document.createElement('img');
                         imgElement.src = src;
                         imgElement.style.width = '100%';
                         imgElement.style.height = '100%';
                         imgElement.style.objectFit = 'cover';
-                        
+
                         swiperSlide.appendChild(imgElement);
                         swiperWrapper.appendChild(swiperSlide);
                     });
@@ -722,9 +722,7 @@ async function renderDetail(objectId) {
                     logDebug('SVR_MOD: Gele Veeg and Befalow font JS styling injected.');
                 }
             }, 700);
-
-
-        } catch (e) {
+    } catch (e) {
         logDebug("Detailpagina Fout: " + e.message);
         $('#loading-overlay').hide();
         // Append error details to the detail sheet content
