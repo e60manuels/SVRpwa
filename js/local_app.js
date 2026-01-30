@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 10; // Increment this number with each commit
+window.SVR_PWA_VERSION = 11; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -677,7 +677,12 @@ function applyState(state) {
             isListView = false;
             $('#map-container').show();
             $('#toggleView i').attr('class', 'fas fa-list');
-            setTimeout(() => map.invalidateSize(), 100);
+            setTimeout(() => {
+                map.invalidateSize();
+                if (window.lastMapBounds) {
+                    map.fitBounds(window.lastMapBounds, { padding: [50, 50] });
+                }
+            }, 100);
             break;
         case 'detail':
             isListView = false;
@@ -1027,13 +1032,24 @@ function renderResults(objects, cLat, cLng) {
 
         const lat = g.coordinates[1], lng = g.coordinates[0], safeName = btoa(unescape(encodeURIComponent(p.name)));
         const marker = L.marker([lat, lng]);
-        const popup = `<div style="min-width:200px;">
-            <h5 style="color:#008AD3;font-family:'Befalow';font-size:20px;margin:0;cursor:pointer;" onclick="window.showSVRDetailPage('${obj.id}')">${p.name}</h5>
-            <div style="font-size:12px;color:#666;">${p.city}</div>
-            <div style="margin-top:10px;display:flex;gap:10px;">
-                <button onclick="window.openNavHelper(${lat},${lng},'${safeName}')" style="flex:1;background:#FDCC01;border:none;padding:5px;border-radius:5px;font-weight:bold;">ROUTE</button>
+        
+        // Match original Android app popup styling exactly
+        // See: bestanden/outerHTML_marker_popup.txt
+        const address = p.address ? `${p.address}, ${p.city}` : p.city;
+        const distDisplay = (obj.distM/1000).toFixed(1);
+        
+        const popup = `<div style="min-width: 220px;">
+            <div style="word-wrap: break-word; margin-top: -5px;">
+                <h5 onclick="window.showSVRDetailPage('${obj.id}')" style="margin: 0; padding: 0; font-family: 'Befalow', sans-serif; font-size: 25px; font-weight: normal; color: #008AD3; cursor: pointer;">${p.name}</h5>
+                <div style="font-size: 13px; color: #666; margin-top: 0px;">${address}</div>
+                <div style="font-size: 13px; color: #333; margin-top: 2px;"><i class="fa-solid fa-map-pin" style="color: #c0392b;"></i> Afstand: ${distDisplay} km</div>
+                <div class="camping-actions" style="display: flex; margin: 8px -20px -15px -20px; border-top: 1px solid #eee;">
+                    <a href="#" class="action-btn btn-route" style="flex: 1; text-align: center; padding: 10px 0; color: #c0392b; text-decoration: none; font-weight: bold; font-size: 14px; border-right: 1px solid #eee;" onclick="window.openNavHelper(${lat}, ${lng}, '${safeName}'); return false;"><i class="fa-solid fa-route"></i> ROUTE</a>
+                    <a href="#" class="action-btn btn-info" style="flex: 1; text-align: center; padding: 10px 0; color: #008AD3; text-decoration: none; font-weight: bold; font-size: 14px;" onclick="window.showSVRDetailPage('${obj.id}'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
+                </div>
             </div>
         </div>`;
+        
         marker.bindPopup(popup);
         if (index < 10) { top10Layer.addLayer(marker); bounds.extend([lat, lng]); } else markerCluster.addLayer(marker);
 
@@ -1051,7 +1067,14 @@ function renderResults(objects, cLat, cLng) {
         </div>`;
         $('#resultsList').append(card);
     });
-    map.fitBounds(bounds, { padding: [50, 50] });
+    
+    // Store bounds for later use
+    window.lastMapBounds = bounds;
+    
+    // Only fit bounds if map is currently visible
+    if (!isListView) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+    }
 }
 
 window.showHelp = function() {
