@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 12; // Increment this number with each commit
+window.SVR_PWA_VERSION = 13; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -906,18 +906,20 @@ async function renderDetail(objectId) {
         const doc = parser.parseFromString(htmlContent, 'text/html');
         
         // Try to find the main content area
-        let mainContent = doc.querySelector('.container-fluid.pt-0 .row');
-        if (!mainContent) {
-             logDebug("Selector '.container-fluid.pt-0 .row' niet gevonden, proberen met 'body'...");
-             mainContent = doc.body;
+        let mainContentElement = doc.querySelector('.col-sm-8.p-4.pt-2') || doc.querySelector('.col-sm-8'); 
+        
+        // Fallback to the body if the specific selector isn't found
+        if (!mainContentElement) {
+            logDebug("Main content selector not found, attempting to use doc.body.innerHTML.");
+            mainContentElement = doc.body;
         }
 
         const detailOverlay = document.getElementById('detail-container');
         const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
 
-        if (mainContent && mainContent.innerHTML.trim().length > 0) {
+        if (mainContentElement && mainContentElement.innerHTML.trim().length > 0) {
             const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = mainContent.innerHTML;
+            tempDiv.innerHTML = mainContentElement.innerHTML;
 
             // 1. Clean up HTML
             tempDiv.querySelectorAll('script, link').forEach(el => el.remove());
@@ -971,40 +973,23 @@ async function renderDetail(objectId) {
             // Inject scripts
             setTimeout(() => {
                 try {
-                    // Swiper Logic
-                    const mainImageContainer = document.querySelector('#detail-container div.row.m-0.p-4.mt-0');
-                    if (mainImageContainer && !mainImageContainer.dataset.swiperInitialized) {
-                        let images = [];
-                        mainImageContainer.querySelectorAll('div.card img').forEach(img => { if(img.src) images.push(img.src); });
-                        if (images.length > 0) {
-                            mainImageContainer.dataset.swiperInitialized = 'true';
-                            const swiperContainer = document.createElement('div');
-                            swiperContainer.className = 'swiper-container svr-detail-swiper';
-                            swiperContainer.style.width = '100%'; swiperContainer.style.height = '300px';
-                            swiperContainer.style.position = 'relative'; swiperContainer.style.overflow = 'hidden';
-                            const wrapper = document.createElement('div'); wrapper.className = 'swiper-wrapper';
-                            images.forEach(src => {
-                                const slide = document.createElement('div'); slide.className = 'swiper-slide';
-                                slide.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;">`;
-                                wrapper.appendChild(slide);
+                    // Swiper Logic - find Swiper containers within the injected content
+                    detailSheet.querySelectorAll('.swiper-container').forEach(swiperContainer => {
+                        if (typeof Swiper !== 'undefined' && !swiperContainer.dataset.swiperInitialized) {
+                            new Swiper(swiperContainer, {
+                                loop: true,
+                                pagination: {
+                                    el: '.swiper-pagination',
+                                    clickable: true,
+                                },
                             });
-                            swiperContainer.appendChild(wrapper);
-                            const pg = document.createElement('div'); pg.className = 'swiper-pagination';
-                            swiperContainer.appendChild(pg);
-                            mainImageContainer.parentNode.replaceChild(swiperContainer, mainImageContainer);
-                            if (typeof Swiper !== 'undefined') new Swiper(swiperContainer, { loop: true, pagination: { el: '.swiper-pagination', clickable: true } });
+                            swiperContainer.dataset.swiperInitialized = 'true'; // Mark as initialized
                         }
-                    }
-                    // Styling
-                    const veeg = document.querySelector('.veeg-campings');
-                    if (veeg) {
-                        veeg.style.setProperty('width', '95%', 'important');
-                        veeg.style.setProperty('max-width', '95%', 'important');
-                        veeg.style.setProperty('background', "url('https://svr.nl/static/images/veeg_geel.png') no-repeat center center", 'important');
-                        veeg.style.setProperty('background-size', '100% 100%', 'important');
-                    }
-                    document.querySelectorAll('.befalow').forEach(el => el.style.setProperty('font-family', "'Befalow', sans-serif", 'important'));
-                } catch(err) { console.error(err); }
+                    });
+
+                    // Apply befalow font
+                    detailSheet.querySelectorAll('.befalow').forEach(el => el.style.setProperty('font-family', "'Befalow', sans-serif", 'important'));
+                } catch(err) { console.error("Error during post-injection script execution:", err); }
             }, 600);
         } else { throw new Error("Geen detailinhoud gevonden."); }
     } catch (e) {
