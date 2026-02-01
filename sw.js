@@ -1,4 +1,4 @@
-const CACHE_NAME = 'svr-pwa-cache-v20';
+const CACHE_NAME = 'svr-pwa-cache-v21';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

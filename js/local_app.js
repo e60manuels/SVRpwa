@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 20; // Increment this number with each commit
+window.SVR_PWA_VERSION = 21; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -994,18 +994,29 @@ async function renderDetail(objectId) {
                 #detail-container .restorelines {
                     line-height: 1.6 !important;
                     font-size: 16px !important;
-                    padding: 5px 15px !important;
+                    padding: 2px 15px !important; /* Alignment with standard text */
                     display: block !important;
+                }
+                /* Align and expand the yellow header bar for Facilities */
+                #detail-container .p-2[style*="background-color:#FDCC01"] {
+                    padding-left: 15px !important; /* Text alignment */
+                    margin-left: -15px !important; /* Stretch bar to the edge */
+                    width: calc(100% + 30px) !important; /* Full width after stretch */
+                    box-sizing: border-box !important;
+                }
+                #detail-container .p-2[style*="background-color:#FDCC01"] h5 {
+                    margin: 0 !important;
+                    font-family: 'Befalow', sans-serif !important;
                 }
 
                 #detail-container .footer {
                     background-color: #008AD3 !important;
-                    color: white !important;
+                    color: black !important;
                     padding: 3rem 1.5rem !important;
                     margin-top: 2rem !important;
                 }
-                #detail-container .footer a { color: white !important; text-decoration: underline; }
-                #detail-container .footer h3 { color: white !important; font-family: 'Befalow', sans-serif; }
+                #detail-container .footer a { color: black !important; text-decoration: underline; }
+                #detail-container .footer h3 { color: black !important; font-family: 'Befalow', sans-serif; }
                 
                 #detail-container .pt-5 { padding-top: 1.5rem !important; }
             `;
