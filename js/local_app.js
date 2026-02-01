@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 36; // Increment this number with each commit
+window.SVR_PWA_VERSION = 37; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -1230,6 +1230,31 @@ async function renderDetail(objectId) {
     }
 }
 
+window.focusOnMarker = function(lat, lng, objectId) {
+    applyState({ view: 'map' });
+    const targetLatLng = L.latLng(lat, lng);
+    
+    // Find the marker in our layers
+    let foundMarker = null;
+    markerCluster.eachLayer(m => { if (m.getLatLng().equals(targetLatLng)) foundMarker = m; });
+    if (!foundMarker) {
+        top10Layer.eachLayer(m => { if (m.getLatLng().equals(targetLatLng)) foundMarker = m; });
+    }
+
+    if (foundMarker) {
+        if (markerCluster.hasLayer(foundMarker)) {
+            markerCluster.zoomToShowLayer(foundMarker, () => {
+                foundMarker.openPopup();
+            });
+        } else {
+            map.setView(targetLatLng, 15);
+            foundMarker.openPopup();
+        }
+    } else {
+        map.setView(targetLatLng, 15);
+    }
+};
+
 function renderResults(objects, cLat, cLng) {
     markerCluster.clearLayers(); top10Layer.clearLayers(); $('#resultsList').empty();
     if (objects.length === 0) { $('#resultsList').append('<div style="padding:20px;text-align:center;">Geen campings gevonden.</div>'); return; }
@@ -1277,7 +1302,7 @@ function renderResults(objects, cLat, cLng) {
                 <div class="card-distance"><i class="fa-solid fa-map-pin"></i> Afstand: ${(obj.distM/1000).toFixed(1)} km</div>
             </div>
             <div class="camping-actions">
-                <a href="#" class="action-btn btn-kaart" onclick="map.setView([${lat},${lng}], 15); applyState({view:'map'}); return false;"><i class="fa-solid fa-map"></i> KAART</a>
+                <a href="#" class="action-btn btn-kaart" onclick="window.focusOnMarker(${lat},${lng}, '${obj.id}'); return false;"><i class="fa-solid fa-map"></i> KAART</a>
                 <a href="#" class="action-btn btn-route" onclick="window.openNavHelper(${lat}, ${lng}, '${safeName}'); return false;"><i class="fa-solid fa-route"></i> ROUTE</a>
                 <a href="#" class="action-btn btn-info" onclick="window.showSVRDetailPage('${obj.id}'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
             </div>
