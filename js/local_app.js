@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 17; // Increment this number with each commit
+window.SVR_PWA_VERSION = 18; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -1001,53 +1001,138 @@ async function renderDetail(objectId) {
             // Inject scripts
             setTimeout(() => {
                 try {
-                    // Swiper Logic - Convert Bootstrap Carousel to Swiper
-                    const carousel = detailSheet.querySelector('.carousel');
-                    if (carousel) {
-                        logDebug("Converting Bootstrap Carousel to Swiper...");
-                        carousel.classList.remove('carousel', 'slide', 'pointer-event');
-                        carousel.classList.add('swiper');
+                    // FUNDAMENTAL CAROUSEL FIX (Ported from WebView implementation)
+                    logDebug("Initializing bulletproof Swiper...");
+                    
+                    // Find the original container of the images (the grid)
+                    const mainImageContainer = detailSheet.querySelector('div.row.m-0.p-4.mt-0');
+
+                    if (mainImageContainer && !mainImageContainer.dataset.swiperInitialized) {
+                        let images = [];
+                        const imageCards = mainImageContainer.querySelectorAll('div.card');
                         
-                        const inner = carousel.querySelector('.carousel-inner');
-                        if (inner) {
-                            inner.classList.remove('carousel-inner');
-                            inner.classList.add('swiper-wrapper');
+                        imageCards.forEach(card => {
+                            const img = card.querySelector('img');
+                            if (img && img.src) {
+                                images.push(img.src);
+                            }
+                        });
+
+                        logDebug(`Found ${images.length} images for carousel.`);
+
+                        if (images.length > 0) {
+                            mainImageContainer.dataset.swiperInitialized = 'true';
                             
-                            inner.querySelectorAll('.carousel-item').forEach((item, idx) => {
-                                item.classList.remove('carousel-item', 'active');
-                                item.classList.add('swiper-slide');
-                                item.style.display = 'block'; 
-                                item.style.float = 'none';
-                                item.style.marginRight = '0';
-                                item.style.height = 'auto';
+                            // Create the Swiper container structure
+                            const swiperContainer = document.createElement('div');
+                            swiperContainer.className = 'swiper svr-detail-swiper'; 
+                            swiperContainer.style.width = '100%';
+                            swiperContainer.style.height = '300px'; 
+                            swiperContainer.style.position = 'relative';
+                            swiperContainer.style.touchAction = 'pan-x';
+                            swiperContainer.style.overflow = 'hidden';
+                            swiperContainer.style.marginBottom = '20px';
+
+                            const swiperWrapper = document.createElement('div');
+                            swiperWrapper.className = 'swiper-wrapper';
+
+                            images.forEach(src => {
+                                const swiperSlide = document.createElement('div');
+                                swiperSlide.className = 'swiper-slide';
+                                swiperSlide.style.display = 'flex';
+                                swiperSlide.style.alignItems = 'center';
+                                swiperSlide.style.justifyContent = 'center';
+                                swiperSlide.style.width = '100%';
+                                
+                                const imgElement = document.createElement('img');
+                                imgElement.src = src;
+                                imgElement.style.width = '100%';
+                                imgElement.style.height = '100%';
+                                imgElement.style.objectFit = 'cover';
+                                
+                                swiperSlide.appendChild(imgElement);
+                                swiperWrapper.appendChild(swiperSlide);
                             });
-                        }
-                        
-                        // Remove old controls
-                        carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next').forEach(el => el.remove());
-                        
-                        // Add Pagination if missing
-                        if (!carousel.querySelector('.swiper-pagination')) {
+
+                            swiperContainer.appendChild(swiperWrapper);
+
                             const pagination = document.createElement('div');
                             pagination.className = 'swiper-pagination';
-                            carousel.appendChild(pagination);
-                        }
+                            swiperContainer.appendChild(pagination);
 
-                        if (typeof Swiper !== 'undefined') {
-                            new Swiper(carousel, {
-                                loop: true,
-                                autoHeight: true,
-                                pagination: {
-                                    el: '.swiper-pagination',
-                                    clickable: true,
-                                },
-                            });
+                            // Replace the original image grid with the new Swiper container
+                            mainImageContainer.parentNode.replaceChild(swiperContainer, mainImageContainer);
+
+                            // Initialize Swiper with robust settings
+                            if (typeof Swiper !== 'undefined') {
+                                new Swiper(swiperContainer, {
+                                    direction: 'horizontal',
+                                    loop: images.length > 1,
+                                    speed: 400,
+                                    roundLengths: true,
+                                    observer: true,
+                                    observeParents: true,
+                                    pagination: {
+                                        el: '.swiper-pagination',
+                                        clickable: true,
+                                    },
+                                    threshold: 10,
+                                    followFinger: true,
+                                    touchStartPreventDefault: true,
+                                    on: {
+                                        init: function () {
+                                            const self = this;
+                                            setTimeout(() => self.update(), 500);
+                                            setTimeout(() => self.update(), 1500);
+                                        },
+                                    },
+                                });
+                                logDebug("Robust Swiper initialized successfully.");
+                            }
                         }
                     } else {
-                        // Fallback: search for existing swiper containers
-                        detailSheet.querySelectorAll('.swiper-container, .swiper').forEach(swiperContainer => {
-                            if (typeof Swiper !== 'undefined' && !swiperContainer.dataset.swiperInitialized) {
-                                new Swiper(swiperContainer, {
+                        // Fallback for pages that might already use .swiper or .carousel
+                        const carousel = detailSheet.querySelector('.carousel');
+                        if (carousel) {
+                            logDebug("Fallback: Converting Bootstrap Carousel to Swiper...");
+                            carousel.classList.remove('carousel', 'slide', 'pointer-event');
+                            carousel.classList.add('swiper');
+                            
+                            const inner = carousel.querySelector('.carousel-inner');
+                            if (inner) {
+                                inner.classList.remove('carousel-inner');
+                                inner.classList.add('swiper-wrapper');
+                                
+                                inner.querySelectorAll('.carousel-item').forEach((item, idx) => {
+                                    item.classList.remove('carousel-item', 'active');
+                                    item.classList.add('swiper-slide');
+                                    item.style.display = 'block'; 
+                                    item.style.float = 'none';
+                                    item.style.marginRight = '0';
+                                    item.style.height = 'auto';
+                                });
+                            }
+                            
+                            carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next').forEach(el => el.remove());
+                            
+                            if (!carousel.querySelector('.swiper-pagination')) {
+                                const pagination = document.createElement('div');
+                                pagination.className = 'swiper-pagination';
+                                carousel.appendChild(pagination);
+                            }
+
+                            if (typeof Swiper !== 'undefined') {
+                                new Swiper(carousel, {
+                                    loop: true,
+                                    autoHeight: true,
+                                    pagination: {
+                                        el: '.swiper-pagination',
+                                        clickable: true,
+                                    },
+                                });
+                            }
+                        }
+                    }
                                     loop: true,
                                     pagination: {
                                         el: '.swiper-pagination',
