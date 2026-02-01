@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 35; // Increment this number with each commit
+window.SVR_PWA_VERSION = 36; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -806,6 +806,12 @@ $searchInput.on('keydown', function(e) {
     }
 });
 
+// Trigger search on Icon click
+$('#searchIcon').on('click', function() {
+    $suggestionsList.hide();
+    window.performSearch();
+});
+
 $searchInput.on('input', function() {
     const q = $(this).val(); if (q.length < 2) { $suggestionsList.hide(); return; }
     const suggestions = window.getSuggestionsLocal(q);
@@ -822,12 +828,27 @@ $searchInput.on('input', function() {
 async function performSearch() {
     if (isSearching) return;
     isSearching = true;
+    
+    // Hide keyboard
+    $searchInput.blur();
+    
     const q = $searchInput.val().trim();
     let sLat = 52.1326, sLng = 5.2913;
 
     if (q) {
         const coords = await window.getCoordinatesWeb(q);
-        if (coords) { sLat = coords.latitude; sLng = coords.longitude; }
+        if (coords) { 
+            sLat = coords.latitude; sLng = coords.longitude; 
+        } else {
+            // Feedback for invalid location
+            const originalPlaceholder = $searchInput.attr('placeholder');
+            $searchInput.val('').attr('placeholder', 'Plaats niet gevonden...').addClass('search-error');
+            setTimeout(() => {
+                $searchInput.attr('placeholder', originalPlaceholder).removeClass('search-error');
+            }, 3000);
+            isSearching = false;
+            return;
+        }
     } else if (currentUserLatLng) {
         sLat = currentUserLatLng.lat; sLng = currentUserLatLng.lng;
     }
