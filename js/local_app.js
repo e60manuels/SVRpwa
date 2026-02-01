@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 26; // Increment this number with each commit
+window.SVR_PWA_VERSION = 27; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -244,11 +244,11 @@ window.SVR_PWA_VERSION = 26; // Increment this number with each commit
         }
     };
     const css = `
-        #svr-filter-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2147483640; display: none; opacity: 0; transition: opacity 0.3s ease; }
+        #svr-filter-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9990; display: none; opacity: 0; transition: opacity 0.3s ease; }
         #svr-filter-backdrop.open { display: block; opacity: 1; }
         #svr-filter-overlay { 
             position: fixed; top: 88px; left: 0; width: 100%; height: calc(100% - 88px); 
-            background-color: #f0f0f0; z-index: 2147483647; display: flex; flex-direction: column; 
+            background-color: #f0f0f0; z-index: 9995; display: flex; flex-direction: column; 
             box-sizing: border-box; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
             border-top-left-radius: 12px; border-top-right-radius: 12px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
