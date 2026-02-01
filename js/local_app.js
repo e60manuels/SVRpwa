@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 32; // Increment this number with each commit
+window.SVR_PWA_VERSION = 33; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -250,8 +250,10 @@ window.SVR_PWA_VERSION = 32; // Increment this number with each commit
             const threshold = 100; // Pixel threshold to close
 
             if (deltaY > threshold) {
-                closeCallback(); // Trigger close
                 element.style.transform = 'translateY(100%)'; // Visual close immediately
+                setTimeout(() => {
+                    closeCallback(); // Trigger full cleanup after animation start
+                }, 10);
             } else {
                 element.style.transform = 'translateY(0)'; // Snap back
             }
@@ -284,6 +286,7 @@ window.SVR_PWA_VERSION = 32; // Increment this number with each commit
 
     window.toggle_filters = async function() {
         backdrop.style.display = 'block';
+        overlay.style.transform = ''; // Reset any residual swipe transforms
         setTimeout(() => { overlay.classList.add('open'); backdrop.classList.add('open'); }, 10);
         if (content.children.length === 0) await fetchFilterData();
     };
