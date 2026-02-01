@@ -1,6 +1,6 @@
 /* --- Detail Page Styling (Injected SVR Content) --- */
 #detail-container {
-    background-color: #f8f9fa; /* Light background for the detail page */
+    background-color: transparent; /* Changed to transparent for see-through effect */
     color: #212529; /* Standard text color */
     font-family: Arial, Helvetica, sans-serif; /* Default font */
 }
