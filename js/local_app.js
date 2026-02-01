@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 13; // Increment this number with each commit
+window.SVR_PWA_VERSION = 14; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -905,12 +905,17 @@ async function renderDetail(objectId) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
         
-        // Try to find the container that holds both col-sm-8 and col-sm-4
-        // Typically they are wrapped in a .row within a .container or .container-fluid
-        let mainContentElement = doc.querySelector('.col-sm-8')?.parentElement;
+        // Try to find the main container that holds everything (content, sidebar, footer)
+        // In the SVR structure, this is often the .container-fluid that follows the header/nav
+        let mainContentElement = doc.querySelector('div.container-fluid:not(.p-0)');
         
-        // Fallback to the specific col-sm-8 if row isn't found, or body
-        if (!mainContentElement || !mainContentElement.classList.contains('row')) {
+        // Fallback to the row containing the content if the specific container-fluid isn't found
+        if (!mainContentElement) {
+            mainContentElement = doc.querySelector('.col-sm-8')?.parentElement;
+        }
+        
+        // Final fallback
+        if (!mainContentElement || mainContentElement.tagName === 'BODY') {
             mainContentElement = doc.querySelector('.col-sm-8.p-4.pt-2') || doc.querySelector('.col-sm-8');
         }
         
@@ -925,6 +930,12 @@ async function renderDetail(objectId) {
         if (mainContentElement && mainContentElement.innerHTML.trim().length > 0) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = mainContentElement.innerHTML;
+
+            // Also check for a separate footer if it's not inside the mainContentElement
+            const externalFooter = doc.querySelector('.footer');
+            if (externalFooter && !tempDiv.querySelector('.footer')) {
+                tempDiv.appendChild(externalFooter.cloneNode(true));
+            }
 
             // 1. Clean up HTML
             tempDiv.querySelectorAll('script, link').forEach(el => el.remove());
@@ -982,19 +993,63 @@ async function renderDetail(objectId) {
             // Inject scripts
             setTimeout(() => {
                 try {
-                    // Swiper Logic - find Swiper containers within the injected content
-                    detailSheet.querySelectorAll('.swiper-container').forEach(swiperContainer => {
-                        if (typeof Swiper !== 'undefined' && !swiperContainer.dataset.swiperInitialized) {
-                            new Swiper(swiperContainer, {
+                    // Swiper Logic - Convert Bootstrap Carousel to Swiper
+                    const carousel = detailSheet.querySelector('.carousel');
+                    if (carousel) {
+                        logDebug("Converting Bootstrap Carousel to Swiper...");
+                        carousel.classList.remove('carousel', 'slide', 'pointer-event');
+                        carousel.classList.add('swiper');
+                        
+                        const inner = carousel.querySelector('.carousel-inner');
+                        if (inner) {
+                            inner.classList.remove('carousel-inner');
+                            inner.classList.add('swiper-wrapper');
+                            
+                            inner.querySelectorAll('.carousel-item').forEach((item, idx) => {
+                                item.classList.remove('carousel-item', 'active');
+                                item.classList.add('swiper-slide');
+                                item.style.display = 'block'; 
+                                item.style.float = 'none';
+                                item.style.marginRight = '0';
+                                item.style.height = 'auto';
+                            });
+                        }
+                        
+                        // Remove old controls
+                        carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next').forEach(el => el.remove());
+                        
+                        // Add Pagination if missing
+                        if (!carousel.querySelector('.swiper-pagination')) {
+                            const pagination = document.createElement('div');
+                            pagination.className = 'swiper-pagination';
+                            carousel.appendChild(pagination);
+                        }
+
+                        if (typeof Swiper !== 'undefined') {
+                            new Swiper(carousel, {
                                 loop: true,
+                                autoHeight: true,
                                 pagination: {
                                     el: '.swiper-pagination',
                                     clickable: true,
                                 },
                             });
-                            swiperContainer.dataset.swiperInitialized = 'true'; // Mark as initialized
                         }
-                    });
+                    } else {
+                        // Fallback: search for existing swiper containers
+                        detailSheet.querySelectorAll('.swiper-container, .swiper').forEach(swiperContainer => {
+                            if (typeof Swiper !== 'undefined' && !swiperContainer.dataset.swiperInitialized) {
+                                new Swiper(swiperContainer, {
+                                    loop: true,
+                                    pagination: {
+                                        el: '.swiper-pagination',
+                                        clickable: true,
+                                    },
+                                });
+                                swiperContainer.dataset.swiperInitialized = 'true'; 
+                            }
+                        });
+                    }
 
                     // Apply befalow font
                     detailSheet.querySelectorAll('.befalow').forEach(el => el.style.setProperty('font-family', "'Befalow', sans-serif", 'important'));
