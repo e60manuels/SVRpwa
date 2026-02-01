@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 16; // Increment this number with each commit
+window.SVR_PWA_VERSION = 17; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -905,37 +905,21 @@ async function renderDetail(objectId) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
         
-        // Target the specific container that holds the actual camping details
-        // Based on the SVR structure, this is 'div.container-fluid.pt-0'
-        let mainContentElement = doc.querySelector('div.container-fluid.pt-0');
-        
-        // Fallback if the specific class isn't there (safety first)
-        if (!mainContentElement) {
-            mainContentElement = doc.querySelector('.col-sm-8')?.parentElement;
-        }
-        
-        if (!mainContentElement) {
-            logDebug("Main content selector not found, attempting to use doc.body.innerHTML.");
-            mainContentElement = doc.body;
-        }
+        // METHOD: "Everything-except-header"
+        // We take the whole body and remove the parts we definitely don't want (nav/header).
+        const bodyContent = doc.body;
+
+        // Remove navigation, headers, and login bars from the website
+        bodyContent.querySelectorAll('nav, header, .navbar, .container-fluid.p-0.text-center').forEach(el => el.remove());
 
         const detailOverlay = document.getElementById('detail-container');
         const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
 
-        if (mainContentElement && mainContentElement.innerHTML.trim().length > 0) {
+        if (bodyContent.innerHTML.trim().length > 0) {
             const tempDiv = document.createElement('div');
-            
-            // Clone the main content
-            const contentClone = mainContentElement.cloneNode(true);
-            tempDiv.appendChild(contentClone);
+            tempDiv.innerHTML = bodyContent.innerHTML;
 
-            // Append the footer separately if it exists and isn't already inside
-            const footer = doc.querySelector('.footer');
-            if (footer && !contentClone.querySelector('.footer')) {
-                tempDiv.appendChild(footer.cloneNode(true));
-            }
-
-            // 1. Clean up HTML
+            // 1. Clean up remaining HTML
             tempDiv.querySelectorAll('script, link').forEach(el => el.remove());
 
             // 2. Make images visible
