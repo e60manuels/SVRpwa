@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 15; // Increment this number with each commit
+window.SVR_PWA_VERSION = 16; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -957,18 +957,44 @@ async function renderDetail(objectId) {
             // 4. Force mobile layout via style tag
             const containerStyle = document.createElement('style');
             containerStyle.innerHTML = `
-                #detail-container .container, #detail-container .container-fluid, #detail-container .row,
-                #detail-container .col-md-8, #detail-container .col-md-4,
-                #detail-container .col-sm-8, #detail-container .col-sm-4 {
+                #detail-container .container, #detail-container .container-fluid {
                     width: 100% !important; max-width: 100vw !important;
-                    margin: 0 !important; padding: 0 15px !important;
+                    padding: 0 !important; margin: 0 !important;
+                    box-sizing: border-box !important;
+                }
+                #detail-container .row {
+                    width: 100% !important; margin: 0 !important; padding: 0 !important;
+                    display: flex !important; flex-direction: column !important;
+                    box-sizing: border-box !important;
+                }
+                #detail-container .col-md-8, #detail-container .col-md-4,
+                #detail-container .col-sm-8, #detail-container .col-sm-4,
+                #detail-container .col-sm-6, #detail-container .col-sm-12,
+                #detail-container .col-6, #detail-container .col-12 {
+                    width: 100% !important; max-width: 100% !important;
+                    padding: 10px 15px !important; margin: 0 !important;
                     box-sizing: border-box !important;
                     float: none !important;
                     display: block !important;
                 }
-                #detail-container img { max-width: 100% !important; height: auto !important; }
-                #detail-container .row { display: flex !important; flex-direction: column !important; }
-                #detail-container .pt-5 { padding-top: 1.5rem !important; } /* Reduce large top padding on sidebar */
+                #detail-container img, #detail-container iframe { 
+                    max-width: 100% !important; 
+                    height: auto !important; 
+                    box-sizing: border-box !important;
+                }
+                /* Specific fix for iframe aspect ratio */
+                #detail-container iframe { aspect-ratio: 16 / 9; }
+
+                #detail-container .footer {
+                    background-color: #008AD3 !important;
+                    color: white !important;
+                    padding: 3rem 1.5rem !important;
+                    margin-top: 2rem !important;
+                }
+                #detail-container .footer a { color: white !important; text-decoration: underline; }
+                #detail-container .footer h3 { color: white !important; font-family: 'Befalow', sans-serif; }
+                
+                #detail-container .pt-5 { padding-top: 1.5rem !important; }
             `;
             tempDiv.prepend(containerStyle);
 
