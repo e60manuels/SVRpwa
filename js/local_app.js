@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 34; // Increment this number with each commit
+window.SVR_PWA_VERSION = 35; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -41,9 +41,16 @@ window.SVR_PWA_VERSION = 34; // Increment this number with each commit
     window.getCoordinatesWeb = async function(place) {
         const locationName = place.includes(" (") ? place.split(" (")[0] : place;
         try {
-            // Use fetchWithRetry to route Nominatim requests through the Worker
-            const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationName + ", Nederland")}&limit=1`;
-            logDebug(`Fetching coordinates for "${place}" via Worker proxy.`);
+            // If the place name is not in our local Dutch list and doesn't already have a country suffix, 
+            // search globally. Otherwise, prefer Netherlands for common names.
+            let query = locationName;
+            const isLocal = window.allLocations.some(l => l.name.toLowerCase() === locationName.toLowerCase());
+            if (isLocal && !locationName.includes(",")) {
+                query += ", Nederland";
+            }
+
+            const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+            logDebug(`Fetching coordinates for "${query}" via Worker proxy.`);
             const contents = await fetchWithRetry(nominatimUrl); // Use fetchWithRetry
             const data = JSON.parse(contents);
             if (data && data.length > 0) {
@@ -631,10 +638,8 @@ function applyState(state) {
             isListView = true;
             $('#list-container').show();
             $('#toggleView i').attr('class', 'fas fa-map');
-            // Check if we should show scroll button immediately (if already scrolled)
-            if ($('#list-container').scrollTop() > 300) {
-                $('#scroll_top_btn').addClass('visible').show();
-            }
+            // Show scroll button on list view to maintain stack size
+            $('#scroll_top_btn').addClass('visible').show();
             break;
         case 'map':
             isListView = false;
@@ -666,9 +671,9 @@ function applyState(state) {
 $('#list-container').on('scroll', function() {
     if (isListView) {
         if ($(this).scrollTop() > 300) {
-            $('#scroll_top_btn').addClass('visible').fadeIn(200);
+            $('#scroll_top_btn').css('opacity', '1');
         } else {
-            $('#scroll_top_btn').removeClass('visible').fadeOut(200);
+            $('#scroll_top_btn').css('opacity', '0.5');
         }
     }
 });
