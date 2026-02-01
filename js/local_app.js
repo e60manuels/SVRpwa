@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 22; // Increment this number with each commit
+window.SVR_PWA_VERSION = 23; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -994,19 +994,29 @@ async function renderDetail(objectId) {
                 #detail-container .restorelines {
                     line-height: 1.6 !important;
                     font-size: 16px !important;
-                    padding: 2px 0 !important; /* Removed 15px padding to shift text left */
+                    padding-left: 0 !important; /* Force 0 to align with description */
+                    padding-top: 2px !important;
+                    padding-bottom: 2px !important;
                     display: block !important;
                 }
+                /* Remove column padding for facilities to prevent double indentation */
+                #detail-container .col-sm-12:has(.restorelines),
+                #detail-container .col-sm-6:has(.restorelines),
+                #detail-container .col-12:has(.restorelines),
+                #detail-container .col-6:has(.restorelines) {
+                    padding-left: 0 !important;
+                }
+                
                 /* Align and expand the yellow header bar for Facilities */
                 #detail-container .p-2[style*="background-color:#FDCC01"] {
-                    padding-left: 0 !important; /* Align text to the start of the container */
+                    padding-left: 0 !important; 
                     margin-left: -15px !important; 
                     width: calc(100% + 30px) !important; 
                     box-sizing: border-box !important;
                 }
                 #detail-container .p-2[style*="background-color:#FDCC01"] h5 {
                     margin: 0 !important;
-                    padding-left: 15px !important; /* Standard indentation */
+                    padding-left: 15px !important; /* Keep text indent in the bar */
                     font-family: 'Befalow', sans-serif !important;
                 }
 
