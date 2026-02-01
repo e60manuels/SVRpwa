@@ -52,4 +52,33 @@ To provide access to both the `SVRpwa` project and the `SVRcampings_v31` WebView
 3.  **Ensure `SVRcampings_v31` exists:** Make sure the `SVRcampings_v31` directory is present directly within `C:\Users\emanu\AndroidStudioProjects\` and contains the WebView app's code.
 4.  **Instruct me to read this GEMINI.md:** After adding the projects, instruct me to read this `GEMINI.md` file again for context.
 
+## Detail Page & UX Improvements (v39 - Current Status)
+
+The app is currently stable at version **v39**. This session resolved fundamental issues with content selection, UI animation, and core UX.
+
+### Key Wins:
+1.  **Fundamental Carousel Fix:** 
+    *   Abandoned the Bootstrap Carousel "hijack" method.
+    *   Implemented the "WebView method": Extracting image URLs directly from the SVR grid (`div.row.m-0.p-4.mt-0`) and building a clean, touch-optimized Swiper component from scratch. This fixed the "stacked images" and "double image" (background + foreground) issues.
+2.  **Complete Detail Page Content:**
+    *   Switched to the "Everything-except-header" selection method.
+    *   The PWA now correctly includes all original SVR sections: Title (Gele Veeg), Description, Facilities, Pricing Table, Reservation Form, GPS Coordinates, Route Button, and Footer.
+    *   Explicitly removed leftover website artifacts (Bootstrap modals and stray "Sluiten" text).
+3.  **Transparent Bottom Sheet UX:**
+    *   Correctly implemented the "see-through" area at the top of the detail sheet.
+    *   Fixed z-index conflicts between the backdrop and the overlay.
+    *   Enabled click-through on the dimmed top area to close the detail page, matching the filter menu behavior.
+4.  **Global Search & UX:**
+    *   Enabled worldwide search (e.g., "Nice") by removing the hardcoded ", Nederland" suffix for international terms.
+    *   Added "Enter" key support and clickable search icon.
+    *   Implemented visual feedback ("Plaats niet gevonden") for invalid locations.
+5.  **List View Enhancements:**
+    *   Added a contextual **Scroll-to-Top** button in the action stack (replacing the Locate button when in List view).
+    *   Stabilized the **"KAART"** button on camping cards: it now performs a smooth focus (zoom 14) and reliably opens the information popup after any cluster expansion.
+
+### Technical Lessons Learned:
+*   **PWA Cache Busting:** Crucial to synchronize three version bumps: `SVR_PWA_VERSION` in JS, `CACHE_NAME` in `sw.js`, and the query parameter (`?v=XX`) in `index.html`.
+*   **Animation Sync:** JavaScript `setTimeout` timers for UI cleanup must match or exceed the CSS `transition` duration (currently set to 0.5s / 500ms) to prevent schokkerige or cut-off animations.
+*   **CSS Specificity:** Inline JS style injection (`style.setProperty`) was used as a last resort to overcome aggressive caching or high-specificity Bootstrap rules for form field widths.
+
 
