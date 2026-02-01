@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 33; // Increment this number with each commit
+window.SVR_PWA_VERSION = 34; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -569,6 +569,7 @@ const markerCluster = L.markerClusterGroup();
 const top10Layer = L.featureGroup();
 let centerMarker = null;
 let currentUserLatLng = null;
+let userLocationMarker = null;
 
 const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(map);
 tiles.on('tileload', () => { if(!window.tilesLogged) { logDebug("Tegels OK"); window.tilesLogged=true; } });
@@ -578,6 +579,20 @@ map.on('locationfound', (e) => {
     if (!currentUserLatLng || currentUserLatLng.distanceTo(e.latlng) > 100) {
         logDebug("Loc: " + e.latlng.lat.toFixed(3) + "," + e.latlng.lng.toFixed(3));
         currentUserLatLng = e.latlng;
+    }
+
+    // Update or create user location marker
+    if (userLocationMarker) {
+        userLocationMarker.setLatLng(e.latlng);
+    } else {
+        userLocationMarker = L.marker(e.latlng, {
+            icon: L.divIcon({
+                className: 'user-location-dot',
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+            }),
+            zIndexOffset: 1000
+        }).addTo(map);
     }
 });
 map.locate({ watch: false, enableHighAccuracy: true });
@@ -607,15 +622,24 @@ function applyState(state) {
     $('#map-container').hide();
     $('#list-container').hide();
 
+    // Reset button visibility
+    $('#locateBtn').hide();
+    $('#scroll_top_btn').removeClass('visible').hide();
+
     switch (state.view) {
         case 'list':
             isListView = true;
             $('#list-container').show();
             $('#toggleView i').attr('class', 'fas fa-map');
+            // Check if we should show scroll button immediately (if already scrolled)
+            if ($('#list-container').scrollTop() > 300) {
+                $('#scroll_top_btn').addClass('visible').show();
+            }
             break;
         case 'map':
             isListView = false;
             $('#map-container').show();
+            $('#locateBtn').show(); // Show locate only on map
             $('#toggleView i').attr('class', 'fas fa-list');
             setTimeout(() => {
                 map.invalidateSize();
@@ -631,11 +655,27 @@ function applyState(state) {
         default:
             isListView = false;
             $('#map-container').show();
+            $('#locateBtn').show();
             $('#toggleView i').attr('class', 'fas fa-list');
             setTimeout(() => map.invalidateSize(), 100);
             break;
     }
 }
+
+// --- SCROLL TO TOP LOGIC ---
+$('#list-container').on('scroll', function() {
+    if (isListView) {
+        if ($(this).scrollTop() > 300) {
+            $('#scroll_top_btn').addClass('visible').fadeIn(200);
+        } else {
+            $('#scroll_top_btn').removeClass('visible').fadeOut(200);
+        }
+    }
+});
+
+$('#scroll_top_btn').on('click', function() {
+    $('#list-container').animate({ scrollTop: 0 }, 400);
+});
 
 // Function to handle showing the detail page with bottom-up animation
 window.showSVRDetailPage = function(objectId) {
@@ -750,9 +790,14 @@ $searchInput.on('click', function() {
     if ($(this).val().length > 0) {
         $(this).val('');
         $suggestionsList.hide();
-        // Optional: Reset search to default state or keep current results? 
-        // Usually clearing the search box implies wanting to start a new search.
-        // For now, just clear the text.
+    }
+});
+
+// Trigger search on Enter key
+$searchInput.on('keydown', function(e) {
+    if (e.key === 'Enter') {
+        $suggestionsList.hide();
+        window.performSearch();
     }
 });
 
