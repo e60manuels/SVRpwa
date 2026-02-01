@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 37; // Increment this number with each commit
+window.SVR_PWA_VERSION = 38; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -1233,26 +1233,31 @@ async function renderDetail(objectId) {
 window.focusOnMarker = function(lat, lng, objectId) {
     applyState({ view: 'map' });
     const targetLatLng = L.latLng(lat, lng);
-    
-    // Find the marker in our layers
+    window.skipFitBounds = true; // Prevent automatic zoom-out
+
+    // Find the marker by ID
     let foundMarker = null;
-    markerCluster.eachLayer(m => { if (m.getLatLng().equals(targetLatLng)) foundMarker = m; });
+    markerCluster.eachLayer(m => { if (m.objId === objectId) foundMarker = m; });
     if (!foundMarker) {
-        top10Layer.eachLayer(m => { if (m.getLatLng().equals(targetLatLng)) foundMarker = m; });
+        top10Layer.eachLayer(m => { if (m.objId === objectId) foundMarker = m; });
     }
 
     if (foundMarker) {
         if (markerCluster.hasLayer(foundMarker)) {
             markerCluster.zoomToShowLayer(foundMarker, () => {
-                foundMarker.openPopup();
+                map.flyTo(targetLatLng, 15, { animate: true, duration: 0.5 });
+                setTimeout(() => foundMarker.openPopup(), 600);
             });
         } else {
-            map.setView(targetLatLng, 15);
-            foundMarker.openPopup();
+            map.flyTo(targetLatLng, 15, { animate: true, duration: 0.5 });
+            setTimeout(() => foundMarker.openPopup(), 600);
         }
     } else {
-        map.setView(targetLatLng, 15);
+        map.flyTo(targetLatLng, 15);
     }
+    
+    // Re-enable automatic zoom after a while
+    setTimeout(() => { window.skipFitBounds = false; }, 3000);
 };
 
 function renderResults(objects, cLat, cLng) {
@@ -1274,6 +1279,7 @@ function renderResults(objects, cLat, cLng) {
 
         const lat = g.coordinates[1], lng = g.coordinates[0], safeName = btoa(unescape(encodeURIComponent(p.name)));
         const marker = L.marker([lat, lng]);
+        marker.objId = obj.id; // Store ID for reliable lookup
         
         // Match original Android app popup styling exactly
         // See: bestanden/outerHTML_marker_popup.txt
@@ -1313,8 +1319,8 @@ function renderResults(objects, cLat, cLng) {
     // Store bounds for later use
     window.lastMapBounds = bounds;
     
-    // Only fit bounds if map is currently visible
-    if (!isListView) {
+    // Only fit bounds if map is currently visible and we're not focusing on a marker
+    if (!isListView && !window.skipFitBounds) {
         map.fitBounds(bounds, { padding: [50, 50] });
     }
 }
