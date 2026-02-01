@@ -147,11 +147,12 @@
         .detail-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: transparent; /* Changed to transparent, we use backdrop instead */
-            z-index: 9999;
+            z-index: 9995; /* Above backdrop (9990) */
             display: none; /* Hidden by default */
             opacity: 0;
             transition: opacity 0.3s ease;
             overscroll-behavior: none; /* Prevent background scrolling when overlay is open */
+            pointer-events: none; /* Allow clicking through empty top area */
         }
         .detail-overlay.open {
             display: block;
@@ -173,6 +174,7 @@
             display: flex; /* For the close button header */
             flex-direction: column;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            pointer-events: auto; /* Re-enable clicks for the actual content */
         }
         .detail-sheet-content > div:not(.detail-header) {
             overflow-y: auto;
