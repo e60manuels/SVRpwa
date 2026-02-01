@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 14; // Increment this number with each commit
+window.SVR_PWA_VERSION = 15; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -905,18 +905,13 @@ async function renderDetail(objectId) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
         
-        // Try to find the main container that holds everything (content, sidebar, footer)
-        // In the SVR structure, this is often the .container-fluid that follows the header/nav
-        let mainContentElement = doc.querySelector('div.container-fluid:not(.p-0)');
+        // Target the specific container that holds the actual camping details
+        // Based on the SVR structure, this is 'div.container-fluid.pt-0'
+        let mainContentElement = doc.querySelector('div.container-fluid.pt-0');
         
-        // Fallback to the row containing the content if the specific container-fluid isn't found
+        // Fallback if the specific class isn't there (safety first)
         if (!mainContentElement) {
             mainContentElement = doc.querySelector('.col-sm-8')?.parentElement;
-        }
-        
-        // Final fallback
-        if (!mainContentElement || mainContentElement.tagName === 'BODY') {
-            mainContentElement = doc.querySelector('.col-sm-8.p-4.pt-2') || doc.querySelector('.col-sm-8');
         }
         
         if (!mainContentElement) {
@@ -929,12 +924,15 @@ async function renderDetail(objectId) {
 
         if (mainContentElement && mainContentElement.innerHTML.trim().length > 0) {
             const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = mainContentElement.innerHTML;
+            
+            // Clone the main content
+            const contentClone = mainContentElement.cloneNode(true);
+            tempDiv.appendChild(contentClone);
 
-            // Also check for a separate footer if it's not inside the mainContentElement
-            const externalFooter = doc.querySelector('.footer');
-            if (externalFooter && !tempDiv.querySelector('.footer')) {
-                tempDiv.appendChild(externalFooter.cloneNode(true));
+            // Append the footer separately if it exists and isn't already inside
+            const footer = doc.querySelector('.footer');
+            if (footer && !contentClone.querySelector('.footer')) {
+                tempDiv.appendChild(footer.cloneNode(true));
             }
 
             // 1. Clean up HTML
