@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 25; // Increment this number with each commit
+window.SVR_PWA_VERSION = 26; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -168,15 +168,18 @@ window.SVR_PWA_VERSION = 25; // Increment this number with each commit
     window.showSVRDetailPage = function(objectId) {
         const detailOverlay = document.getElementById('detail-container');
         const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+        const backdrop = document.getElementById('svr-filter-backdrop');
 
-        // Clear previous content immediately to avoid showing stale data or white screen glitches
-        // Show a loading state inside the sheet
+        // Clear previous content immediately
         $(detailSheet).empty().append('<div style="display:flex;justify-content:center;align-items:center;height:100%;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#008AD3"></i></div>');
 
-        // Initially hide overlay and sheet, then make visible with animation
+        // Show backdrop and overlay
+        if (backdrop) {
+            backdrop.style.display = 'block';
+            setTimeout(() => backdrop.classList.add('open'), 10);
+        }
         detailOverlay.style.display = 'block';
         
-        // Ensure we remove the 'open' class first to trigger the transition
         detailOverlay.classList.remove('open');
         
         setTimeout(() => {
@@ -336,9 +339,17 @@ window.SVR_PWA_VERSION = 25; // Increment this number with each commit
     };
 
     window.closeFilterOverlay = function() { 
-        overlay.classList.remove('open'); backdrop.classList.remove('open');
+        overlay.classList.remove('open'); 
+        backdrop.classList.remove('open');
+        
+        // Also handle detail container if open
+        const detailOverlay = document.getElementById('detail-container');
+        if (detailOverlay && detailOverlay.classList.contains('open')) {
+            window.handleDetailBack();
+        }
+
         overlay.style.transform = ''; // Clear inline transform from swipe
-        setTimeout(() => { if (!overlay.classList.contains('open')) backdrop.style.display = 'none'; }, 300);
+        setTimeout(() => { if (!overlay.classList.contains('open') && !detailOverlay.classList.contains('open')) backdrop.style.display = 'none'; }, 300);
     };
     backdrop.onclick = window.closeFilterOverlay;
 

@@ -146,7 +146,7 @@
         /* --- DETAIL BOTTOM SHEET --- */
         .detail-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); /* Dimmed background */
+            background: transparent; /* Changed to transparent, we use backdrop instead */
             z-index: 9999;
             display: none; /* Hidden by default */
             opacity: 0;
@@ -159,10 +159,11 @@
         }
 
         .detail-sheet-content {
-            position: absolute; bottom: 0; left: 0; right: 0;
+            position: absolute; 
+            top: 88px; /* Start 88px from top for the see-through area */
+            bottom: 0; left: 0; right: 0;
             background: white;
-            min-height: 50%; /* Start with some visible height */
-            height: calc(100% - 88px); /* Same as filter overlay */
+            height: calc(100% - 88px);
             max-height: calc(100% - 88px);
             border-top-left-radius: 12px;
             border-top-right-radius: 12px;
