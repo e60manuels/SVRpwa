@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 31; // Increment this number with each commit
+window.SVR_PWA_VERSION = 32; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -271,7 +271,11 @@ window.SVR_PWA_VERSION = 31; // Increment this number with each commit
         }
 
         overlay.style.transform = ''; // Clear inline transform from swipe
-        setTimeout(() => { if (!overlay.classList.contains('open') && !detailOverlay.classList.contains('open')) backdrop.style.display = 'none'; }, 300);
+        setTimeout(() => { 
+            if (!overlay.classList.contains('open') && (!detailOverlay || !detailOverlay.classList.contains('open'))) {
+                backdrop.style.display = 'none'; 
+            }
+        }, 500);
     };
     backdrop.onclick = window.closeFilterOverlay;
 
