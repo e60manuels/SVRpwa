@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 28; // Increment this number with each commit
+window.SVR_PWA_VERSION = 29; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -717,7 +717,7 @@ window.onpopstate = (e) => {
             setTimeout(() => {
                 detailOverlay.style.display = 'none';
                 if (backdrop) backdrop.style.display = 'none';
-                performSearch(); // Re-render list/map if needed
+                // Removed performSearch() to prevent redundant API calls
             }, 400);
         }
     } else {
@@ -729,7 +729,7 @@ window.onpopstate = (e) => {
         setTimeout(() => {
             detailOverlay.style.display = 'none';
             if (backdrop) backdrop.style.display = 'none';
-            performSearch();
+            // Removed performSearch() to prevent redundant API calls
         }, 400);
     }
 };
