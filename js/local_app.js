@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 21; // Increment this number with each commit
+window.SVR_PWA_VERSION = 22; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -994,18 +994,19 @@ async function renderDetail(objectId) {
                 #detail-container .restorelines {
                     line-height: 1.6 !important;
                     font-size: 16px !important;
-                    padding: 2px 15px !important; /* Alignment with standard text */
+                    padding: 2px 0 !important; /* Removed 15px padding to shift text left */
                     display: block !important;
                 }
                 /* Align and expand the yellow header bar for Facilities */
                 #detail-container .p-2[style*="background-color:#FDCC01"] {
-                    padding-left: 15px !important; /* Text alignment */
-                    margin-left: -15px !important; /* Stretch bar to the edge */
-                    width: calc(100% + 30px) !important; /* Full width after stretch */
+                    padding-left: 0 !important; /* Align text to the start of the container */
+                    margin-left: -15px !important; 
+                    width: calc(100% + 30px) !important; 
                     box-sizing: border-box !important;
                 }
                 #detail-container .p-2[style*="background-color:#FDCC01"] h5 {
                     margin: 0 !important;
+                    padding-left: 15px !important; /* Standard indentation */
                     font-family: 'Befalow', sans-serif !important;
                 }
 
