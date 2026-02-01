@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 27; // Increment this number with each commit
+window.SVR_PWA_VERSION = 28; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -165,84 +165,6 @@ window.SVR_PWA_VERSION = 27; // Increment this number with each commit
         } catch(e) { logDebug("Nav Fout: " + e.message); }
     };
 
-    window.showSVRDetailPage = function(objectId) {
-        const detailOverlay = document.getElementById('detail-container');
-        const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
-        const backdrop = document.getElementById('svr-filter-backdrop');
-
-        // Clear previous content immediately
-        $(detailSheet).empty().append('<div style="display:flex;justify-content:center;align-items:center;height:100%;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#008AD3"></i></div>');
-
-        // Show backdrop and overlay
-        if (backdrop) {
-            backdrop.style.display = 'block';
-            setTimeout(() => backdrop.classList.add('open'), 10);
-        }
-        detailOverlay.style.display = 'block';
-        
-        detailOverlay.classList.remove('open');
-        
-        setTimeout(() => {
-            detailOverlay.classList.add('open'); // Trigger background fade in
-            
-            // Push state and fetch content
-            setTimeout(() => {
-                history.pushState({ view: 'detail', objectId: objectId }, "", `#detail/${objectId}`);
-                renderDetail(objectId);
-            }, 300); 
-        }, 10);
-    };
-
-    // Modify the back handler to animate the sheet down before navigating back
-    window.handleDetailBack = function() {
-        const detailOverlay = document.getElementById('detail-container');
-        const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
-
-        detailOverlay.classList.remove('open'); // Trigger background fade out
-        detailSheet.style.transform = ''; // Clear inline transform from swipe
-
-        setTimeout(() => {
-            detailOverlay.style.display = 'none'; // Hide after animation
-            if (history.state && history.state.view === 'detail') {
-                history.back(); // Navigate back in history
-            }
-        }, 400); // Match CSS transition duration
-    };
-
-
-    // Update onpopstate to handle the sheet animation on history changes
-    window.onpopstate = (e) => {
-        const detailOverlay = document.getElementById('detail-container');
-        const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
-
-        if (e.state) {
-            applyState(e.state);
-            if (e.state.view === 'detail' && e.state.objectId) {
-                detailOverlay.style.display = 'block';
-                setTimeout(() => {
-                    detailOverlay.classList.add('open');
-                    detailSheet.classList.add('open');
-                    renderDetail(e.state.objectId);
-                }, 10);
-            } else if (e.state.view === 'list' || e.state.view === 'map') {
-                detailSheet.classList.remove('open');
-                detailOverlay.classList.remove('open');
-                setTimeout(() => {
-                    detailOverlay.style.display = 'none';
-                    performSearch(); // Re-render list/map if needed
-                }, 400);
-            }
-        } else {
-            // Fallback if state is null (e.g., initial page load or unmanaged history entry)
-            applyState({ view: 'map' }); // Default to map view
-            detailSheet.classList.remove('open');
-            detailOverlay.classList.remove('open');
-            setTimeout(() => {
-                detailOverlay.style.display = 'none';
-                performSearch();
-            }, 400);
-        }
-    };
     const css = `
         #svr-filter-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9990; display: none; opacity: 0; transition: opacity 0.3s ease; }
         #svr-filter-backdrop.open { display: block; opacity: 1; }
@@ -712,6 +634,7 @@ function applyState(state) {
 window.showSVRDetailPage = function(objectId) {
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+    const backdrop = document.getElementById('svr-filter-backdrop');
 
     // CRITICAL FIX: Explicitly remove transform property and force reflow
     // This ensures any previous swipe-to-close inline styles (translateY) are gone
@@ -727,7 +650,11 @@ window.showSVRDetailPage = function(objectId) {
     // Clear previous content immediately
     $(detailSheet).empty().append('<div style="display:flex;justify-content:center;align-items:center;height:100%;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#008AD3"></i></div>');
 
-    // Initially show overlay, then animate
+    // Show backdrop and overlay
+    if (backdrop) {
+        backdrop.style.display = 'block';
+        setTimeout(() => backdrop.classList.add('open'), 10);
+    }
     detailOverlay.style.display = 'block';
     
     // Tiny delay to ensure browser picks up the display:block before adding the 'open' class for transition
@@ -746,13 +673,20 @@ window.showSVRDetailPage = function(objectId) {
 window.handleDetailBack = function() {
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+    const backdrop = document.getElementById('svr-filter-backdrop');
 
     detailSheet.classList.remove('open'); // Trigger slide down
     detailOverlay.classList.remove('open'); // Trigger background fade out
+    if (backdrop) backdrop.classList.remove('open');
 
     setTimeout(() => {
         detailOverlay.style.display = 'none'; // Hide after animation
-        history.back(); // Navigate back in history
+        if (backdrop && !document.getElementById('svr-filter-overlay').classList.contains('open')) {
+            backdrop.style.display = 'none';
+        }
+        if (history.state && history.state.view === 'detail') {
+            history.back(); // Navigate back in history
+        }
     }, 400); // Match CSS transition duration
 };
 
@@ -761,10 +695,15 @@ window.handleDetailBack = function() {
 window.onpopstate = (e) => {
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+    const backdrop = document.getElementById('svr-filter-backdrop');
 
     if (e.state) {
         applyState(e.state);
         if (e.state.view === 'detail' && e.state.objectId) {
+            if (backdrop) {
+                backdrop.style.display = 'block';
+                setTimeout(() => backdrop.classList.add('open'), 10);
+            }
             detailOverlay.style.display = 'block';
             setTimeout(() => {
                 detailOverlay.classList.add('open');
@@ -774,8 +713,10 @@ window.onpopstate = (e) => {
         } else if (e.state.view === 'list' || e.state.view === 'map') {
             detailSheet.classList.remove('open');
             detailOverlay.classList.remove('open');
+            if (backdrop) backdrop.classList.remove('open');
             setTimeout(() => {
                 detailOverlay.style.display = 'none';
+                if (backdrop) backdrop.style.display = 'none';
                 performSearch(); // Re-render list/map if needed
             }, 400);
         }
@@ -784,8 +725,10 @@ window.onpopstate = (e) => {
         applyState({ view: 'map' }); // Default to map view
         detailSheet.classList.remove('open');
         detailOverlay.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('open');
         setTimeout(() => {
             detailOverlay.style.display = 'none';
+            if (backdrop) backdrop.style.display = 'none';
             performSearch();
         }, 400);
     }
