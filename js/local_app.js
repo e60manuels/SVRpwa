@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 23; // Increment this number with each commit
+window.SVR_PWA_VERSION = 24; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -909,8 +909,17 @@ async function renderDetail(objectId) {
         // We take the whole body and remove the parts we definitely don't want (nav/header).
         const bodyContent = doc.body;
 
-        // Remove navigation, headers, and login bars from the website
-        bodyContent.querySelectorAll('nav, header, .navbar, .container-fluid.p-0.text-center').forEach(el => el.remove());
+        // Remove navigation, headers, login bars, leftover modals, and the unused detail map
+        bodyContent.querySelectorAll('nav, header, .navbar, .container-fluid.p-0.text-center, .modal, #map_detail').forEach(el => {
+            // If it's the map, also try to remove the parent card if it's purely a map container
+            if (el.id === 'map_detail') {
+                const parentCard = el.closest('.card');
+                if (parentCard) parentCard.remove();
+                else el.remove();
+            } else {
+                el.remove();
+            }
+        });
 
         const detailOverlay = document.getElementById('detail-container');
         const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
