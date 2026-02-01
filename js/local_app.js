@@ -905,10 +905,15 @@ async function renderDetail(objectId) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
         
-        // Try to find the main content area
-        let mainContentElement = doc.querySelector('.col-sm-8.p-4.pt-2') || doc.querySelector('.col-sm-8'); 
+        // Try to find the container that holds both col-sm-8 and col-sm-4
+        // Typically they are wrapped in a .row within a .container or .container-fluid
+        let mainContentElement = doc.querySelector('.col-sm-8')?.parentElement;
         
-        // Fallback to the body if the specific selector isn't found
+        // Fallback to the specific col-sm-8 if row isn't found, or body
+        if (!mainContentElement || !mainContentElement.classList.contains('row')) {
+            mainContentElement = doc.querySelector('.col-sm-8.p-4.pt-2') || doc.querySelector('.col-sm-8');
+        }
+        
         if (!mainContentElement) {
             logDebug("Main content selector not found, attempting to use doc.body.innerHTML.");
             mainContentElement = doc.body;
@@ -944,13 +949,17 @@ async function renderDetail(objectId) {
             const containerStyle = document.createElement('style');
             containerStyle.innerHTML = `
                 #detail-container .container, #detail-container .container-fluid, #detail-container .row,
-                #detail-container .col-md-8, #detail-container .col-md-4 {
+                #detail-container .col-md-8, #detail-container .col-md-4,
+                #detail-container .col-sm-8, #detail-container .col-sm-4 {
                     width: 100% !important; max-width: 100vw !important;
                     margin: 0 !important; padding: 0 15px !important;
                     box-sizing: border-box !important;
+                    float: none !important;
+                    display: block !important;
                 }
                 #detail-container img { max-width: 100% !important; height: auto !important; }
                 #detail-container .row { display: flex !important; flex-direction: column !important; }
+                #detail-container .pt-5 { padding-top: 1.5rem !important; } /* Reduce large top padding on sidebar */
             `;
             tempDiv.prepend(containerStyle);
 
