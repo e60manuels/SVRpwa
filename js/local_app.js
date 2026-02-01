@@ -1133,16 +1133,6 @@ async function renderDetail(objectId) {
                             }
                         }
                     }
-                                    loop: true,
-                                    pagination: {
-                                        el: '.swiper-pagination',
-                                        clickable: true,
-                                    },
-                                });
-                                swiperContainer.dataset.swiperInitialized = 'true'; 
-                            }
-                        });
-                    }
 
                     // Apply befalow font
                     detailSheet.querySelectorAll('.befalow').forEach(el => el.style.setProperty('font-family', "'Befalow', sans-serif", 'important'));
