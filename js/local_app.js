@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 19; // Increment this number with each commit
+window.SVR_PWA_VERSION = 20; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -968,6 +968,35 @@ async function renderDetail(objectId) {
                 }
                 /* Specific fix for iframe aspect ratio */
                 #detail-container iframe { aspect-ratio: 16 / 9; }
+
+                /* Fix for Tarieven (Pricing Table) */
+                #detail-container .object_pricing {
+                    font-size: 16px !important;
+                    width: 100% !important;
+                    overflow-x: auto !important;
+                }
+                #detail-container .object_pricing table {
+                    width: 100% !important;
+                    table-layout: auto !important;
+                    border-collapse: collapse !important;
+                }
+                #detail-container .object_pricing td {
+                    width: auto !important; /* Overrule hardcoded 380px */
+                    padding: 8px 5px !important;
+                    border-bottom: 1px solid #eee !important;
+                }
+                #detail-container .object_pricing td:not(:first-child) {
+                    width: 65px !important; /* Fixed width for 'Normaal' and 'All-in' columns */
+                    text-align: center !important;
+                }
+
+                /* Fix for Faciliteiten (Facilities List) */
+                #detail-container .restorelines {
+                    line-height: 1.6 !important;
+                    font-size: 16px !important;
+                    padding: 5px 15px !important;
+                    display: block !important;
+                }
 
                 #detail-container .footer {
                     background-color: #008AD3 !important;
