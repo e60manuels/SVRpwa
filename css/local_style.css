@@ -170,7 +170,7 @@
             border-top-right-radius: 12px;
             overflow: hidden; /* Prevent body scroll, use inner scroll */
             transform: translateY(100%); /* Start off-screen */
-            transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+            transition: transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
             display: flex; /* For the close button header */
             flex-direction: column;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
