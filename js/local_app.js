@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 38; // Increment this number with each commit
+window.SVR_PWA_VERSION = 39; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -1233,7 +1233,8 @@ async function renderDetail(objectId) {
 window.focusOnMarker = function(lat, lng, objectId) {
     applyState({ view: 'map' });
     const targetLatLng = L.latLng(lat, lng);
-    window.skipFitBounds = true; // Prevent automatic zoom-out
+    const standardZoom = 14; 
+    window.skipFitBounds = true;
 
     // Find the marker by ID
     let foundMarker = null;
@@ -1242,22 +1243,31 @@ window.focusOnMarker = function(lat, lng, objectId) {
         top10Layer.eachLayer(m => { if (m.objId === objectId) foundMarker = m; });
     }
 
+    const finalizeFocus = () => {
+        // Force the standard zoom level and position
+        map.setView(targetLatLng, standardZoom, { animate: true });
+        
+        // Wait for the final movement to finish before opening popup
+        setTimeout(() => {
+            if (foundMarker) {
+                foundMarker.openPopup();
+            }
+        }, 300);
+    };
+
     if (foundMarker) {
         if (markerCluster.hasLayer(foundMarker)) {
-            markerCluster.zoomToShowLayer(foundMarker, () => {
-                map.flyTo(targetLatLng, 15, { animate: true, duration: 0.5 });
-                setTimeout(() => foundMarker.openPopup(), 600);
-            });
+            // zoomToShowLayer handles the cluster expansion
+            markerCluster.zoomToShowLayer(foundMarker, finalizeFocus);
         } else {
-            map.flyTo(targetLatLng, 15, { animate: true, duration: 0.5 });
-            setTimeout(() => foundMarker.openPopup(), 600);
+            finalizeFocus();
         }
     } else {
-        map.flyTo(targetLatLng, 15);
+        map.setView(targetLatLng, standardZoom);
     }
     
-    // Re-enable automatic zoom after a while
-    setTimeout(() => { window.skipFitBounds = false; }, 3000);
+    // Lock fitBounds for a bit longer to ensure stability
+    setTimeout(() => { window.skipFitBounds = false; }, 4000);
 };
 
 function renderResults(objects, cLat, cLng) {
