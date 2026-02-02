@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 43; // Increment this number with each commit
+window.SVR_PWA_VERSION = 44; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -963,10 +963,23 @@ window.performSearch = async function(forceAPI = false) {
 
         logDebug("API resultaten ontvangen. Aantal: " + objects.length);
         
+        // Strip data om binnen de localStorage limiet van 5MB te blijven
+        const strippedObjects = objects.map(o => ({
+            id: o.id,
+            geometry: o.geometry,
+            properties: {
+                name: o.properties.name,
+                city: o.properties.city,
+                type_camping: o.properties.type_camping,
+                facilities: o.properties.facilities,
+                address: o.properties.address
+            }
+        }));
+
         // Cache de resultaten
         try {
-            localStorage.setItem('svr_cache_campsites', JSON.stringify(objects));
-            logDebug("Cache bijgewerkt.");
+            localStorage.setItem('svr_cache_campsites', JSON.stringify(strippedObjects));
+            logDebug(`Cache bijgewerkt (${strippedObjects.length} items).`);
         } catch(e) { logDebug("Cache Opslag Fout: " + e.message); }
 
         objects.forEach(o => { o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; });
