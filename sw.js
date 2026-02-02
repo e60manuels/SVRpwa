@@ -1,4 +1,4 @@
-const CACHE_NAME = 'svr-pwa-cache-v40';
+const CACHE_NAME = 'svr-pwa-cache-v41';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const ASSETS_TO_CACHE = [
   './js/leaflet.markercluster.js',
   './fonts/befalow.ttf',
   './assets/Woonplaatsen_in_Nederland.csv',
+  './assets/campsites_preset.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
   'https://code.jquery.com/jquery-3.6.0.min.js',
