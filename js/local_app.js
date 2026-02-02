@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 41; // Increment this number with each commit
+window.SVR_PWA_VERSION = 42; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -19,6 +19,18 @@ window.SVR_PWA_VERSION = 41; // Increment this number with each commit
     // --- INSTANT CACHE / PRESET LOGIC ---
     window.loadCachedCampsites = async function() {
         try {
+            // Plaats de rode punaise direct op de startlocatie (Nederland)
+            const startLat = 52.1326, startLng = 5.2913;
+            if (centerMarker) map.removeLayer(centerMarker);
+            centerMarker = L.marker([startLat, startLng], { 
+                icon: L.divIcon({ 
+                    className: 'search-marker', 
+                    html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>', 
+                    iconSize:[30,30], 
+                    iconAnchor:[15,30] 
+                }) 
+            }).addTo(map);
+
             let data = null;
             const cached = localStorage.getItem('svr_cache_campsites');
             
@@ -32,15 +44,14 @@ window.SVR_PWA_VERSION = 41; // Increment this number with each commit
             }
 
             if (data && data.objects && data.objects.length > 0) {
-                const sLat = 52.1326, sLng = 5.2913;
                 data.objects.forEach(o => { 
-                    o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; 
+                    o.distM = o.geometry ? calculateDistance(startLat, startLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; 
                 });
                 data.objects.sort((a, b) => a.distM - b.distM);
                 
-                // Direct renderen (gebruik skipFitBounds om verspringen te voorkomen als we al een andere view hebben)
+                // Direct renderen (gebruik skipFitBounds om verspringen te voorkomen)
                 window.skipFitBounds = true;
-                renderResults(data.objects, sLat, sLng);
+                renderResults(data.objects, startLat, startLng);
                 window.skipFitBounds = false;
                 
                 window.hasDataOnScreen = true;
@@ -570,20 +581,8 @@ window.SVR_PWA_VERSION = 41; // Increment this number with each commit
             btn.style.color = '#333';
         }
 
-        // --- COOKIE LOGIC REPLACED BY HEADER INJECTION IN FETCHWITHRETRY ---
-        // The original logic tried to set cookies on the wrong domain (PWA origin vs SVR origin).
-        // Instead, we now send X-SVR-Filters and X-SVR-Config headers which the Worker converts to cookies.
-        /*
-        const expires = "; expires=" + new Date(Date.now() + 86400e3).toUTCString();
-        document.cookie = "filters=" + JSON.stringify(selectedGuids) + expires + "; path=/; domain=svr.nl";
-        document.cookie = "config=" + JSON.stringify({filters: selectedGuids, geo:{}, search_free:{}, favorite:"0"}) + expires + "; path=/; domain=svr.nl";
-        document.cookie = "cookies=1" + expires + "; path=/; domain=svr.nl";
-        document.cookie = "view_mode=map" + expires + "; path=/; domain=svr.nl";
-        document.cookie = "current_page=0" + expires + "; path=/; domain=svr.nl";
-        */
-
         window.closeFilterOverlay();
-        window.performSearch();
+        window.performSearch(true); // Force API call for filter changes
     };
 
     // Wis filters functionaliteit
@@ -604,7 +603,7 @@ window.SVR_PWA_VERSION = 41; // Increment this number with each commit
         document.cookie = "filters=[]; expires=" + expires + "; path=/; domain=svr.nl";
 
         window.closeFilterOverlay();
-        window.performSearch();
+        window.performSearch(true); // Force API call for resetting filters
     };
 
     // Voeg click handler toe aan de reset knop
@@ -872,7 +871,7 @@ $searchInput.on('input', function() {
     $suggestionsList.show();
 });
 
-window.performSearch = async function(isBackground = false) {
+window.performSearch = async function(forceAPI = false) {
     if (isSearching) return;
     isSearching = true;
     
@@ -900,15 +899,35 @@ window.performSearch = async function(isBackground = false) {
         sLat = currentUserLatLng.lat; sLng = currentUserLatLng.lng;
     }
 
-    if (!isBackground) {
-        if (centerMarker) map.removeLayer(centerMarker);
-        centerMarker = L.marker([sLat, sLng], { icon: L.divIcon({ className: 'search-marker', html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>', iconSize:[30,30], iconAnchor:[15,30] }) }).addTo(map);
+    // Update de rode punaise naar de nieuwe locatie
+    if (centerMarker) map.removeLayer(centerMarker);
+    centerMarker = L.marker([sLat, sLng], { 
+        icon: L.divIcon({ 
+            className: 'search-marker', 
+            html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>', 
+            iconSize:[30,30], 
+            iconAnchor:[15,30] 
+        }) 
+    }).addTo(map);
+
+    // Instant Search: Als we niet forceren (geen filterwijziging) en we hebben data, dan rekenen we het lokaal uit
+    if (!forceAPI && window.hasDataOnScreen) {
+        const cached = localStorage.getItem('svr_cache_campsites');
+        if (cached) {
+            logDebug("Instant Search via Cache...");
+            const objects = JSON.parse(cached);
+            objects.forEach(o => { 
+                o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; 
+            });
+            objects.sort((a, b) => a.distM - b.distM);
+            renderResults(objects, sLat, sLng);
+            isSearching = false;
+            return;
+        }
     }
 
-    // Alleen spinner tonen als het geen achtergrond-call is OF als er nog helemaal niets op het scherm staat
-    if (!isBackground || !window.hasDataOnScreen) {
-        $('#loading-overlay').css('display', 'flex');
-    }
+    // Alleen spinner tonen als we echt een API-call gaan doen
+    $('#loading-overlay').css('display', 'flex');
 
     try {
         let apiUrl = `https://www.svr.nl/api/objects?page=0&lat=${sLat}&lng=${sLng}&distance=50000&limit=1500`;
@@ -935,24 +954,20 @@ window.performSearch = async function(isBackground = false) {
             return true;
         });
 
-        logDebug("Gefilterd aantal: " + objects.length);
+        logDebug("API resultaten ontvangen. Aantal: " + objects.length);
         
-        // Cache de resultaten voor de volgende keer
+        // Cache de resultaten
         try {
             localStorage.setItem('svr_cache_campsites', JSON.stringify(objects));
             logDebug("Cache bijgewerkt.");
         } catch(e) { logDebug("Cache Opslag Fout: " + e.message); }
 
-        // Als dit een handmatige zoekopdracht was, OF als we nog niets op het scherm hadden, nu renderen
-        if (!isBackground || !window.hasDataOnScreen) {
-            objects.forEach(o => { o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; });
-            objects.sort((a, b) => a.distM - b.distM);
-            renderResults(objects, sLat, sLng);
-            window.hasDataOnScreen = true;
-            setTimeout(() => map.invalidateSize(), 500);
-        } else {
-            logDebug("Achtergrond update voltooid (cache ververst).");
-        }
+        objects.forEach(o => { o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; });
+        objects.sort((a, b) => a.distM - b.distM);
+        renderResults(objects, sLat, sLng);
+        window.hasDataOnScreen = true;
+        setTimeout(() => map.invalidateSize(), 500);
+
     } catch (e) { logDebug("Search fout: " + e.message); }
     finally { $('#loading-overlay').hide(); isSearching = false; }
 }
@@ -1530,8 +1545,8 @@ window.initializeApp = function() {
     // Direct de kaart vullen vanuit cache of preset (Instant Map)
     window.loadCachedCampsites();
     
-    // Start een achtergrond-fetch om de cache bij te werken voor het volgende gebruik
-    setTimeout(() => window.performSearch(true), 500);
+    // Start een achtergrond-fetch om de cache bij te werken voor het volgende gebruik (geen forceAPI)
+    setTimeout(() => window.performSearch(false), 500);
     
     // Start background fetch of filters to improve UI responsiveness
     if (window.fetchFilterData) {
