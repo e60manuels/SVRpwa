@@ -1,9 +1,12 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 40; // Increment this number with each commit
+window.SVR_PWA_VERSION = 41; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
     window.SVR_FILTER_OVERLAY_INJECTED = true;
+
+    // Flag to track if we already have some data on screen
+    window.hasDataOnScreen = false;
 
     // --- DEBUG LOGGING ---
     function logDebug(msg) {
@@ -12,6 +15,41 @@ window.SVR_PWA_VERSION = 40; // Increment this number with each commit
     }
     window.logDebug = logDebug;
     logDebug("SVR PWA v2.5 Start");
+
+    // --- INSTANT CACHE / PRESET LOGIC ---
+    window.loadCachedCampsites = async function() {
+        try {
+            let data = null;
+            const cached = localStorage.getItem('svr_cache_campsites');
+            
+            if (cached) {
+                logDebug("Laden van campings uit LocalStorage cache...");
+                data = { objects: JSON.parse(cached) };
+            } else {
+                logDebug("Laden van campings uit assets/campsites_preset.json...");
+                const res = await fetch('assets/campsites_preset.json');
+                if (res.ok) data = await res.json();
+            }
+
+            if (data && data.objects && data.objects.length > 0) {
+                const sLat = 52.1326, sLng = 5.2913;
+                data.objects.forEach(o => { 
+                    o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; 
+                });
+                data.objects.sort((a, b) => a.distM - b.distM);
+                
+                // Direct renderen (gebruik skipFitBounds om verspringen te voorkomen als we al een andere view hebben)
+                window.skipFitBounds = true;
+                renderResults(data.objects, sLat, sLng);
+                window.skipFitBounds = false;
+                
+                window.hasDataOnScreen = true;
+                logDebug(`Direct geladen: ${data.objects.length} campings.`);
+            }
+        } catch (e) {
+            logDebug("Cache/Preset Fout: " + e.message);
+        }
+    };
 
     // --- CSV & SEARCH LOGIC ---
     window.allLocations = [];
@@ -834,7 +872,7 @@ $searchInput.on('input', function() {
     $suggestionsList.show();
 });
 
-async function performSearch() {
+window.performSearch = async function(isBackground = false) {
     if (isSearching) return;
     isSearching = true;
     
@@ -862,10 +900,16 @@ async function performSearch() {
         sLat = currentUserLatLng.lat; sLng = currentUserLatLng.lng;
     }
 
-    if (centerMarker) map.removeLayer(centerMarker);
-    centerMarker = L.marker([sLat, sLng], { icon: L.divIcon({ className: 'search-marker', html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>', iconSize:[30,30], iconAnchor:[15,30] }) }).addTo(map);
+    if (!isBackground) {
+        if (centerMarker) map.removeLayer(centerMarker);
+        centerMarker = L.marker([sLat, sLng], { icon: L.divIcon({ className: 'search-marker', html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>', iconSize:[30,30], iconAnchor:[15,30] }) }).addTo(map);
+    }
 
-    $('#loading-overlay').css('display', 'flex');
+    // Alleen spinner tonen als het geen achtergrond-call is OF als er nog helemaal niets op het scherm staat
+    if (!isBackground || !window.hasDataOnScreen) {
+        $('#loading-overlay').css('display', 'flex');
+    }
+
     try {
         let apiUrl = `https://www.svr.nl/api/objects?page=0&lat=${sLat}&lng=${sLng}&distance=50000&limit=1500`;
         if (window.currentFilters && window.currentFilters.length > 0) {
@@ -875,58 +919,40 @@ async function performSearch() {
         const contents = await fetchWithRetry(apiUrl);
 
         if (!contents || contents.trim().startsWith("<!doctype") || contents.trim().startsWith("<html") || contents.includes("Internal Server Error")) {
-            const doc = new DOMParser().parseFromString(contents, 'text/html');
-            const title = doc.title || "Foutpagina";
-            logDebug("SVR meldt: " + title);
-            if (contents.toLowerCase().includes("login") || contents.toLowerCase().includes("inloggen")) {
-                logDebug("HINT: Inloggen op SVR.nl vereist!");
-            }
-            throw new Error("SVR stuurde HTML ipv JSON");
+            throw new Error("SVR stuurde geen geldige JSON");
         }
 
         const data = JSON.parse(contents);
         const allObjects = data.objects || [];
 
-        // Debug: log some sample objects to see type_camping values
-        if (allObjects.length > 0) {
-            logDebug("Totaal aantal objecten ontvangen: " + allObjects.length);
-            logDebug("Voorbeeld van eerste 5 objecten:");
-            for (let i = 0; i < Math.min(5, allObjects.length); i++) {
-                const obj = allObjects[i];
-                const typeCamping = obj.properties ? obj.properties.type_camping : 'undefined';
-                logDebug(`  Object ${i}: id=${obj.id}, type_camping=${typeCamping}, name=${obj.properties ? obj.properties.name : 'no props'}`);
-            }
-
-            // Count objects by type_camping value
-            const counts = {0: 0, 1: 0, 2: 0, 3: 0, other: 0};
-            allObjects.forEach(obj => {
-                const tc = obj.properties ? obj.properties.type_camping : 'undefined';
-                if (tc === 0 || tc === 1 || tc === 2 || tc === 3) {
-                    counts[tc]++;
-                } else {
-                    counts.other++;
-                }
-            });
-            logDebug(`Verdeling type_camping: 0=${counts[0]}, 1=${counts[1]}, 2=${counts[2]}, 3=${counts[3]}, other=${counts.other}`);
-        }
-
-        // Filter out objects where type_camping === 3 (these don't match the filters)
+        // Filter out objects where type_camping === 3
         const objects = allObjects.filter(o => {
             const props = o.properties;
-            // Only include objects that have properties and where type_camping is not 3
-            // type_camping === 3 means the object doesn't match the applied filters
             if (props) {
                 const typeCamping = props.type_camping !== undefined ? props.type_camping : -1;
                 return typeCamping !== 3;
             }
-            return true; // If no properties, include the object
+            return true;
         });
 
         logDebug("Gefilterd aantal: " + objects.length);
-        objects.forEach(o => { o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; });
-        objects.sort((a, b) => a.distM - b.distM);
-        renderResults(objects, sLat, sLng);
-        setTimeout(() => map.invalidateSize(), 500);
+        
+        // Cache de resultaten voor de volgende keer
+        try {
+            localStorage.setItem('svr_cache_campsites', JSON.stringify(objects));
+            logDebug("Cache bijgewerkt.");
+        } catch(e) { logDebug("Cache Opslag Fout: " + e.message); }
+
+        // Als dit een handmatige zoekopdracht was, OF als we nog niets op het scherm hadden, nu renderen
+        if (!isBackground || !window.hasDataOnScreen) {
+            objects.forEach(o => { o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; });
+            objects.sort((a, b) => a.distM - b.distM);
+            renderResults(objects, sLat, sLng);
+            window.hasDataOnScreen = true;
+            setTimeout(() => map.invalidateSize(), 500);
+        } else {
+            logDebug("Achtergrond update voltooid (cache ververst).");
+        }
     } catch (e) { logDebug("Search fout: " + e.message); }
     finally { $('#loading-overlay').hide(); isSearching = false; }
 }
@@ -1500,7 +1526,12 @@ async function initApp() {
 
 window.initializeApp = function() {
     history.replaceState({ view: 'map' }, "");
-    setTimeout(() => performSearch(), 500);
+    
+    // Direct de kaart vullen vanuit cache of preset (Instant Map)
+    window.loadCachedCampsites();
+    
+    // Start een achtergrond-fetch om de cache bij te werken voor het volgende gebruik
+    setTimeout(() => window.performSearch(true), 500);
     
     // Start background fetch of filters to improve UI responsiveness
     if (window.fetchFilterData) {
