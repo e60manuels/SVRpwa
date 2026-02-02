@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 47; // Increment this number with each commit
+window.SVR_PWA_VERSION = 48; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -1578,7 +1578,7 @@ window.initializeApp = function() {
             logDebug("Starting delayed background filter fetch...");
             window.fetchFilterData();
         }
-    }, 800);
+    }, 1500);
 
     if (!localStorage.getItem('svr_help_shown')) {
         setTimeout(() => { window.showHelp(); localStorage.setItem('svr_help_shown', 'true'); }, 2500);
