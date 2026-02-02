@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 42; // Increment this number with each commit
+window.SVR_PWA_VERSION = 43; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -914,12 +914,18 @@ window.performSearch = async function(forceAPI = false) {
     if (!forceAPI && window.hasDataOnScreen) {
         const cached = localStorage.getItem('svr_cache_campsites');
         if (cached) {
-            logDebug("Instant Search via Cache...");
+            logDebug("Instant Search via Cache (Volledige lijst)...");
             const objects = JSON.parse(cached);
+            
+            // Bereken afstanden voor ALLE campings in de cache
             objects.forEach(o => { 
                 o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; 
             });
+            
+            // Sorteer de volledige lijst
             objects.sort((a, b) => a.distM - b.distM);
+            
+            // Render de volledige set
             renderResults(objects, sLat, sLng);
             isSearching = false;
             return;
@@ -930,7 +936,8 @@ window.performSearch = async function(forceAPI = false) {
     $('#loading-overlay').css('display', 'flex');
 
     try {
-        let apiUrl = `https://www.svr.nl/api/objects?page=0&lat=${sLat}&lng=${sLng}&distance=50000&limit=1500`;
+        // Gebruik een ruime straal voor de API-call om de cache zo compleet mogelijk te maken
+        let apiUrl = `https://www.svr.nl/api/objects?page=0&lat=${sLat}&lng=${sLng}&distance=500000&limit=2000`;
         if (window.currentFilters && window.currentFilters.length > 0) {
             window.currentFilters.forEach(f => apiUrl += `&filter[facilities][]=${f}`);
         }
