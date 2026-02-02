@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 46; // Increment this number with each commit
+window.SVR_PWA_VERSION = 47; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -18,6 +18,7 @@ window.SVR_PWA_VERSION = 46; // Increment this number with each commit
 
     // --- INSTANT CACHE / PRESET LOGIC ---
     window.loadCachedCampsites = async function() {
+        performance.mark('instant-map-start');
         try {
             // Plaats de rode punaise direct op de startlocatie (Nederland)
             const startLat = 52.1326, startLng = 5.2913;
@@ -44,14 +45,15 @@ window.SVR_PWA_VERSION = 46; // Increment this number with each commit
             }
 
             if (data && data.objects && data.objects.length > 0) {
+                const sLat = 52.1326, sLng = 5.2913;
                 data.objects.forEach(o => { 
-                    o.distM = o.geometry ? calculateDistance(startLat, startLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; 
+                    o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; 
                 });
                 data.objects.sort((a, b) => a.distM - b.distM);
                 
                 // Direct renderen (gebruik skipFitBounds om verspringen te voorkomen)
                 window.skipFitBounds = true;
-                renderResults(data.objects, startLat, startLng);
+                renderResults(data.objects, sLat, sLng);
                 window.skipFitBounds = false;
                 
                 window.hasDataOnScreen = true;
@@ -59,6 +61,9 @@ window.SVR_PWA_VERSION = 46; // Increment this number with each commit
             }
         } catch (e) {
             logDebug("Cache/Preset Fout: " + e.message);
+        } finally {
+            performance.mark('instant-map-end');
+            performance.measure('Instant Map Loading', 'instant-map-start', 'instant-map-end');
         }
     };
 
@@ -1566,11 +1571,14 @@ window.initializeApp = function() {
     // Dit gebeurt 100% lokaal, zonder API-call voor campings.
     window.loadCachedCampsites();
     
-    // Start background fetch of filter checkboxes (vinkjes) to improve UI responsiveness
-    // Dit haalt alleen de menu-structuur op, geen camping data.
-    if (window.fetchFilterData) {
-        window.fetchFilterData();
-    }
+    // Start background fetch of filter checkboxes (vinkjes) with a small delay
+    // This ensures the initial local render gets full CPU priority first.
+    setTimeout(() => {
+        if (window.fetchFilterData) {
+            logDebug("Starting delayed background filter fetch...");
+            window.fetchFilterData();
+        }
+    }, 800);
 
     if (!localStorage.getItem('svr_help_shown')) {
         setTimeout(() => { window.showHelp(); localStorage.setItem('svr_help_shown', 'true'); }, 2500);
