@@ -1,4 +1,4 @@
-const CACHE_NAME = 'svr-pwa-cache-v57';
+const CACHE_NAME = 'svr-pwa-cache-v58';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -45,6 +45,8 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      return self.clients.claim(); // Forceer de nieuwe SW om direct controle te nemen
     })
   );
 });
