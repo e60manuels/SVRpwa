@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 39; // Increment this number with each commit
+window.SVR_PWA_VERSION = 40; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -295,10 +295,13 @@ window.SVR_PWA_VERSION = 39; // Increment this number with each commit
         backdrop.style.display = 'block';
         overlay.style.transform = ''; // Reset any residual swipe transforms
         setTimeout(() => { overlay.classList.add('open'); backdrop.classList.add('open'); }, 10);
-        if (content.children.length === 0) await fetchFilterData();
+        if (content.children.length === 0 && !window.isFetchingFilters) await fetchFilterData();
     };
 
+    window.isFetchingFilters = false;
     async function fetchFilterData() {
+        if (window.isFetchingFilters) return;
+        window.isFetchingFilters = true;
         try {
             logDebug("Filters ophalen...");
             const contents = await fetchWithRetry('https://www.svr.nl/objects');
@@ -322,11 +325,13 @@ window.SVR_PWA_VERSION = 39; // Increment this number with each commit
                     logDebug("Foutpagina ontvangen: " + (doc.title || "Onbekende fout"));
                     loading.style.display = 'none';
                     content.innerHTML = '<div style="padding:20px;text-align:center;">Fout bij ophalen filters</div>';
+                    window.isFetchingFilters = false;
                     return;
                 }
 
                 loading.style.display = 'none';
                 content.innerHTML = '';
+
 
                 // Zoek alle koppen met de klasse 'befalow' zoals in de originele Android app
                 const befalowElements = Array.from(doc.querySelectorAll('.befalow')).filter(el => {
@@ -442,6 +447,8 @@ window.SVR_PWA_VERSION = 39; // Increment this number with each commit
             logDebug("Filter Fout: " + e.message);
             loading.style.display = 'none';
             content.innerHTML = '<div style="padding:20px;text-align:center;">Fout bij ophalen filters</div>';
+        } finally {
+            window.isFetchingFilters = false;
         }
     }
 
@@ -564,6 +571,8 @@ window.SVR_PWA_VERSION = 39; // Increment this number with each commit
 
     // Voeg click handler toe aan de reset knop
     overlay.querySelector('#svr-filter-reset-btn').onclick = window.resetFilters;
+
+    window.fetchFilterData = fetchFilterData;
 
 })();
 
@@ -1492,6 +1501,12 @@ async function initApp() {
 window.initializeApp = function() {
     history.replaceState({ view: 'map' }, "");
     setTimeout(() => performSearch(), 500);
+    
+    // Start background fetch of filters to improve UI responsiveness
+    if (window.fetchFilterData) {
+        window.fetchFilterData();
+    }
+
     if (!localStorage.getItem('svr_help_shown')) {
         setTimeout(() => { window.showHelp(); localStorage.setItem('svr_help_shown', 'true'); }, 2500);
     }
