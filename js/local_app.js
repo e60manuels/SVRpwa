@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 45; // Increment this number with each commit
+window.SVR_PWA_VERSION = 46; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -1563,9 +1563,15 @@ window.initializeApp = function() {
     history.replaceState({ view: 'map' }, "");
     
     // Direct de kaart EN de lijst vullen vanuit cache of preset (Instant Map & List)
-    // Dit gebeurt 100% lokaal, zonder API-call.
+    // Dit gebeurt 100% lokaal, zonder API-call voor campings.
     window.loadCachedCampsites();
     
+    // Start background fetch of filter checkboxes (vinkjes) to improve UI responsiveness
+    // Dit haalt alleen de menu-structuur op, geen camping data.
+    if (window.fetchFilterData) {
+        window.fetchFilterData();
+    }
+
     if (!localStorage.getItem('svr_help_shown')) {
         setTimeout(() => { window.showHelp(); localStorage.setItem('svr_help_shown', 'true'); }, 2500);
     }
