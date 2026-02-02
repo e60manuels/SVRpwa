@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 48; // Increment this number with each commit
+window.SVR_PWA_VERSION = 49; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -29,7 +29,8 @@ window.SVR_PWA_VERSION = 48; // Increment this number with each commit
                     html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>', 
                     iconSize:[30,30], 
                     iconAnchor:[15,30] 
-                }) 
+                }),
+                zIndexOffset: 2000 
             }).addTo(map);
 
             let data = null;
@@ -912,7 +913,8 @@ window.performSearch = async function(forceAPI = false) {
             html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>', 
             iconSize:[30,30], 
             iconAnchor:[15,30] 
-        }) 
+        }),
+        zIndexOffset: 2000
     }).addTo(map);
 
     // Instant Search: Als we niet forceren (geen filterwijziging) en we hebben data, dan rekenen we het lokaal uit
@@ -1189,7 +1191,7 @@ async function renderDetail(objectId) {
                             swiperContainer.style.width = '100%';
                             swiperContainer.style.height = '300px'; 
                             swiperContainer.style.position = 'relative';
-                            swiperContainer.style.touchAction = 'pan-x';
+                            swiperContainer.style.touchAction = 'pan-y';
                             swiperContainer.style.overflow = 'hidden';
                             swiperContainer.style.marginBottom = '20px';
 
@@ -1238,7 +1240,7 @@ async function renderDetail(objectId) {
                                     },
                                     threshold: 10,
                                     followFinger: true,
-                                    touchStartPreventDefault: true,
+                                    touchStartPreventDefault: false,
                                     on: {
                                         init: function () {
                                             const self = this;
