@@ -1,7 +1,8 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 62; // Increment this number with each commit
+window.SVR_PWA_VERSION = 63; // Increment this number with each commit
 
 (function () {
+    startSplashScreenAnimation();
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
     window.SVR_FILTER_OVERLAY_INJECTED = true;
 
@@ -15,6 +16,36 @@ window.SVR_PWA_VERSION = 62; // Increment this number with each commit
     }
     window.logDebug = logDebug;
     logDebug("SVR PWA v2.5 Start");
+
+    // --- SPLASH SCREEN LOGIC ---
+    function startSplashScreenAnimation() {
+        const splashTextElement = document.getElementById('splash-text');
+        const text = "Kamperen bij de boer";
+        let i = 0;
+        const speed = 100; // Typing speed in milliseconds
+
+        function typeWriter() {
+            if (i < text.length) {
+                splashTextElement.textContent += text.charAt(i);
+                i++;
+                setTimeout(typeWriter, speed);
+            } else {
+                // Animation finished, now hide the splash screen
+                setTimeout(hideSplashScreen, 1000); // Wait 1 second after typing
+            }
+        }
+        typeWriter();
+    }
+
+    function hideSplashScreen() {
+        const splashScreenElement = document.getElementById('splash-screen');
+        if (splashScreenElement) {
+            splashScreenElement.style.opacity = '0'; // Start fade out
+            splashScreenElement.addEventListener('transitionend', () => {
+                splashScreenElement.remove(); // Remove from DOM after transition
+            }, { once: true });
+        }
+    }
 
     // --- INSTANT CACHE / PRESET LOGIC ---
     window.loadCachedCampsites = async function() {
