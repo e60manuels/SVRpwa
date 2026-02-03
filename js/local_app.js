@@ -43,6 +43,26 @@ window.SVR_PWA_VERSION = 61; // Increment this number with each commit
                 logDebug("Laden van campings uit assets/campsites_preset.json...");
                 const res = await fetch('assets/campsites_preset.json');
                 if (res.ok) data = await res.json();
+
+                // NEW: If loaded from preset, save to localStorage for subsequent searches
+                if (data && data.objects && data.objects.length > 0) {
+                    try {
+                        // Strip data before saving to localStorage to keep it light
+                        const strippedObjects = data.objects.map(o => ({
+                            id: o.id,
+                            geometry: o.geometry,
+                            properties: {
+                                name: o.properties.name,
+                                city: o.properties.city,
+                                type_camping: o.properties.type_camping,
+                                facilities: o.properties.facilities,
+                                address: o.properties.address
+                            }
+                        }));
+                        localStorage.setItem('svr_cache_campsites', JSON.stringify(strippedObjects));
+                        logDebug(`Preset geladen en opgeslagen in LocalStorage (${strippedObjects.length} items).`);
+                    } catch(e) { logDebug("Preset Cache Opslag Fout: " + e.message); }
+                }
             }
 
             if (data && data.objects && data.objects.length > 0) {
