@@ -117,23 +117,6 @@
         </button>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/leaflet.markercluster.js"></script>
-    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
-    <script src="js/local_app.js?v=65"></script>
-    <script src="js/pwa_install.js?v=65"></script>
-    <!-- Force GitHub Pages Refresh v60 - Resetting Build Queue -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker geregistreerd', reg))
-                    .catch(err => console.log('Service Worker registratie mislukt', err));
-            });
-        }
-    </script>
-
     <!-- Installatie Banner - standaard verborgen -->
     <div id="install-banner" class="install-banner" style="display: none;">
       <div class="install-banner-content">
@@ -151,5 +134,22 @@
         </button>
       </div>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
+    <script src="js/local_app.js?v=67"></script>
+    <script src="js/pwa_install.js?v=67"></script>
+    <!-- Force GitHub Pages Refresh v60 - Resetting Build Queue -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker geregistreerd', reg))
+                    .catch(err => console.log('Service Worker registratie mislukt', err));
+            });
+        }
+    </script>
 </body>
 </html>
