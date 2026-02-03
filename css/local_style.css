@@ -6,7 +6,9 @@
 
         :root {
             --svr-yellow: #FDCC01; --svr-blue: #008AD3; --svr-red: #c0392b; --svr-green: #92d050;
-            --status-bar-height: 0px; --header-height: 60px;
+            --status-bar-height: env(safe-area-inset-top, 0px); 
+            --header-height: 60px;
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
         }
 
         body { margin: 0; padding: 0; font-family: sans-serif; background-color: var(--svr-blue); overflow: hidden; }
