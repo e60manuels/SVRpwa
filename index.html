@@ -27,10 +27,6 @@
 </head>
 <body>
 
-    <div id="splash-screen">
-        <span id="splash-text"></span>
-    </div>
-
     <div id="loading-overlay"><i class="fas fa-spinner fa-spin fa-2x" style="color: var(--svr-blue);"></i></div>
 
     <div id="portrait-lock">
@@ -125,8 +121,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
-    <script src="js/local_app.js?v=63"></script>
-    <script src="js/pwa_install.js?v=63"></script>
+    <script src="js/local_app.js?v=65"></script>
+    <script src="js/pwa_install.js?v=65"></script>
     <!-- Force GitHub Pages Refresh v60 - Resetting Build Queue -->
     <script>
         if ('serviceWorker' in navigator) {
@@ -147,7 +143,7 @@
         <div class="install-banner-text">
           <p>Installeer de SVR Campings app op je smartphone, tablet of desktopcomputer 👌</p>
         </div>
-        <button id="install-button" class="install-button">
+        <button id="install-button" class="install-button" disabled>
           Installeren
         </button>
         <button id="close-banner" class="close-button">

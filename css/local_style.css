@@ -212,32 +212,6 @@
             #portrait-lock { display: flex; }
         }
 
-/* --- SPLASH SCREEN --- */
-#splash-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--svr-yellow);
-    z-index: 10000; /* Ensure it's on top of everything */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 1;
-    transition: opacity 0.5s ease-out; /* For fade-out effect */
-}
-
-#splash-text {
-    font-family: 'Befalow', sans-serif;
-    font-size: 40px;
-    color: black;
-    text-align: center;
-    white-space: nowrap; /* Prevent text wrapping during typewriter effect */
-    overflow: hidden; /* Hide overflowing text during typewriter effect */
-    margin: 0; /* Remove default margin */
-}
-
 /* --- INSTALLATION BANNER --- */
 .install-banner {
   position: fixed;
@@ -292,6 +266,13 @@
 
 .install-button:hover {
   transform: scale(1.05);
+}
+
+.install-button:disabled {
+  background: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .close-button {
