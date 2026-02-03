@@ -6,29 +6,26 @@ const closeBanner = document.getElementById('close-banner');
 
 // Check if the app is already installed
 function isAppInstalled() {
-  // For standalone mode (app launched from home screen)
   if (window.matchMedia('(display-mode: standalone)').matches) {
     return true;
   }
-  // For iOS - window.navigator.standalone is deprecated but still useful
   if (window.navigator.standalone === true) {
     return true;
   }
   return false;
 }
 
-// Check localStorage for user preference
-function shouldShowBanner() {
+// Check localStorage for user preference - used for re-showing after dismissal
+function shouldShowBannerAgain() {
   const dismissed = localStorage.getItem('install-banner-dismissed');
   const dismissedDate = localStorage.getItem('install-banner-dismissed-date');
   
-  // If dismissed, re-show banner after 90 days
   if (dismissed && dismissedDate) {
     const daysSinceDismissed = (Date.now() - parseInt(dismissedDate)) / (1000 * 60 * 60 * 24);
-    return daysSinceDismissed > 90;
+    return daysSinceDismissed > 90; // Re-show after 90 days
   }
   
-  return true; // Show by default if not dismissed
+  return true; // Show if not dismissed
 }
 
 // Show installation promotion
@@ -37,28 +34,29 @@ function showInstallPromotion() {
     return;
   }
   
-  if (!shouldShowBanner()) {
-    return;
-  }
-  
+  // Banner will always be shown initially if not installed and not permanently dismissed
+  // `shouldShowBannerAgain` only prevents re-showing after a recent dismissal.
   installBanner.style.display = 'flex'; // Use flex to center content
 }
 
 // Hide installation promotion
 function hideInstallPromotion() {
-  installBanner.style.display = 'none';
+  if (installBanner) {
+      installBanner.style.display = 'none';
+  }
 }
 
 // Listen for beforeinstallprompt event
 window.addEventListener('beforeinstallprompt', (e) => {
-  // Prevent the mini-infobar from appearing on mobile
   e.preventDefault();
-  
-  // Stash the event so it can be triggered later.
   deferredPrompt = e;
   
   // Update UI to notify the user they can install the PWA
-  showInstallPromotion();
+  // The banner is already visible, now enable the install button
+  if (installButton) {
+      installButton.disabled = false; // Activate the button
+      installButton.textContent = 'Installeren'; // Ensure text is correct
+  }
 });
 
 // Install button click handler
@@ -68,21 +66,17 @@ if (installButton) {
       return;
     }
     
-    // Show the install prompt
+    installButton.disabled = true; // Disable button immediately
+    installButton.textContent = 'Bezig met installeren...'; // Provide feedback
+
     deferredPrompt.prompt();
-    
-    // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
     
     console.log(`User response to the install prompt: ${outcome}`);
     
-    // Hide the banner
     hideInstallPromotion();
-    
-    // Clear the deferredPrompt so it can be garbage collected
     deferredPrompt = null;
     
-    // Optionally, send analytics event
     if (outcome === 'accepted') {
       console.log('User accepted the PWA installation prompt');
     } else {
@@ -91,13 +85,10 @@ if (installButton) {
   });
 }
 
-
 // Close button click handler
 if (closeBanner) {
   closeBanner.addEventListener('click', () => {
     hideInstallPromotion();
-    
-    // Save user preference
     localStorage.setItem('install-banner-dismissed', 'true');
     localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
   });
@@ -117,16 +108,13 @@ function isIOS() {
 
 // Show iOS installation instructions (if applicable)
 function showIOSInstructions() {
-  if (isAppInstalled()) { // Already installed, no need for instructions
+  if (isAppInstalled()) {
     return;
   }
 
-  // Hide the regular install banner if it's visible
-  if (installBanner) {
-      hideInstallPromotion();
-  }
+  // Hide the regular install banner if it's visible (for iOS, this is never shown initially)
+  hideInstallPromotion();
 
-  // Create a modal or dedicated section for iOS instructions
   const iosInstructionsHtml = `
     <div id="ios-install-instructions" style="
       position: fixed; bottom: 0; left: 0; right: 0;
@@ -146,7 +134,6 @@ function showIOSInstructions() {
     </div>
   `;
 
-  // Check if it's not already shown
   if (!document.getElementById('ios-install-instructions')) {
       document.body.insertAdjacentHTML('beforeend', iosInstructionsHtml);
       document.getElementById('close-ios-instructions').addEventListener('click', () => {
@@ -159,18 +146,14 @@ function showIOSInstructions() {
 
 // Initial check when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-  if (isIOS() && shouldShowBanner()) {
-    // For iOS, if not installed and not dismissed, show instructions
-    showIOSInstructions();
-  } else if (!isAppInstalled() && shouldShowBanner()) {
-    // For other platforms, if not installed and not dismissed, show general banner
-    // This will be shown if beforeinstallprompt doesn't fire immediately
-    // or if the browser doesn't support it directly.
-    // However, for beforeinstallprompt-supporting browsers, it's generally best
-    // to wait for the event to decide when to show.
-    // This part is mainly for browsers that don't fire beforeinstallprompt.
-    // In practice, for Android Chrome, we mostly rely on beforeinstallprompt event.
-    // Keep this commented out or minimal to avoid conflicting with beforeinstallprompt.
-    // showInstallPromotion();
+  // Always show banner/instructions if not installed, and not permanently dismissed yet
+  if (!isAppInstalled()) {
+      if (shouldShowBannerAgain()) { // Check if we should show again (after 90 days)
+          if (isIOS()) {
+              showIOSInstructions();
+          } else {
+              showInstallPromotion(); // For Android/Desktop, show the banner immediately
+          }
+      }
   }
 });
