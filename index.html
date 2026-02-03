@@ -125,7 +125,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
-    <script src="js/local_app.js?v=60"></script>
+    <script src="js/local_app.js?v=63"></script>
+    <script src="js/pwa_install.js?v=63"></script>
     <!-- Force GitHub Pages Refresh v60 - Resetting Build Queue -->
     <script>
         if ('serviceWorker' in navigator) {
@@ -136,5 +137,23 @@
             });
         }
     </script>
+
+    <!-- Installatie Banner - standaard verborgen -->
+    <div id="install-banner" class="install-banner" style="display: none;">
+      <div class="install-banner-content">
+        <div class="install-banner-icon">
+          <img src="icons/icon-192.png" alt="App Icon">
+        </div>
+        <div class="install-banner-text">
+          <p>Installeer de SVR Campings app op je smartphone, tablet of desktopcomputer 👌</p>
+        </div>
+        <button id="install-button" class="install-button">
+          Installeren
+        </button>
+        <button id="close-banner" class="close-button">
+          ✕
+        </button>
+      </div>
+    </div>
 </body>
 </html>
