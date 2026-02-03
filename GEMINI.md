@@ -43,42 +43,41 @@ Since this is a static web application, no build process is required.
 
 ---
 
+## Offline-First & Instant Performance (v59 - Current Status)
+
+The app is now at version **v59**. This session focused on eliminating startup latency and providing an "Instant Map" experience.
+
+### Key Wins:
+1.  **Zero-Call Startup:** 
+    *   The app no longer makes API calls for campsite data on startup.
+    *   Both the Map and List views are populated instantly from a local `localStorage` cache or a optimized `assets/campsites_preset.json` (for new installs).
+2.  **Instant Local Search:**
+    *   City/location searches now perform distance calculations locally against the cached dataset (~1270 campsites).
+    *   This provides zero-latency results without spinners for standard searches.
+3.  **Cache Optimization (Data Stripping):**
+    *   Campsite data is "stripped" of heavy fields (long descriptions, URLs) before caching.
+    *   The full dataset is reduced from ~6MB to ~280KB, well within the 5MB `localStorage` limit.
+4.  **Optimized UI Timing:**
+    *   Background fetch for filter definitions (vinkjes) is delayed by 1500ms to give the CPU full priority for rendering markers and list cards.
+    *   Performance Marks added to track rendering duration (avg. ~1.1s for 1270 markers).
+5.  **UX & Styling Polish:**
+    *   **Swiper Fix:** Enabled vertical page scrolling when touching image carousels (set `touchStartPreventDefault: false`).
+    *   **Red Marker Priority:** Assigned `zIndexOffset: 2000` to the search marker so it always stays on top of blue campsite markers.
+    *   **Final Styling:** Settled on a clean **Yellow Header** and standard **White/Gray Footer** for maximum compatibility.
+
+### Technical Lessons Learned:
+*   **LocalStorage Quota:** Always strip API responses to essential fields for caching. Heavy HTML content in JSON can quickly exceed the 5MB quota.
+*   **Service Worker Persistence:** Android "WebAPKs" (installed PWAs) are extremely stubborn with `manifest.json` updates. A version jump (e.g., from v55 to v59) and `self.clients.claim()` are needed to force a refresh.
+*   **Main Thread Priority:** Heavily rendering 1000+ DOM elements (markers/cards) blocks the CPU. Delay secondary network tasks (like filter fetching) until rendering is complete.
+*   **External Outages:** GitHub Actions outages (status red) can prevent pushed code from going live. Always check `GitHub Actions` tab if changes don't appear online.
+
+---
+
 ## Next Session Instructions (START HERE)
 
 To provide access to both the `SVRpwa` project and the `SVRcampings_v31` WebView project, please follow these steps when starting the next session:
 
 1.  **Start the session in the parent directory:** When prompted to select a working directory, choose `C:\Users\emanu\AndroidStudioProjects`.
-2.  **Add both project directories:** After the session starts, inform the Gemini CLI to add both `SVRpwa` and `SVRcampings_v31` as accessible project directories. (The exact command for this will depend on the Gemini CLI's capabilities, but usually involves adding paths.)
-3.  **Ensure `SVRcampings_v31` exists:** Make sure the `SVRcampings_v31` directory is present directly within `C:\Users\emanu\AndroidStudioProjects\` and contains the WebView app's code.
+2.  **Add both project directories:** After the session starts, inform the Gemini CLI to add both `SVRpwa` and `SVRcampings_v31` as accessible project directories.
+3.  **Check Version Status:** Verify if **v59** is finally live on GitHub. If not, check GitHub Actions for the 2 Feb 2026 outage status.
 4.  **Instruct me to read this GEMINI.md:** After adding the projects, instruct me to read this `GEMINI.md` file again for context.
-
-## Detail Page & UX Improvements (v39 - Current Status)
-
-The app is currently stable at version **v39**. This session resolved fundamental issues with content selection, UI animation, and core UX.
-
-### Key Wins:
-1.  **Fundamental Carousel Fix:** 
-    *   Abandoned the Bootstrap Carousel "hijack" method.
-    *   Implemented the "WebView method": Extracting image URLs directly from the SVR grid (`div.row.m-0.p-4.mt-0`) and building a clean, touch-optimized Swiper component from scratch. This fixed the "stacked images" and "double image" (background + foreground) issues.
-2.  **Complete Detail Page Content:**
-    *   Switched to the "Everything-except-header" selection method.
-    *   The PWA now correctly includes all original SVR sections: Title (Gele Veeg), Description, Facilities, Pricing Table, Reservation Form, GPS Coordinates, Route Button, and Footer.
-    *   Explicitly removed leftover website artifacts (Bootstrap modals and stray "Sluiten" text).
-3.  **Transparent Bottom Sheet UX:**
-    *   Correctly implemented the "see-through" area at the top of the detail sheet.
-    *   Fixed z-index conflicts between the backdrop and the overlay.
-    *   Enabled click-through on the dimmed top area to close the detail page, matching the filter menu behavior.
-4.  **Global Search & UX:**
-    *   Enabled worldwide search (e.g., "Nice") by removing the hardcoded ", Nederland" suffix for international terms.
-    *   Added "Enter" key support and clickable search icon.
-    *   Implemented visual feedback ("Plaats niet gevonden") for invalid locations.
-5.  **List View Enhancements:**
-    *   Added a contextual **Scroll-to-Top** button in the action stack (replacing the Locate button when in List view).
-    *   Stabilized the **"KAART"** button on camping cards: it now performs a smooth focus (zoom 14) and reliably opens the information popup after any cluster expansion.
-
-### Technical Lessons Learned:
-*   **PWA Cache Busting:** Crucial to synchronize three version bumps: `SVR_PWA_VERSION` in JS, `CACHE_NAME` in `sw.js`, and the query parameter (`?v=XX`) in `index.html`.
-*   **Animation Sync:** JavaScript `setTimeout` timers for UI cleanup must match or exceed the CSS `transition` duration (currently set to 0.5s / 500ms) to prevent schokkerige or cut-off animations.
-*   **CSS Specificity:** Inline JS style injection (`style.setProperty`) was used as a last resort to overcome aggressive caching or high-specificity Bootstrap rules for form field widths.
-
-
