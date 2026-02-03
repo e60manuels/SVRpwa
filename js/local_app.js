@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 63; // Increment this number with each commit
+window.SVR_PWA_VERSION = 64; // Increment this number with each commit
 
 (function () {
     startSplashScreenAnimation();

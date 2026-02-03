@@ -237,3 +237,89 @@
     overflow: hidden; /* Hide overflowing text during typewriter effect */
     margin: 0; /* Remove default margin */
 }
+
+/* --- INSTALLATION BANNER --- */
+.install-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, var(--svr-blue) 0%, #764ba2 100%); /* Using SVR blue */
+  color: white;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  z-index: 9999;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.install-banner-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.install-banner-icon img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+
+.install-banner-text {
+  flex: 1;
+}
+
+.install-button {
+  background: white;
+  color: var(--svr-blue); /* Using SVR blue */
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.install-button:hover {
+  transform: scale(1.05);
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+}
+
+/* iOS Instructions */
+.ios-instructions {
+    background: #f8f8f8;
+    color: #333;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+}
+.ios-instructions p {
+    margin-top: 0;
+    font-weight: bold;
+}
+.ios-instructions ol {
+    padding-left: 20px;
+    margin-bottom: 0;
+}
+.ios-instructions li {
+    margin-bottom: 5px;
+}
