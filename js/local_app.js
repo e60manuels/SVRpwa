@@ -18,6 +18,7 @@ window.SVR_PWA_VERSION = 74; // Increment this number with each commit
         }
         type();
     }
+    window.typewriterEffect = typewriterEffect; // Expose globally
 
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
     window.SVR_FILTER_OVERLAY_INJECTED = true;
