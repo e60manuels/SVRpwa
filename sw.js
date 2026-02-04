@@ -1,7 +1,6 @@
-const CACHE_NAME = 'svr-pwa-cache-v74';
+const CACHE_NAME = 'svr-pwa-cache-v75';
 const ASSETS_TO_CACHE = [
   './',
-  './index.html',
   './offline.html',
   './css/local_style.css',
   './css/custom_styles.css',
@@ -51,7 +50,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - network first for dynamic content, cache for static assets
+// Fetch event - network first for index.html, cache-first for other static assets
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   const PROXY_BASE_URL_HOSTNAME = 'svr-proxy-worker.e60-manuels.workers.dev'; // Replace with your actual worker hostname
@@ -62,9 +61,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Strategy for index.html (network-first, then cache)
+  if (url.pathname === '/' || url.pathname === '/index.html') {
+    event.respondWith(
+      fetch(event.request)
+        .then(networkResponse => {
+          return caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, networkResponse.clone()); // Update cache
+            return networkResponse;
+          });
+        })
+        .catch(() => {
+          return caches.match(event.request).then(response => {
+            return response || caches.match('./offline.html'); // Fallback to cache or offline page
+          });
+        })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((response) => {
-      // Cache-first strategy for static assets
+      // Cache-first strategy for other static assets
       return response || fetch(event.request).catch((error) => {
         // Fallback to offline page for navigation requests that fail
         if (event.request.mode === 'navigate') {
