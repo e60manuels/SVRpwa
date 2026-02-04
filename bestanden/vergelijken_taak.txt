@@ -1,4 +1,0 @@
-in de map C:\Users\emanu\AndroidStudioProjects\SVRpwa\bestanden staan de bestanden met de HTML code voor de svr webview app en svr pwa app; outerHTML_webview.txt en outerHTML_pwa 
-We gaan de pwa app verbeteren, omdat er bepaalde UIen UX elementen zijn die niet gelijk zijn met de webview app. We starten met de aanpassing van de Lijst-weergave pagina. 
-Jouw taak: vergelijk de HTML code in beide bestanden en leg de verschillen vast. Met de verschillen gaan we de PWA Lijst-weergave pagina aanpassen. 
-Je kunt misschien de Investigator agent voor deze taak gebruiken. Laat mij jouw bevindingen weten.

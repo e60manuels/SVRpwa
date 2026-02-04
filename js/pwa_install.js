@@ -1,8 +1,6 @@
 // Variables
 let deferredPrompt = null;
-const installBanner = document.getElementById('install-banner');
-const installButton = document.getElementById('install-button');
-const closeBanner = document.getElementById('close-banner');
+let installBanner, installButton, closeBanner;
 
 // Local Debugging function
 function logDebug(msg) {
@@ -94,49 +92,35 @@ window.addEventListener('beforeinstallprompt', (e) => {
   showInstallPromotion();
 });
 
-// Install button click handler
-if (installButton) {
-  installButton.addEventListener('click', async () => {
-    logDebug("Installatieknop geklikt.");
-    if (!deferredPrompt) {
-      logDebug("Installatieknop geklikt, maar deferredPrompt is null.");
-      return;
-    }
-    
-    installButton.disabled = true; // Disable button immediately
-    installButton.textContent = 'Bezig met installeren...'; // Provide feedback
-    logDebug("Installatieproces gestart.");
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    logDebug(`Gebruiker reactie op installatieprompt: ${outcome}`);
-    
-    hideInstallPromotion();
-    deferredPrompt = null;
-    
-    if (outcome === 'accepted') {
-      logDebug('Gebruiker heeft de PWA installatieprompt geaccepteerd.');
-    } else {
-      logDebug('Gebruiker heeft de PWA installatieprompt afgewezen.');
-    }
-  });
-}
-
-// Close button click handler
-if (closeBanner) {
-  closeBanner.addEventListener('click', () => {
-    logDebug("Sluitknop geklikt. Banner verbergen en voorkeur opslaan.");
-    hideInstallPromotion();
-    localStorage.setItem('install-banner-dismissed', 'true');
-    localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
-  });
-}
+// Listen for beforeinstallprompt event
+window.addEventListener('beforeinstallprompt', (e) => {
+  logDebug("beforeinstallprompt event afgevuurd.");
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // The installButton is now a globally declared `let` variable, assigned in DOMContentLoaded.
+  // It's safe to access it here after the DOM is loaded.
+  // However, `beforeinstallprompt` can fire *before* DOMContentLoaded,
+  // so we should check if `installButton` is initialized.
+  if (installButton) {
+      logDebug("deferredPrompt ingesteld. Activeer de installatieknop.");
+      installButton.disabled = false; // Activate the button
+      installButton.textContent = 'Installeren'; // Ensure text is correct
+      logDebug("Installatieknop geactiveerd.");
+  } else {
+      logDebug("beforeinstallprompt: installButton element nog niet beschikbaar. Wachten op DOMContentLoaded.");
+  }
+  // The banner is now shown via window.closeHelpOverlayAndShowPWA() or user interaction
+});
 
 // Detect when the app is actually installed
 window.addEventListener('appinstalled', (evt) => {
   logDebug('PWA is succesvol geïnstalleerd.');
-  hideInstallPromotion();
+  // installBanner is a global `let` variable, assigned in DOMContentLoaded.
+  // It should be available here if the app is installed *after* DOMContentLoaded.
+  if (installBanner) {
+    installBanner.style.display = 'none';
+  }
 });
 
 // iOS detection
@@ -160,32 +144,51 @@ function showIOSInstructions() {
       return;
   }
 
-  // Hide the regular install banner if it's visible (for iOS, this is never shown initially)
-  hideInstallPromotion();
+  // Hide the regular install banner if it's visible. installBanner is global `let`.
+  if (installBanner) {
+    installBanner.style.display = 'none';
+  }
+
 
   const iosInstructionsHtml = `
-    <div id="ios-install-instructions" style="
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: white; padding: 20px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-      z-index: 9998; text-align: center;
-    ">
-      <p style="margin-top:0; font-weight: bold; color: #333;">Installeer SVR Campings op je iPhone/iPad:</p>
-      <ol style="padding-left: 20px; text-align: left; color: #555;">
-        <li>Tik op het deel-icoon <span style="font-size: 1.5em; vertical-align: middle;">⇧</span> onderin de browser.</li>
-        <li>Scroll naar beneden en tik op 'Zet op beginscherm'.</li>
-        <li>Tik op 'Voeg toe' rechtsboven.</li>
-      </ol>
-      <button id="close-ios-instructions" style="
-        background: var(--svr-blue); color: white; border: none; padding: 10px 20px;
-        border-radius: 5px; margin-top: 15px; cursor: pointer;
-      ">Begrepen</button>
+    <div id="ios-install-instructions" class="ios-install-instructions">
+      <div class="ios-install-content">
+        <button id="close-ios-instructions" class="ios-close-button">
+          ✕
+        </button>
+        <div class="ios-install-icon">
+          <img src="icons/icon-192.png" alt="App Icon">
+        </div>
+        <div class="ios-install-text">
+          <p>Installeer de SVR Campings app</p>
+        </div>
+      </div>
+      <div class="ios-install-detailed-instructions">
+        <p>Volg deze stappen om de app te installeren:</p>
+        <ol>
+          <li>Tik op het deel-icoon <span style="font-size: 1.5em; vertical-align: middle;">⇧</span> onderin de browser.</li>
+          <li>Scroll naar beneden en tik op 'Zet op beginscherm'.</li>
+          <li>Tik op 'Voeg toe' rechtsboven.</li>
+        </ol>
+      </div>
+      <button id="ios-understood-button" class="ios-close-button">
+        Begrepen
+      </button>
     </div>
   `;
 
   if (!document.getElementById('ios-install-instructions')) {
       document.body.insertAdjacentHTML('beforeend', iosInstructionsHtml);
-      document.getElementById('close-ios-instructions').addEventListener('click', () => {
+      // Attach event listener to the new "Begrepen" button
+      document.getElementById('ios-understood-button').addEventListener('click', () => {
           logDebug("iOS instructies gesloten. Voorkeur opslaan.");
+          document.getElementById('ios-install-instructions').remove();
+          localStorage.setItem('install-banner-dismissed', 'true');
+          localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
+      });
+       // Attach event listener to the new "Close" button (X)
+      document.getElementById('close-ios-instructions').addEventListener('click', () => {
+          logDebug("iOS instructies gesloten via kruisje. Voorkeur opslaan.");
           document.getElementById('ios-install-instructions').remove();
           localStorage.setItem('install-banner-dismissed', 'true');
           localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
@@ -199,6 +202,54 @@ function showIOSInstructions() {
 // Initial check when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
   logDebug("DOMContentLoaded event afgevuurd.");
+
+  // Now that DOM is loaded, get elements and assign to global let variables
+  installBanner = document.getElementById('install-banner');
+  installButton = document.getElementById('install-button');
+  closeBanner = document.getElementById('close-banner');
+
+  // Install button click handler
+  if (installButton) {
+    installButton.addEventListener('click', async () => {
+      logDebug("Installatieknop geklikt.");
+      if (!deferredPrompt) {
+        logDebug("Installatieknop geklikt, maar deferredPrompt is null.");
+        return;
+      }
+      
+      installButton.disabled = true; // Disable button immediately
+      installButton.textContent = 'Bezig met installeren...'; // Provide feedback
+      logDebug("Installatieproces gestart.");
+
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      logDebug(`Gebruiker reactie op installatieprompt: ${outcome}`);
+      
+      hideInstallPromotion();
+      deferredPrompt = null;
+      
+      if (outcome === 'accepted') {
+        logDebug('Gebruiker heeft de PWA installatieprompt geaccepteerd.');
+      } else {
+        logDebug('Gebruiker heeft de PWA installatieprompt afgewezen.');
+      }
+    });
+  }
+
+  // Close button click handler
+  if (closeBanner) {
+    closeBanner.addEventListener('click', () => {
+      logDebug("Sluitknop geklikt. Banner verbergen en voorkeur opslaan.");
+      hideInstallPromotion();
+      localStorage.setItem('install-banner-dismissed', 'true');
+      localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
+    });
+  }
+
+  // Expose showInstallPromotion globally
+  window.showInstallPromotion = showInstallPromotion;
+
   if (!isAppInstalled()) {
       logDebug("App is nog niet geïnstalleerd.");
       if (shouldShowBannerAgain()) {
@@ -206,8 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
               logDebug("Platform is iOS. Toon iOS instructies.");
               showIOSInstructions();
           } else {
-              logDebug("Platform is niet iOS. Toon installatiebanner.");
-              showInstallPromotion(); // For Android/Desktop, show the banner immediately
+              logDebug("Platform is niet iOS. De installatiebanner wordt getoond na sluiten van help-overlay of user-interactie.");
+              // showInstallPromotion(); // Removed direct call to showInstallPromotion() here
           }
       } else {
           logDebug("Banner is eerder afgewezen en mag nog niet opnieuw worden getoond.");
