@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 70; // Increment this number with each commit
+window.SVR_PWA_VERSION = 71; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -7,6 +7,9 @@ window.SVR_PWA_VERSION = 70; // Increment this number with each commit
 
     // Flag to track if we already have some data on screen
     window.hasDataOnScreen = false;
+
+    // Introduce a flag to control PWA prompt visibility after help overlay interaction
+    window.shouldShowPWAAfterHelp = false; // Initialize the flag
 
     // --- DEBUG LOGGING ---
     function logDebug(msg) {
@@ -1519,7 +1522,7 @@ window.showLoginScreen = function() {
   const loginHtml = `
     <div id="login-overlay" style="
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 10000;
+      background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: flex-start; padding-top: 10vh; z-index: 10000;
     ">
       <div style="
         background: white; padding: 30px; border-radius: 10px;
@@ -1603,7 +1606,18 @@ window.initializeApp = function() {
     }, 1500);
 
     if (!localStorage.getItem('svr_help_shown')) {
+        // Only set the flag if the help screen is shown as part of the initial flow
+        window.shouldShowPWAAfterHelp = true; 
         setTimeout(() => { window.showHelp(); localStorage.setItem('svr_help_shown', 'true'); }, 2500);
+    } else {
+        // If help screen is not shown, or already shown, trigger PWA prompt check directly
+        // after a slight delay to avoid interfering with initial load.
+        setTimeout(() => { 
+            // Only show prompt if it hasn't been handled via initial help screen.
+            // In this 'else' block, it means help was NOT shown, so the prompt should show.
+            window.shouldShowPWAAfterHelp = true; // Set flag to true for direct call
+            window.closeHelpOverlayAndShowPWA(); 
+        }, 3000); 
     }
 };
 
@@ -1615,8 +1629,8 @@ window.closeHelpOverlayAndShowPWA = function() {
         logDebug("Help overlay gesloten.");
     }
     
-    // Check if the PWA install prompt should be shown
-    if (window.isAppInstalled && !window.isAppInstalled()) { // Only show if not installed
+    // Only show the PWA prompt if the flag is set (meaning it's part of the initial flow)
+    if (window.shouldShowPWAAfterHelp && window.isAppInstalled && !window.isAppInstalled()) {
         if (window.isIOS && window.isIOS()) {
             logDebug("Platform is iOS. Toon iOS instructies na sluiten help-overlay.");
             window.showIOSInstructions();
@@ -1625,6 +1639,7 @@ window.closeHelpOverlayAndShowPWA = function() {
             window.showInstallPromotion();
         }
     }
+    window.shouldShowPWAAfterHelp = false; // Reset the flag after checking/showing
 };
 
 $(document).ready(() => {
