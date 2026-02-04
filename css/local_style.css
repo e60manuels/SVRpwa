@@ -346,3 +346,10 @@
   cursor: pointer;
   margin-top: 15px;
 }
+
+/* Border for "Klik ergens om te sluiten" text */
+.bordered-text {
+    border: 1px solid white;
+    padding: 5px 10px;
+    border-radius: 5px;
+}

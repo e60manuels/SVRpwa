@@ -213,8 +213,12 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (outcome === 'accepted') {
         logDebug('Gebruiker heeft de PWA installatieprompt geaccepteerd.');
-      } else {
+      } else if (outcome === 'dismissed') { // User explicitly dismissed the native prompt
         logDebug('Gebruiker heeft de PWA installatieprompt afgewezen.');
+        localStorage.setItem('install-banner-dismissed', 'true');
+        localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
+      } else {
+        logDebug(`Gebruiker reactie op installatieprompt: ${outcome} (onverwacht).`);
       }
     });
   }
