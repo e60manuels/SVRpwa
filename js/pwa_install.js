@@ -9,20 +9,26 @@ function logDebug(msg) {
 
 // Check if the app is already installed
 function isAppInstalled() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  const isIosStandalone = (window.navigator.standalone === true);
+  const isPersistentFlagSet = (localStorage.getItem('pwa-app-installed') === 'true');
+
+  logDebug(`isAppInstalled() checks: isStandalone=${isStandalone}, isIosStandalone=${isIosStandalone}, isPersistentFlagSet=${isPersistentFlagSet}`);
+
   // Check if the app is running in standalone mode (installed PWA)
-  if (window.matchMedia('(display-mode: standalone)').matches) {
+  if (isStandalone) {
     logDebug("App is reeds geïnstalleerd (standalone mode).");
     localStorage.setItem('pwa-app-installed', 'true'); // Persist this state
     return true;
   }
   // Check for older iOS standalone mode
-  if (window.navigator.standalone === true) { 
+  if (isIosStandalone) { 
     logDebug("App is reeds geïnstalleerd (iOS standalone).");
     localStorage.setItem('pwa-app-installed', 'true'); // Persist this state
     return true;
   }
   // Check our own persistent flag (set after successful install)
-  if (localStorage.getItem('pwa-app-installed') === 'true') {
+  if (isPersistentFlagSet) {
       logDebug("App is reeds geïnstalleerd (via persistent flag).");
       return true;
   }
