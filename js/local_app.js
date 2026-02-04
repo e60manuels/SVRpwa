@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 67; // Increment this number with each commit
+window.SVR_PWA_VERSION = 68; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -1604,6 +1604,21 @@ window.initializeApp = function() {
 
     if (!localStorage.getItem('svr_help_shown')) {
         setTimeout(() => { window.showHelp(); localStorage.setItem('svr_help_shown', 'true'); }, 2500);
+    }
+};
+
+// Function to close the help overlay and potentially show PWA install prompt
+window.closeHelpOverlayAndShowPWA = function() {
+    const helpOverlay = document.getElementById('help-overlay');
+    if (helpOverlay) {
+        helpOverlay.style.display = 'none';
+        logDebug("Help overlay gesloten.");
+    }
+    
+    // Check if the PWA install prompt should be shown
+    if (window.showInstallPromotion) {
+        logDebug("Attempting to show PWA install promotion after help overlay close.");
+        window.showInstallPromotion();
     }
 };
 

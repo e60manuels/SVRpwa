@@ -36,7 +36,7 @@
     </div>
 
     <!-- HELP OVERLAY POC -->
-    <div id="help-overlay" onclick="this.style.display='none'">
+    <div id="help-overlay" onclick="window.closeHelpOverlayAndShowPWA();">
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 80%;">
             <p style="font-weight: bold; font-size: 16px; text-shadow: 0 1px 4px rgba(0,0,0,0.5);">Klik ergens om te sluiten</p>
         </div>
@@ -120,17 +120,17 @@
     <!-- Installatie Banner - standaard verborgen -->
     <div id="install-banner" class="install-banner" style="display: none;">
       <div class="install-banner-content">
+        <button id="close-banner" class="close-button">
+          ✕
+        </button>
         <div class="install-banner-icon">
           <img src="icons/icon-192.png" alt="App Icon">
         </div>
         <div class="install-banner-text">
-          <p>Installeer de SVR Campings app op je smartphone, tablet of desktopcomputer 👌</p>
+          <p>Installeer de SVR Campings app</p>
         </div>
         <button id="install-button" class="install-button" disabled>
           Installeren
-        </button>
-        <button id="close-banner" class="close-button">
-          ✕
         </button>
       </div>
     </div>
