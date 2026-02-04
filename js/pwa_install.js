@@ -54,11 +54,6 @@ function shouldShowBannerAgain() {
 // Show installation promotion
 function showInstallPromotion() {
   logDebug("showInstallPromotion() aangeroepen.");
-  // If PWA is already installed and detected by our flag, do not show promotion
-  if (localStorage.getItem('pwa-app-installed') === 'true') {
-      logDebug("showInstallPromotion: PWA is al permanent geïnstalleerd, toon banner niet.");
-      return;
-  }
   if (isAppInstalled()) { // Redundant check, but kept for consistency with existing logic.
     logDebug("showInstallPromotion: App is al geïnstalleerd (standalone/iOS standalone), toon banner niet.");
     return;
@@ -132,11 +127,6 @@ window.isIOS = isIOS; // Expose globally
 // Show iOS installation instructions (if applicable)
 function showIOSInstructions() {
   logDebug("showIOSInstructions() aangeroepen.");
-  // If PWA is already installed and detected by our flag, do not show instructions
-  if (localStorage.getItem('pwa-app-installed') === 'true') {
-      logDebug("showIOSInstructions: PWA is al permanent geïnstalleerd, toon instructies niet.");
-      return;
-  }
   if (isAppInstalled()) { // Redundant check, but kept for consistency with existing logic.
     logDebug("showIOSInstructions: App is al geïnstalleerd (standalone/iOS standalone), toon instructies niet.");
     return;
