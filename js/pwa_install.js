@@ -9,13 +9,22 @@ function logDebug(msg) {
 
 // Check if the app is already installed
 function isAppInstalled() {
+  // Check if the app is running in standalone mode (installed PWA)
   if (window.matchMedia('(display-mode: standalone)').matches) {
     logDebug("App is reeds geïnstalleerd (standalone mode).");
+    localStorage.setItem('pwa-app-installed', 'true'); // Persist this state
     return true;
   }
-  if (window.navigator.standalone === true) { // For older iOS
+  // Check for older iOS standalone mode
+  if (window.navigator.standalone === true) { 
     logDebug("App is reeds geïnstalleerd (iOS standalone).");
+    localStorage.setItem('pwa-app-installed', 'true'); // Persist this state
     return true;
+  }
+  // Check our own persistent flag (set after successful install)
+  if (localStorage.getItem('pwa-app-installed') === 'true') {
+      logDebug("App is reeds geïnstalleerd (via persistent flag).");
+      return true;
   }
   logDebug("App is nog niet geïnstalleerd.");
   return false;
@@ -45,8 +54,13 @@ function shouldShowBannerAgain() {
 // Show installation promotion
 function showInstallPromotion() {
   logDebug("showInstallPromotion() aangeroepen.");
-  if (isAppInstalled()) {
-    logDebug("showInstallPromotion: App is al geïnstalleerd, toon banner niet.");
+  // If PWA is already installed and detected by our flag, do not show promotion
+  if (localStorage.getItem('pwa-app-installed') === 'true') {
+      logDebug("showInstallPromotion: PWA is al permanent geïnstalleerd, toon banner niet.");
+      return;
+  }
+  if (isAppInstalled()) { // Redundant check, but kept for consistency with existing logic.
+    logDebug("showInstallPromotion: App is al geïnstalleerd (standalone/iOS standalone), toon banner niet.");
     return;
   }
   
@@ -98,6 +112,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 // Detect when the app is actually installed
 window.addEventListener('appinstalled', (evt) => {
   logDebug('PWA is succesvol geïnstalleerd.');
+  localStorage.setItem('pwa-app-installed', 'true'); // Set persistent flag
   // installBanner is a global `let` variable, assigned in DOMContentLoaded.
   // It should be available here if the app is installed *after* DOMContentLoaded.
   if (installBanner) {
@@ -117,8 +132,13 @@ window.isIOS = isIOS; // Expose globally
 // Show iOS installation instructions (if applicable)
 function showIOSInstructions() {
   logDebug("showIOSInstructions() aangeroepen.");
-  if (isAppInstalled()) {
-    logDebug("showIOSInstructions: App is al geïnstalleerd, toon instructies niet.");
+  // If PWA is already installed and detected by our flag, do not show instructions
+  if (localStorage.getItem('pwa-app-installed') === 'true') {
+      logDebug("showIOSInstructions: PWA is al permanent geïnstalleerd, toon instructies niet.");
+      return;
+  }
+  if (isAppInstalled()) { // Redundant check, but kept for consistency with existing logic.
+    logDebug("showIOSInstructions: App is al geïnstalleerd (standalone/iOS standalone), toon instructies niet.");
     return;
   }
 
@@ -213,6 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (outcome === 'accepted') {
         logDebug('Gebruiker heeft de PWA installatieprompt geaccepteerd.');
+        localStorage.setItem('pwa-app-installed', 'true'); // Set persistent flag on acceptance
       } else if (outcome === 'dismissed') { // User explicitly dismissed the native prompt
         logDebug('Gebruiker heeft de PWA installatieprompt afgewezen.');
         localStorage.setItem('install-banner-dismissed', 'true');
