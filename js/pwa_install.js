@@ -20,6 +20,7 @@ function isAppInstalled() {
   logDebug("App is nog niet geïnstalleerd.");
   return false;
 }
+window.isAppInstalled = isAppInstalled; // Expose globally
 
 // Check localStorage for user preference - used for re-showing after dismissal
 function shouldShowBannerAgain() {
@@ -79,25 +80,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
   
-  logDebug("deferredPrompt ingesteld. Activeer de installatieknop.");
-  if (installButton) {
-      installButton.disabled = false; // Activate the button
-      installButton.textContent = 'Installeren'; // Ensure text is correct
-      logDebug("Installatieknop geactiveerd.");
-  } else {
-      logDebug("beforeinstallprompt: installButton element niet gevonden.");
-  }
-  
-  // Zorg dat de banner zichtbaar is als het event afgaat en de knop is geactiveerd
-  showInstallPromotion();
-});
-
-// Listen for beforeinstallprompt event
-window.addEventListener('beforeinstallprompt', (e) => {
-  logDebug("beforeinstallprompt event afgevuurd.");
-  e.preventDefault();
-  deferredPrompt = e;
-  
   // The installButton is now a globally declared `let` variable, assigned in DOMContentLoaded.
   // It's safe to access it here after the DOM is loaded.
   // However, `beforeinstallprompt` can fire *before* DOMContentLoaded,
@@ -130,6 +112,7 @@ function isIOS() {
   logDebug(`isIOS(): ${isIosDevice}`);
   return isIosDevice;
 }
+window.isIOS = isIOS; // Expose globally
 
 // Show iOS installation instructions (if applicable)
 function showIOSInstructions() {
@@ -160,7 +143,7 @@ function showIOSInstructions() {
           <img src="icons/icon-192.png" alt="App Icon">
         </div>
         <div class="ios-install-text">
-          <p>Installeer de SVR Campings app</p>
+          <p>Installeer deze SVR app</p>
         </div>
       </div>
       <div class="ios-install-detailed-instructions">
@@ -186,18 +169,17 @@ function showIOSInstructions() {
           localStorage.setItem('install-banner-dismissed', 'true');
           localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
       });
-       // Attach event listener to the new "Close" button (X)
+       // Attach event listener to the new "Close" button (X) - DO NOT store dismissed status
       document.getElementById('close-ios-instructions').addEventListener('click', () => {
-          logDebug("iOS instructies gesloten via kruisje. Voorkeur opslaan.");
+          logDebug("iOS instructies gesloten via kruisje. Voorkeur NIET opslaan.");
           document.getElementById('ios-install-instructions').remove();
-          localStorage.setItem('install-banner-dismissed', 'true');
-          localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
+          // localStorage.setItem('install-banner-dismissed', 'true'); // Removed
+          // localStorage.setItem('install-banner-dismissed-date', Date.now().toString()); // Removed
       });
       logDebug("iOS installatie-instructies getoond.");
   } else {
       logDebug("iOS installatie-instructies zijn reeds zichtbaar.");
-  }
-}
+  }}
 
 // Initial check when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -240,10 +222,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Close button click handler
   if (closeBanner) {
     closeBanner.addEventListener('click', () => {
-      logDebug("Sluitknop geklikt. Banner verbergen en voorkeur opslaan.");
+      logDebug("Sluitknop geklikt. Banner verbergen en voorkeur NIET opslaan.");
       hideInstallPromotion();
-      localStorage.setItem('install-banner-dismissed', 'true');
-      localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
+      // localStorage.setItem('install-banner-dismissed', 'true'); // Removed
+      // localStorage.setItem('install-banner-dismissed-date', Date.now().toString()); // Removed
     });
   }
 

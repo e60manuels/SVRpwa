@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 68; // Increment this number with each commit
+window.SVR_PWA_VERSION = 69; // Increment this number with each commit
 
 (function () {
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
@@ -1616,9 +1616,14 @@ window.closeHelpOverlayAndShowPWA = function() {
     }
     
     // Check if the PWA install prompt should be shown
-    if (window.showInstallPromotion) {
-        logDebug("Attempting to show PWA install promotion after help overlay close.");
-        window.showInstallPromotion();
+    if (window.isAppInstalled && !window.isAppInstalled()) { // Only show if not installed
+        if (window.isIOS && window.isIOS()) {
+            logDebug("Platform is iOS. Toon iOS instructies na sluiten help-overlay.");
+            window.showIOSInstructions();
+        } else if (window.showInstallPromotion) { // For Android/Desktop
+            logDebug("Attempting to show PWA install promotion after help overlay close.");
+            window.showInstallPromotion();
+        }
     }
 };
 
