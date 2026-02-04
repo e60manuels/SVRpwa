@@ -1,7 +1,24 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 72; // Increment this number with each commit
+window.SVR_PWA_VERSION = 73; // Increment this number with each commit
 
 (function () {
+    // Typewriter effect for splash screen
+    function typewriterEffect(elementId, text, speed) {
+        let i = 0;
+        const targetElement = document.getElementById(elementId);
+        if (!targetElement) return;
+
+        targetElement.textContent = ''; // Clear existing text
+        function type() {
+            if (i < text.length) {
+                targetElement.textContent += text.charAt(i);
+                i++;
+                setTimeout(type, speed);
+            }
+        }
+        type();
+    }
+
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
     window.SVR_FILTER_OVERLAY_INJECTED = true;
 
@@ -761,21 +778,26 @@ $('#scroll_top_btn').on('click', function() {
 window.showSVRDetailPage = function(objectId) {
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
+    const splashScreen = document.getElementById('detail-splash');
     const backdrop = document.getElementById('svr-filter-backdrop');
 
     // CRITICAL FIX: Explicitly remove transform property and force reflow
-    // This ensures any previous swipe-to-close inline styles (translateY) are gone
     detailSheet.style.removeProperty('transform');
-    detailSheet.style.transition = 'none'; // Disable transition to prevent flying
-    
-    // Force reflow
-    void detailSheet.offsetWidth; 
-
-    // Restore transition
+    detailSheet.style.transition = 'none';
+    void detailSheet.offsetWidth;
     detailSheet.style.transition = '';
 
-    // Clear previous content immediately
-    $(detailSheet).empty().append('<div style="display:flex;justify-content:center;align-items:center;height:100%;"><i class="fas fa-spinner fa-spin fa-2x" style="color:#008AD3"></i></div>');
+    // Show splash screen immediately
+    if (splashScreen) {
+        splashScreen.classList.remove('hide'); // Make sure it's visible
+        typewriterEffect('detail-splash-text', 'Kamperen bij de boer', 75); // Start typewriter effect
+        // Clear actual content area, but don't remove splash
+        const elementsToClear = Array.from(detailSheet.children).filter(el => el.id !== 'detail-splash');
+        elementsToClear.forEach(el => el.remove());
+    } else {
+        // Fallback if splash not found (shouldn't happen with correct HTML)
+        $(detailSheet).empty();
+    }
 
     // Show backdrop and overlay
     if (backdrop) {
@@ -783,28 +805,27 @@ window.showSVRDetailPage = function(objectId) {
         setTimeout(() => backdrop.classList.add('open'), 10);
     }
     detailOverlay.style.display = 'block';
-    
-    // Tiny delay to ensure browser picks up the display:block before adding the 'open' class for transition
+
     setTimeout(() => {
         detailOverlay.classList.add('open');
-        
         // Push state and fetch content
-        setTimeout(() => {
-            history.pushState({ view: 'detail', objectId: objectId }, "", `#detail/${objectId}`);
-            renderDetail(objectId);
-        }, 300); 
+        history.pushState({ view: 'detail', objectId: objectId }, "", `#detail/${objectId}`);
+        renderDetail(objectId); // renderDetail will now hide the splash when content is ready
     }, 10);
 };
 
-// Function to handle the back action for the detail sheet
+// Function to handle the back action for the detail sheet (no changes here)
 window.handleDetailBack = function() {
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
     const backdrop = document.getElementById('svr-filter-backdrop');
+    const splashScreen = document.getElementById('detail-splash');
+
 
     detailSheet.classList.remove('open'); // Trigger slide down
     detailOverlay.classList.remove('open'); // Trigger background fade out
     if (backdrop) backdrop.classList.remove('open');
+    if (splashScreen) splashScreen.classList.add('hide'); // Hide splash instantly on back
 
     setTimeout(() => {
         detailOverlay.style.display = 'none'; // Hide after animation
@@ -813,6 +834,11 @@ window.handleDetailBack = function() {
         }
         if (history.state && history.state.view === 'detail') {
             history.back(); // Navigate back in history
+        }
+        // Ensure splash is completely gone from DOM after fade-out
+        if (splashScreen) {
+            splashScreen.classList.remove('hide'); // Reset for next use
+            // The splash screen should remain in the DOM, just hidden, ready for next detail view
         }
     }, 400); // Match CSS transition duration
 };
@@ -823,10 +849,21 @@ window.onpopstate = (e) => {
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
     const backdrop = document.getElementById('svr-filter-backdrop');
+    const splashScreen = document.getElementById('detail-splash');
+
 
     if (e.state) {
         applyState(e.state);
         if (e.state.view === 'detail' && e.state.objectId) {
+            // Show splash and start typewriter effect
+            if (splashScreen) {
+                splashScreen.classList.remove('hide');
+                typewriterEffect('detail-splash-text', 'Kamperen bij de boer', 75);
+                 // Clear actual content area, but don't remove splash
+                const elementsToClear = Array.from(detailSheet.children).filter(el => el.id !== 'detail-splash');
+                elementsToClear.forEach(el => el.remove());
+            }
+
             if (backdrop) {
                 backdrop.style.display = 'block';
                 setTimeout(() => backdrop.classList.add('open'), 10);
@@ -834,17 +871,18 @@ window.onpopstate = (e) => {
             detailOverlay.style.display = 'block';
             setTimeout(() => {
                 detailOverlay.classList.add('open');
-                detailSheet.classList.add('open');
-                renderDetail(e.state.objectId);
+                detailSheet.classList.add('open'); // This will trigger the slide up animation
+                renderDetail(e.state.objectId); // This will fetch content and hide splash
             }, 10);
         } else if (e.state.view === 'list' || e.state.view === 'map') {
             detailSheet.classList.remove('open');
             detailOverlay.classList.remove('open');
             if (backdrop) backdrop.classList.remove('open');
+            if (splashScreen) splashScreen.classList.add('hide'); // Hide splash instantly on state change
+
             setTimeout(() => {
                 detailOverlay.style.display = 'none';
                 if (backdrop) backdrop.style.display = 'none';
-                // Removed performSearch() to prevent redundant API calls
             }, 400);
         }
     } else {
@@ -853,10 +891,11 @@ window.onpopstate = (e) => {
         detailSheet.classList.remove('open');
         detailOverlay.classList.remove('open');
         if (backdrop) backdrop.classList.remove('open');
+        if (splashScreen) splashScreen.classList.add('hide'); // Hide splash instantly on fallback
+
         setTimeout(() => {
             detailOverlay.style.display = 'none';
             if (backdrop) backdrop.style.display = 'none';
-            // Removed performSearch() to prevent redundant API calls
         }, 400);
     }
 };
@@ -892,10 +931,10 @@ $searchInput.on('input', function() {
     const suggestions = window.getSuggestionsLocal(q);
     $suggestionsList.empty();
     if (suggestions.length === 0) { $suggestionsList.hide(); return; }
-    suggestions.forEach(p => { 
-        const $li = $('<li class="suggestion-item"></li>').text(p); 
-        $li.on('click', () => { $searchInput.val(p); $suggestionsList.hide(); window.performSearch(); }); 
-        $suggestionsList.append($li); 
+    suggestions.forEach(p => {
+        const $li = $('<li class="suggestion-item"></li>').text(p);
+        $li.on('click', () => { $searchInput.val(p); $suggestionsList.hide(); window.performSearch(); });
+        $suggestionsList.append($li);
     });
     $suggestionsList.show();
 });
@@ -903,17 +942,17 @@ $searchInput.on('input', function() {
 window.performSearch = async function(forceAPI = false) {
     if (isSearching) return;
     isSearching = true;
-    
+
     // Hide keyboard
     $searchInput.blur();
-    
+
     const q = $searchInput.val().trim();
     let sLat = 52.1326, sLng = 5.2913;
 
     if (q) {
         const coords = await window.getCoordinatesWeb(q);
-        if (coords) { 
-            sLat = coords.latitude; sLng = coords.longitude; 
+        if (coords) {
+            sLat = coords.latitude; sLng = coords.longitude;
         } else {
             // Feedback for invalid location
             const originalPlaceholder = $searchInput.attr('placeholder');
@@ -930,12 +969,12 @@ window.performSearch = async function(forceAPI = false) {
 
     // Update de rode punaise naar de nieuwe locatie
     if (centerMarker) map.removeLayer(centerMarker);
-    centerMarker = L.marker([sLat, sLng], { 
-        icon: L.divIcon({ 
-            className: 'search-marker', 
-            html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>', 
-            iconSize:[30,30], 
-            iconAnchor:[15,30] 
+    centerMarker = L.marker([sLat, sLng], {
+        icon: L.divIcon({
+            className: 'search-marker',
+            html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>',
+            iconSize:[30,30],
+            iconAnchor:[15,30]
         }),
         zIndexOffset: 2000
     }).addTo(map);
@@ -946,15 +985,15 @@ window.performSearch = async function(forceAPI = false) {
         if (cached) {
             logDebug("Instant Search via Cache (Volledige lijst)...");
             const objects = JSON.parse(cached);
-            
+
             // Bereken afstanden voor ALLE campings in de cache
-            objects.forEach(o => { 
-                o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; 
+            objects.forEach(o => {
+                o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999;
             });
-            
+
             // Sorteer de volledige lijst
             objects.sort((a, b) => a.distM - b.distM);
-            
+
             // Render de volledige set
             renderResults(objects, sLat, sLng);
             isSearching = false;
@@ -971,7 +1010,7 @@ window.performSearch = async function(forceAPI = false) {
         if (window.currentFilters && window.currentFilters.length > 0) {
             window.currentFilters.forEach(f => apiUrl += `&filter[facilities][]=${f}`);
         }
-        
+
         const contents = await fetchWithRetry(apiUrl);
 
         if (!contents || contents.trim().startsWith("<!doctype") || contents.trim().startsWith("<html") || contents.includes("Internal Server Error")) {
@@ -992,7 +1031,7 @@ window.performSearch = async function(forceAPI = false) {
         });
 
         logDebug("API resultaten ontvangen. Aantal: " + objects.length);
-        
+
         // Strip data om binnen de localStorage limiet van 5MB te blijven
         const strippedObjects = objects.map(o => ({
             id: o.id,
@@ -1023,6 +1062,15 @@ window.performSearch = async function(forceAPI = false) {
 }
 
 async function renderDetail(objectId) {
+    const detailSheet = document.querySelector('#detail-container .detail-sheet-content');
+    const splashScreen = document.getElementById('detail-splash');
+
+    // Ensure splash is visible before fetch
+    if (splashScreen) {
+        splashScreen.classList.remove('hide');
+        // Typewriter effect already started in showSVRDetailPage
+    }
+
     try {
         const PROXY_BASE_URL = 'https://svr-proxy-worker.e60-manuels.workers.dev';
         const detailUrl = `${PROXY_BASE_URL}/object/${objectId}`;
@@ -1036,33 +1084,24 @@ async function renderDetail(objectId) {
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
-        
-        // METHOD: "Everything-except-header"
-        // We take the whole body and remove the parts we definitely don't want (nav/header).
+
         const bodyContent = doc.body;
 
-        // Remove navigation, headers, login bars, leftover modals, and ONLY the map container itself
         bodyContent.querySelectorAll('nav, header, .navbar, .container-fluid.p-0.text-center, .modal, #map_detail').forEach(el => {
             el.remove();
         });
-
-        const detailOverlay = document.getElementById('detail-container');
-        const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
 
         if (bodyContent.innerHTML.trim().length > 0) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = bodyContent.innerHTML;
 
-            // 1. Clean up remaining HTML
             tempDiv.querySelectorAll('script, link').forEach(el => el.remove());
 
-            // 2. Make images visible
             tempDiv.querySelectorAll('img').forEach(img => {
                 img.classList.remove('d-none');
                 img.removeAttribute('loading');
             });
 
-            // 3. Rewrite relative URLs
             const SVR_BASE = 'https://www.svr.nl';
             tempDiv.querySelectorAll('[src], [href]').forEach(element => {
                 const attr = element.hasAttribute('src') ? 'src' : 'href';
@@ -1072,7 +1111,6 @@ async function renderDetail(objectId) {
                 }
             });
 
-            // 4. Force mobile layout via style tag
             const containerStyle = document.createElement('style');
             containerStyle.innerHTML = `
                 #detail-container .container, #detail-container .container-fluid {
@@ -1095,9 +1133,9 @@ async function renderDetail(objectId) {
                     float: none !important;
                     display: block !important;
                 }
-                #detail-container img, #detail-container iframe { 
-                    max-width: 100% !important; 
-                    height: auto !important; 
+                #detail-container img, #detail-container iframe {
+                    max-width: 100% !important;
+                    height: auto !important;
                     box-sizing: border-box !important;
                 }
                 /* Specific fix for iframe aspect ratio */
@@ -1140,12 +1178,12 @@ async function renderDetail(objectId) {
                 #detail-container .col-6:has(.restorelines) {
                     padding-left: 0 !important;
                 }
-                
+
                 /* Align and expand the yellow header bar for Facilities */
                 #detail-container .p-2[style*="background-color:#FDCC01"] {
-                    padding-left: 0 !important; 
-                    margin-left: -15px !important; 
-                    width: calc(100% + 30px) !important; 
+                    padding-left: 0 !important;
+                    margin-left: -15px !important;
+                    width: calc(100% + 30px) !important;
                     box-sizing: border-box !important;
                 }
                 #detail-container .p-2[style*="background-color:#FDCC01"] h5 {
@@ -1162,7 +1200,7 @@ async function renderDetail(objectId) {
                 }
                 #detail-container .footer a { color: black !important; text-decoration: underline; }
                 #detail-container .footer h3 { color: black !important; font-family: 'Befalow', sans-serif; }
-                
+
                 #detail-container .pt-5 { padding-top: 1.5rem !important; }
             `;
             tempDiv.prepend(containerStyle);
@@ -1175,158 +1213,167 @@ async function renderDetail(objectId) {
                     <div style="width: 30px;"></div>
                 </div>
             </div>`;
-            
-            // Render
-            $(detailSheet).empty().append(closeBtn);
-            detailSheet.appendChild(tempDiv);
-            
-            // Re-enable swipe
-            window.enableSwipeToClose(detailSheet, window.handleDetailBack, '.detail-header');
 
-            // Inject scripts
-            setTimeout(() => {
-                try {
-                    // FUNDAMENTAL CAROUSEL FIX (Ported from WebView implementation)
-                    logDebug("Initializing bulletproof Swiper...");
-                    
-                    // Find the original container of the images (the grid)
-                    const mainImageContainer = detailSheet.querySelector('div.row.m-0.p-4.mt-0');
+            // Hide splash and then append content after a short delay for smooth transition
+            if (splashScreen) {
+                splashScreen.classList.add('hide'); // Start fade out
+                setTimeout(() => {
+                    // Remove splash from DOM after it fades out, then add content
+                    // Keep the actual splash element in the DOM (but hidden) so it can be reused
+                    // The direct children of detailSheet are now just the splash, which is hidden,
+                    // and any previously loaded content (which we need to remove before appending new).
+                    const elementsToClear = Array.from(detailSheet.children).filter(el => el.id !== 'detail-splash');
+                    elementsToClear.forEach(el => el.remove());
 
-                    if (mainImageContainer && !mainImageContainer.dataset.swiperInitialized) {
-                        let images = [];
-                        const imageCards = mainImageContainer.querySelectorAll('div.card');
-                        
-                        imageCards.forEach(card => {
-                            const img = card.querySelector('img');
-                            if (img && img.src) {
-                                images.push(img.src);
-                            }
-                        });
+                    $(detailSheet).append(closeBtn);
+                    detailSheet.appendChild(tempDiv);
 
-                        logDebug(`Found ${images.length} images for carousel.`);
+                    // Re-enable swipe
+                    window.enableSwipeToClose(detailSheet, window.handleDetailBack, '.detail-header');
 
-                        if (images.length > 0) {
-                            mainImageContainer.dataset.swiperInitialized = 'true';
-                            
-                            // Create the Swiper container structure
-                            const swiperContainer = document.createElement('div');
-                            swiperContainer.className = 'swiper svr-detail-swiper'; 
-                            swiperContainer.style.width = '100%';
-                            swiperContainer.style.height = '300px'; 
-                            swiperContainer.style.position = 'relative';
-                            swiperContainer.style.touchAction = 'pan-y';
-                            swiperContainer.style.overflow = 'hidden';
-                            swiperContainer.style.marginBottom = '20px';
+                    // Inject scripts
+                    setTimeout(() => {
+                        try {
+                            logDebug("Initializing bulletproof Swiper...");
 
-                            const swiperWrapper = document.createElement('div');
-                            swiperWrapper.className = 'swiper-wrapper';
+                            const mainImageContainer = detailSheet.querySelector('div.row.m-0.p-4.mt-0');
 
-                            images.forEach(src => {
-                                const swiperSlide = document.createElement('div');
-                                swiperSlide.className = 'swiper-slide';
-                                swiperSlide.style.display = 'flex';
-                                swiperSlide.style.alignItems = 'center';
-                                swiperSlide.style.justifyContent = 'center';
-                                swiperSlide.style.width = '100%';
-                                
-                                const imgElement = document.createElement('img');
-                                imgElement.src = src;
-                                imgElement.style.width = '100%';
-                                imgElement.style.height = '100%';
-                                imgElement.style.objectFit = 'cover';
-                                
-                                swiperSlide.appendChild(imgElement);
-                                swiperWrapper.appendChild(swiperSlide);
-                            });
+                            if (mainImageContainer && !mainImageContainer.dataset.swiperInitialized) {
+                                let images = [];
+                                const imageCards = mainImageContainer.querySelectorAll('div.card');
 
-                            swiperContainer.appendChild(swiperWrapper);
-
-                            const pagination = document.createElement('div');
-                            pagination.className = 'swiper-pagination';
-                            swiperContainer.appendChild(pagination);
-
-                            // Replace the original image grid with the new Swiper container
-                            mainImageContainer.parentNode.replaceChild(swiperContainer, mainImageContainer);
-
-                            // Initialize Swiper with robust settings
-                            if (typeof Swiper !== 'undefined') {
-                                new Swiper(swiperContainer, {
-                                    direction: 'horizontal',
-                                    loop: images.length > 1,
-                                    speed: 400,
-                                    roundLengths: true,
-                                    observer: true,
-                                    observeParents: true,
-                                    pagination: {
-                                        el: '.swiper-pagination',
-                                        clickable: true,
-                                    },
-                                    threshold: 10,
-                                    followFinger: true,
-                                    touchStartPreventDefault: false,
-                                    on: {
-                                        init: function () {
-                                            const self = this;
-                                            setTimeout(() => self.update(), 500);
-                                            setTimeout(() => self.update(), 1500);
-                                        },
-                                    },
+                                imageCards.forEach(card => {
+                                    const img = card.querySelector('img');
+                                    if (img && img.src) {
+                                        images.push(img.src);
+                                    }
                                 });
-                                logDebug("Robust Swiper initialized successfully.");
-                            }
-                        }
-                    } else {
-                        // Fallback for pages that might already use .swiper or .carousel
-                        const carousel = detailSheet.querySelector('.carousel');
-                        if (carousel) {
-                            logDebug("Fallback: Converting Bootstrap Carousel to Swiper...");
-                            carousel.classList.remove('carousel', 'slide', 'pointer-event');
-                            carousel.classList.add('swiper');
-                            
-                            const inner = carousel.querySelector('.carousel-inner');
-                            if (inner) {
-                                inner.classList.remove('carousel-inner');
-                                inner.classList.add('swiper-wrapper');
-                                
-                                inner.querySelectorAll('.carousel-item').forEach((item, idx) => {
-                                    item.classList.remove('carousel-item', 'active');
-                                    item.classList.add('swiper-slide');
-                                    item.style.display = 'block'; 
-                                    item.style.float = 'none';
-                                    item.style.marginRight = '0';
-                                    item.style.height = 'auto';
-                                });
-                            }
-                            
-                            carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next').forEach(el => el.remove());
-                            
-                            if (!carousel.querySelector('.swiper-pagination')) {
-                                const pagination = document.createElement('div');
-                                pagination.className = 'swiper-pagination';
-                                carousel.appendChild(pagination);
+
+                                logDebug(`Found ${images.length} images for carousel.`);
+
+                                if (images.length > 0) {
+                                    mainImageContainer.dataset.swiperInitialized = 'true';
+
+                                    const swiperContainer = document.createElement('div');
+                                    swiperContainer.className = 'swiper svr-detail-swiper';
+                                    swiperContainer.style.width = '100%';
+                                    swiperContainer.style.height = '300px';
+                                    swiperContainer.style.position = 'relative';
+                                    swiperContainer.style.touchAction = 'pan-y';
+                                    swiperContainer.style.overflow = 'hidden';
+                                    swiperContainer.style.marginBottom = '20px';
+
+                                    const swiperWrapper = document.createElement('div');
+                                    swiperWrapper.className = 'swiper-wrapper';
+
+                                    images.forEach(src => {
+                                        const swiperSlide = document.createElement('div');
+                                        swiperSlide.className = 'swiper-slide';
+                                        swiperSlide.style.display = 'flex';
+                                        swiperSlide.style.alignItems = 'center';
+                                        swiperSlide.style.justifyContent = 'center';
+                                        swiperSlide.style.width = '100%';
+
+                                        const imgElement = document.createElement('img');
+                                        imgElement.src = src;
+                                        imgElement.style.width = '100%';
+                                        imgElement.style.height = '100%';
+                                        imgElement.style.objectFit = 'cover';
+
+                                        swiperSlide.appendChild(imgElement);
+                                        swiperWrapper.appendChild(swiperSlide);
+                                    });
+
+                                    swiperContainer.appendChild(swiperWrapper);
+
+                                    const pagination = document.createElement('div');
+                                    pagination.className = 'swiper-pagination';
+                                    swiperContainer.appendChild(pagination);
+
+                                    mainImageContainer.parentNode.replaceChild(swiperContainer, mainImageContainer);
+
+                                    if (typeof Swiper !== 'undefined') {
+                                        new Swiper(swiperContainer, {
+                                            direction: 'horizontal',
+                                            loop: images.length > 1,
+                                            speed: 400,
+                                            roundLengths: true,
+                                            observer: true,
+                                            observeParents: true,
+                                            pagination: {
+                                                el: '.swiper-pagination',
+                                                clickable: true,
+                                            },
+                                            threshold: 10,
+                                            followFinger: true,
+                                            touchStartPreventDefault: false,
+                                            on: {
+                                                init: function () {
+                                                    const self = this;
+                                                    setTimeout(() => self.update(), 500);
+                                                    setTimeout(() => self.update(), 1500);
+                                                },
+                                            },
+                                        });
+                                        logDebug("Robust Swiper initialized successfully.");
+                                    }
+                                }
+                            } else {
+                                const carousel = detailSheet.querySelector('.carousel');
+                                if (carousel) {
+                                    logDebug("Fallback: Converting Bootstrap Carousel to Swiper...");
+                                    carousel.classList.remove('carousel', 'slide', 'pointer-event');
+                                    carousel.classList.add('swiper');
+
+                                    const inner = carousel.querySelector('.carousel-inner');
+                                    if (inner) {
+                                        inner.classList.remove('carousel-inner');
+                                        inner.classList.add('swiper-wrapper');
+
+                                        inner.querySelectorAll('.carousel-item').forEach((item, idx) => {
+                                            item.classList.remove('carousel-item', 'active');
+                                            item.classList.add('swiper-slide');
+                                            item.style.display = 'block';
+                                            item.style.float = 'none';
+                                            item.style.marginRight = '0';
+                                            item.style.height = 'auto';
+                                        });
+                                    }
+
+                                    carousel.querySelectorAll('.carousel-control-prev, .carousel-control-next').forEach(el => el.remove());
+
+                                    if (!carousel.querySelector('.swiper-pagination')) {
+                                        const pagination = document.createElement('div');
+                                        pagination.className = 'swiper-pagination';
+                                        carousel.appendChild(pagination);
+                                    }
+
+                                    if (typeof Swiper !== 'undefined') {
+                                        new Swiper(carousel, {
+                                            loop: true,
+                                            autoHeight: true,
+                                            pagination: {
+                                                el: '.swiper-pagination',
+                                                clickable: true,
+                                            },
+                                        });
+                                    }
+                                }
                             }
 
-                            if (typeof Swiper !== 'undefined') {
-                                new Swiper(carousel, {
-                                    loop: true,
-                                    autoHeight: true,
-                                    pagination: {
-                                        el: '.swiper-pagination',
-                                        clickable: true,
-                                    },
-                                });
-                            }
-                        }
-                    }
-
-                    // Apply befalow font
-                    detailSheet.querySelectorAll('.befalow').forEach(el => el.style.setProperty('font-family', "'Befalow', sans-serif", 'important'));
-                } catch(err) { console.error("Error during post-injection script execution:", err); }
-            }, 600);
+                            detailSheet.querySelectorAll('.befalow').forEach(el => el.style.setProperty('font-family', "'Befalow', sans-serif", 'important'));
+                        } catch(err) { console.error("Error during post-injection script execution:", err); }
+                    }, 600);
+                }, 500); // Wait for splash fade out transition
+            }
         } else { throw new Error("Geen detailinhoud gevonden."); }
     } catch (e) {
         logDebug("Detail Fout: " + e.message);
-        $('#detail-container .detail-sheet-content').empty().append(`<div style="padding:40px;text-align:center;"><h3>Fout</h3><p>${e.message}</p><button onclick="window.handleDetailBack()">Terug</button></div>`);
+        // Ensure splash is hidden if an error occurs
+        if (splashScreen) splashScreen.classList.add('hide');
+        const elementsToClear = Array.from(detailSheet.children).filter(el => el.id !== 'detail-splash');
+        elementsToClear.forEach(el => el.remove());
+        $(detailSheet).append(`<div style="padding:40px;text-align:center;"><h3>Fout</h3><p>${e.message}</p><button onclick="window.handleDetailBack()">Terug</button></div>`);
     }
 }
 
