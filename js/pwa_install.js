@@ -151,20 +151,35 @@ function showIOSInstructions() {
 
   const iosInstructionsHtml = `
     <div id="ios-install-instructions" class="ios-install-instructions">
-      <div class="ios-install-content">
-        <button id="close-ios-instructions" class="ios-close-button">
-          ✕
-        </button>
-        <div class="ios-install-icon">
-          <img src="icons/icon-192.png" alt="App Icon">
+      <div class="ios-install-header-row"> <!-- New div for the header row -->
+        <div class="ios-install-left"> <!-- Container for SVR icon and text -->
+          <div class="ios-install-icon">
+            <img src="icons/icon-192.png" alt="App Icon">
+          </div>
+          <div class="ios-install-text">
+            <p>Installeer de SVR app als volgt:</p>
+          </div>
         </div>
-        <div class="ios-install-text">
-          <p>Installeer de SVR app als volgt:</p>
+        <div class="ios-install-right"> <!-- Container for the close button -->
+          <button id="close-ios-instructions" class="ios-close-button">
+            ✕
+          </button>
         </div>
       </div>
       <div class="ios-install-detailed-instructions">
         <ol>
-          <li>Tik op het deel-icoon <i class="fas fa-share-nodes" style="font-size: 1.5em; vertical-align: middle;"></i> onderin je browser.</li>
+          <li>Tik op het deel-icoon <span style="display: inline-flex; align-items: center; vertical-align: middle; font-size: 1.5em; width: 24px; height: 24px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" style="display: block; width: 100%; height: 100%;">
+        <line x1="40" y1="96" x2="100" y2="96"/>
+        <line x1="156" y1="96" x2="216" y2="96"/>
+        <line x1="40" y1="96" x2="40" y2="224"/>
+        <line x1="216" y1="96" x2="216" y2="224"/>
+        <line x1="40" y1="224" x2="216" y2="224"/>
+        <line x1="128" y1="160" x2="128" y2="32"/>
+        <line x1="128" y1="32" x2="96" y2="64"/>
+        <line x1="128" y1="32" x2="160" y2="64"/>
+    </svg>
+</span> onderin je browser.</li>
           <li>Scroll naar beneden en tik op 'Zet op beginscherm'.</li>
           <li>Tik op 'Voeg toe' rechtsboven.</li>
         </ol>

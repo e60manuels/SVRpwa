@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="24" height="24" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Box -->
+  <!-- Linker helft van bovenrand -->
+  <line x1="40" y1="96" x2="100" y2="96"/>
+  <!-- Rechter helft van bovenrand -->
+  <line x1="156" y1="96" x2="216" y2="96"/>
+  <!-- Zijkanten en onderkant -->
+  <line x1="40" y1="96" x2="40" y2="224"/>
+  <line x1="216" y1="96" x2="216" y2="224"/>
+  <line x1="40" y1="224" x2="216" y2="224"/>
+
+  <!-- Arrow up vanuit hart van de box -->
+  <!-- Hart van box: (128, 160) -->
+  <!-- Pijl iets langer: top op y=32 ipv 48 -->
+  <line x1="128" y1="160" x2="128" y2="32"/>
+  <line x1="128" y1="32" x2="96" y2="64"/>
+  <line x1="128" y1="32" x2="160" y2="64"/>
+</svg>
