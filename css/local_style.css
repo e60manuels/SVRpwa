@@ -183,8 +183,8 @@
         }
         .detail-sheet-content > div:not(.detail-header) {
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
             flex-grow: 1;
+            overscroll-behavior: none;
         }
         .detail-overlay.open .detail-sheet-content {
             transform: translateY(0%); /* Slide into view */
@@ -319,10 +319,16 @@
   box-sizing: border-box;
   padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px)); /* Account for safe area */
 }
-.ios-install-instructions p {
-    margin-top: 0;
-    font-weight: bold;
-    color: white; /* Ensure text color is white */
+.ios-install-icon {
+  width: 48px; /* Example size, can be adjusted */
+  height: 48px; /* Example size, can be adjusted */
+  margin: 0 auto 10px auto; /* Center it and add some bottom margin */
+}
+
+.ios-install-icon img {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px; /* Adjust as needed */
 }
 .ios-install-instructions ol {
     padding-left: 20px;

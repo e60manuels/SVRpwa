@@ -159,13 +159,12 @@ function showIOSInstructions() {
           <img src="icons/icon-192.png" alt="App Icon">
         </div>
         <div class="ios-install-text">
-          <p>Installeer deze SVR app</p>
+          <p>Installeer de SVR app als volgt:</p>
         </div>
       </div>
       <div class="ios-install-detailed-instructions">
-        <p>Volg deze stappen om de app te installeren:</p>
         <ol>
-          <li>Tik op het deel-icoon <span style="font-size: 1.5em; vertical-align: middle;">⇧</span> onderin de browser.</li>
+          <li>Tik op het deel-icoon <i class="fas fa-share-nodes" style="font-size: 1.5em; vertical-align: middle;"></i> onderin je browser.</li>
           <li>Scroll naar beneden en tik op 'Zet op beginscherm'.</li>
           <li>Tik op 'Voeg toe' rechtsboven.</li>
         </ol>
