@@ -152,12 +152,9 @@ function showIOSInstructions() {
   const iosInstructionsHtml = `
     <div id="ios-install-instructions" class="ios-install-instructions">
       <div class="ios-install-header-row"> <!-- New div for the header row -->
-        <div class="ios-install-left"> <!-- Container for SVR icon and text -->
+        <div class="ios-install-left"> <!-- Container for SVR icon -->
           <div class="ios-install-icon">
             <img src="icons/icon-192.png" alt="App Icon">
-          </div>
-          <div class="ios-install-text">
-            <p>Installeer de SVR app als volgt:</p>
           </div>
         </div>
         <div class="ios-install-right"> <!-- Container for the close button -->
@@ -166,9 +163,10 @@ function showIOSInstructions() {
           </button>
         </div>
       </div>
+      <p class="ios-install-main-text">Installeer de SVR app als volgt:</p> <!-- Yellow text moved here -->
       <div class="ios-install-detailed-instructions">
         <ol>
-          <li>Tik op het deel-icoon <span style="display: inline-flex; align-items: center; vertical-align: middle; font-size: 1.5em; width: 24px; height: 24px;">
+          <li>Tik op de drie-puntjes ... onderin de browser en tik op het deel-icoon <span style="display: inline-flex; align-items: center; vertical-align: middle; font-size: 1.5em; width: 24px; height: 24px;">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" style="display: block; width: 100%; height: 100%;">
         <line x1="40" y1="96" x2="100" y2="96"/>
         <line x1="156" y1="96" x2="216" y2="96"/>
@@ -179,9 +177,9 @@ function showIOSInstructions() {
         <line x1="128" y1="32" x2="96" y2="64"/>
         <line x1="128" y1="32" x2="160" y2="64"/>
     </svg>
-</span> onderin je browser.</li>
-          <li>Scroll naar beneden en tik op 'Zet op beginscherm'.</li>
-          <li>Tik op 'Voeg toe' rechtsboven.</li>
+</span>. (soms is drie-puntjes klikken niet nodig)</li>
+          <li>Swipe omhoog, scroll naar beneden en tik op 'Zet op beginscherm'. (soms is swipe niet nodig)</li>
+          <li>Tik rechtsboven op 'Voeg toe'.</li>
         </ol>
       </div>
       <button id="ios-understood-button" class="ios-close-button">
