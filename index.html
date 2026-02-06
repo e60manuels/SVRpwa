@@ -16,6 +16,9 @@
     <link rel="apple-touch-icon" href="icons/icon-192.webp">
     <link rel="icon" type="image/webp" href="icons/icon-192.webp">
 
+    <!-- LCP Image Preload -->
+    <link rel="preload" fetchpriority="high" as="image" href="https://tile.openstreetmap.org/8/131/83.png">
+
     <!-- Assets -->
     <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"></noscript>
@@ -89,7 +92,7 @@
         </div>
 
         <!-- Version Indicator -->
-        <div id="pwa-version-display" style="position: absolute; bottom: 5px; left: 15px; font-size: 10px; color: rgba(255,255,255,0.8); pointer-events: none;"></div>
+        <div id="pwa-version-display" style="position: absolute; bottom: 5px; left: 35px; font-size: 10px; color: rgba(255,255,255,0.8); pointer-events: none;"></div>
     </div>
 
     <header class="svr-header">
@@ -156,8 +159,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
-    <script src="js/local_app.js?v=85"></script>
-    <script src="js/pwa_install.js?v=85"></script>
+    <script src="js/local_app.js?v=86"></script>
+    <script src="js/pwa_install.js?v=86"></script>
     <!-- Force GitHub Pages Refresh v60 - Resetting Build Queue -->
     <script>
         if ('serviceWorker' in navigator) {

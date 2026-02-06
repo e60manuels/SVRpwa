@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 85; // Increment this number with each commit
+window.SVR_PWA_VERSION = 86; // Increment this number with each commit
 
 (function () {
     // Typewriter effect for splash screen (now using CSS class)
@@ -665,7 +665,7 @@ let centerMarker = null;
 let currentUserLatLng = null;
 let userLocationMarker = null;
 
-const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(map);
+const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(map);
 tiles.on('tileload', () => { if(!window.tilesLogged) { logDebug("Tegels OK"); window.tilesLogged=true; } });
 map.addLayer(markerCluster); map.addLayer(top10Layer);
 
