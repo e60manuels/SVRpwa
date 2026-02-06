@@ -1,4 +1,5 @@
-const CACHE_NAME = 'svr-pwa-cache-v84';
+const CACHE_NAME = 'svr-pwa-cache-v85';
+const MAP_CACHE_NAME = 'svr-pwa-map-tiles';
 const ASSETS_TO_CACHE = [
   './',
   './offline.html',
@@ -39,7 +40,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
+          if (cache !== CACHE_NAME && cache !== MAP_CACHE_NAME) {
             console.log('SW: Clearing old cache');
             return caches.delete(cache);
           }
@@ -59,6 +60,21 @@ self.addEventListener('fetch', (event) => {
   // Skip Service Worker for requests to the Cloudflare Worker proxy or any API endpoint
   if (url.hostname === PROXY_BASE_URL_HOSTNAME || url.pathname.includes('/api/')) {
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Map Tiles strategy (Cache-first)
+  if (url.hostname.includes('tile.openstreetmap.org')) {
+    event.respondWith(
+      caches.open(MAP_CACHE_NAME).then((cache) => {
+        return cache.match(event.request).then((response) => {
+          return response || fetch(event.request).then((networkResponse) => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
+          });
+        });
+      })
+    );
     return;
   }
 
