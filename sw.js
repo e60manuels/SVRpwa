@@ -1,4 +1,4 @@
-const CACHE_NAME = 'svr-pwa-cache-v78';
+const CACHE_NAME = 'svr-pwa-cache-v82';
 const ASSETS_TO_CACHE = [
   './',
   './offline.html',
@@ -11,7 +11,7 @@ const ASSETS_TO_CACHE = [
   './fonts/befalow.ttf',
   './assets/Woonplaatsen_in_Nederland.csv',
   './assets/campsites_preset.json',
-  './icons/icon-192.png',
+  './icons/icon-192.webp',
   './icons/icon-512.png',
   'https://code.jquery.com/jquery-3.6.0.min.js',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',

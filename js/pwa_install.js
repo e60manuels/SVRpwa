@@ -154,7 +154,7 @@ function showIOSInstructions() {
       <div class="ios-install-header-row"> <!-- New div for the header row -->
         <div class="ios-install-left"> <!-- Container for SVR icon -->
           <div class="ios-install-icon">
-            <img src="icons/icon-192.png" alt="App Icon">
+            <img src="icons/icon-192.webp" alt="App Icon">
           </div>
         </div>
         <div class="ios-install-right"> <!-- Container for the close button -->
