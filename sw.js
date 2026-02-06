@@ -1,4 +1,4 @@
-const CACHE_NAME = 'svr-pwa-cache-v85';
+const CACHE_NAME = 'svr-pwa-cache-v86';
 const MAP_CACHE_NAME = 'svr-pwa-map-tiles';
 const ASSETS_TO_CACHE = [
   './',

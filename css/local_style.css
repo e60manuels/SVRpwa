@@ -149,16 +149,54 @@
         .svr-scroll-top { bottom: 75px !important; }
 
         /* --- DETAIL BOTTOM SHEET --- */
+
         .detail-overlay {
+
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+
             background: transparent; /* Changed to transparent, we use backdrop instead */
+
             z-index: 9995; /* Above backdrop (9990) */
+
             display: none; /* Hidden by default */
+
             opacity: 0;
+
             transition: opacity 0.3s ease;
+
             overscroll-behavior: none; /* Prevent background scrolling when overlay is open */
+
             pointer-events: none; /* Allow clicking through empty top area */
+
         }
+
+        
+
+        /* Swiper Pagination Below Image */
+
+        .svr-detail-swiper {
+
+            padding-bottom: 30px !important;
+
+            height: auto !important;
+
+        }
+
+        .svr-detail-swiper .swiper-pagination {
+
+            bottom: 0 !important;
+
+        }
+
+        .svr-detail-swiper .swiper-slide img {
+
+            height: 300px !important;
+
+            object-fit: cover;
+
+        }
+
+        
         .detail-overlay.open {
             display: block;
             opacity: 1;
