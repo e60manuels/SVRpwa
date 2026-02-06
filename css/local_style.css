@@ -394,3 +394,23 @@
 .ios-install-instructions li {
     margin-bottom: 5px;
 }
+
+/* --- TYPEWRITER EFFECT --- */
+.typewriter {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 3px solid var(--svr-blue);
+    animation: typing 2s steps(20, end), blink-caret .75s step-end infinite;
+    max-width: fit-content;
+}
+
+@keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+}
+
+@keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: var(--svr-blue); }
+}
