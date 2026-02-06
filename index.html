@@ -13,8 +13,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="SVR Campings">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.webp">
+    <link rel="icon" type="image/webp" href="icons/icon-192.webp">
 
     <!-- Assets -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -76,6 +76,9 @@
             <div class="help-text">Wissel tussen Lijst en Kaart weergave</div>
             <div class="help-arrow arrow-right"></div>
         </div>
+
+        <!-- Version Indicator -->
+        <div id="pwa-version-display" style="position: absolute; bottom: 5px; left: 15px; font-size: 10px; color: rgba(255,255,255,0.8); pointer-events: none;"></div>
     </div>
 
     <header class="svr-header">
@@ -127,7 +130,7 @@
           ✕
         </button>
         <div class="install-banner-icon">
-          <img src="icons/icon-192.png" alt="App Icon">
+          <img src="icons/icon-192.webp" alt="App Icon">
         </div>
         <div class="install-banner-text">
           <p>Installeer deze SVR app</p>
@@ -142,8 +145,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
-    <script src="js/local_app.js?v=78"></script>
-    <script src="js/pwa_install.js?v=78"></script>
+    <script src="js/local_app.js?v=82"></script>
+    <script src="js/pwa_install.js?v=82"></script>
     <!-- Force GitHub Pages Refresh v60 - Resetting Build Queue -->
     <script>
         if ('serviceWorker' in navigator) {

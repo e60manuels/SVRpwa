@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 78; // Increment this number with each commit
+window.SVR_PWA_VERSION = 82; // Increment this number with each commit
 
 (function () {
     // Typewriter effect for splash screen
@@ -1640,6 +1640,10 @@ async function initApp() {
 window.initializeApp = function() {
     history.replaceState({ view: 'map' }, "");
     
+    // Set version display
+    const verDisplay = document.getElementById('pwa-version-display');
+    if (verDisplay) verDisplay.textContent = `v${window.SVR_PWA_VERSION}`;
+
     // Direct de kaart EN de lijst vullen vanuit cache of preset (Instant Map & List)
     // Dit gebeurt 100% lokaal, zonder API-call voor campings.
     window.loadCachedCampsites();

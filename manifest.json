@@ -10,9 +10,9 @@
   "theme_color": "#FDCC01",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "icons/icon-192.webp",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/webp",
       "purpose": "any maskable"
     },
     {
