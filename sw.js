@@ -1,4 +1,4 @@
-const CACHE_NAME = 'svr-pwa-cache-v82';
+const CACHE_NAME = 'svr-pwa-cache-v83';
 const ASSETS_TO_CACHE = [
   './',
   './offline.html',
