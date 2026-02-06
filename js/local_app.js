@@ -1,22 +1,16 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = 83; // Increment this number with each commit
+window.SVR_PWA_VERSION = 84; // Increment this number with each commit
 
 (function () {
-    // Typewriter effect for splash screen
-    function typewriterEffect(elementId, text, speed) {
-        let i = 0;
+    // Typewriter effect for splash screen (now using CSS class)
+    function typewriterEffect(elementId, text) {
         const targetElement = document.getElementById(elementId);
         if (!targetElement) return;
 
-        targetElement.textContent = ''; // Clear existing text
-        function type() {
-            if (i < text.length) {
-                targetElement.textContent += text.charAt(i);
-                i++;
-                setTimeout(type, speed);
-            }
-        }
-        type();
+        targetElement.textContent = text;
+        targetElement.classList.remove('typewriter');
+        void targetElement.offsetWidth; // Force reflow to restart animation
+        targetElement.classList.add('typewriter');
     }
     window.typewriterEffect = typewriterEffect; // Expose globally
 
@@ -791,7 +785,7 @@ window.showSVRDetailPage = function(objectId) {
     // Show splash screen immediately
     if (splashScreen) {
         splashScreen.classList.remove('hide'); // Make sure it's visible
-        typewriterEffect('detail-splash-text', 'Kamperen bij de boer', 75); // Start typewriter effect
+        typewriterEffect('detail-splash-text', 'Kamperen bij de boer'); // Start typewriter effect
         // Clear actual content area, but don't remove splash
         const elementsToClear = Array.from(detailSheet.children).filter(el => el.id !== 'detail-splash');
         elementsToClear.forEach(el => el.remove());
@@ -859,7 +853,7 @@ window.onpopstate = (e) => {
             // Show splash and start typewriter effect
             if (splashScreen) {
                 splashScreen.classList.remove('hide');
-                typewriterEffect('detail-splash-text', 'Kamperen bij de boer', 75);
+                typewriterEffect('detail-splash-text', 'Kamperen bij de boer');
                  // Clear actual content area, but don't remove splash
                 const elementsToClear = Array.from(detailSheet.children).filter(el => el.id !== 'detail-splash');
                 elementsToClear.forEach(el => el.remove());
