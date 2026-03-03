@@ -24,7 +24,22 @@
         .search-container input { border: none; outline: none; width: 100%; padding: 0 8px; font-size: 15px; background: transparent; }
         
         #searchIcon { color: var(--svr-blue); padding: 5px; font-size: 16px; }
-        #infoBtn { color: var(--svr-blue); padding: 5px; font-size: 18px; font-family: serif; font-style: italic; font-weight: bold; cursor: pointer; }
+        .search-container #infoBtn.map-stack-btn {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            background: white;
+            color: var(--svr-blue);
+            cursor: pointer;
+            box-shadow: none;
+        }
 
         /* --- HELP OVERLAY --- */
         #help-overlay {

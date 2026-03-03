@@ -100,7 +100,9 @@
             <div class="search-container" style="position: relative;">
                 <i class="fas fa-search" id="searchIcon"></i>
                 <input type="text" id="searchInput" placeholder="Zoek een SVR camping" autocomplete="off">
-                <span id="infoBtn" onclick="window.showHelp()">i</span>
+                <button id="infoBtn" class="map-stack-btn" onclick="window.showHelp()">
+                    <i class="fas fa-info"></i>
+                </button>
                 <ul id="suggestionsList" class="suggestions-list"></ul>
             </div>
         </div>
@@ -159,8 +161,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
-    <script src="js/local_app.js?v=99"></script>
-    <script src="js/pwa_install.js?v=99"></script>
+    <script src="js/local_app.js?v=0.2.0"></script>
+    <script src="js/pwa_install.js?v=0.2.0"></script>
     <!-- Force GitHub Pages Refresh v60 - Resetting Build Queue -->
     <script>
         if ('serviceWorker' in navigator) {
