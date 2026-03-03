@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.3"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.4"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -373,9 +373,9 @@ window.SVR_PWA_VERSION = "0.2.3"; // Increment this number with each commit
     };
 
     window.closeFilterOverlay = function() { 
-        // If we are in the 'filters' history state, going back will trigger onpopstate
-        // which will call hideFilterOverlay().
-        if (history.state && history.state.view === 'filters') {
+        // If we are in the 'filters' or 'detail' history state, going back will trigger onpopstate
+        // which will call hideFilterOverlay() or handle the detail close animation.
+        if (history.state && (history.state.view === 'filters' || history.state.view === 'detail')) {
             history.back();
         } else {
             // Fallback if state is already gone
