@@ -33,25 +33,66 @@
 
         .svr-top-row { width: 100%; height: 60px; display: flex; padding: 0 12px; gap: 10px; align-items: center; box-sizing: border-box; flex-shrink: 0; }
 
-        /* The scrollable chips bar */
+        /* The scrollable chips bar container */
+        .filters-nav-container {
+            width: 100%;
+            height: 36px;
+            position: relative;
+            display: none; /* Hidden by default */
+            align-items: center;
+            overflow: hidden;
+        }
+
+        body.has-filters .filters-nav-container {
+            display: flex;
+        }
+
         .active-filters-bar { 
             width: 100%; 
-            height: 36px; 
+            height: 100%; 
             overflow-x: auto; 
             white-space: nowrap; 
             padding: 0 12px 4px 12px; 
             box-sizing: border-box; 
-            display: none; /* Hidden by default */
+            display: flex;
+            align-items: center;
             scrollbar-width: none; /* Firefox */
             -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
 
         .active-filters-bar::-webkit-scrollbar { display: none; }
 
-        body.has-filters .active-filters-bar { 
-            display: flex; 
-            align-items: center; 
+        /* Navigation Arrows */
+        .filter-nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            cursor: pointer;
+            color: #666;
+            font-size: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
         }
+
+        .filter-nav-arrow.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .filter-nav-arrow.left { left: 4px; }
+        .filter-nav-arrow.right { right: 4px; }
 
         /* Individual Chip Styling */
         .active-filter-chip { 
