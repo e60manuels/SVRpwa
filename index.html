@@ -107,7 +107,11 @@
             </div>
         </div>
         <!-- Filter Chips Bar (Dynamically filled) -->
-        <div id="active-filters-bar" class="active-filters-bar"></div>
+        <div id="filters-nav-container" class="filters-nav-container">
+            <button id="filter-arrow-left" class="filter-nav-arrow left"><i class="fas fa-chevron-left"></i></button>
+            <div id="active-filters-bar" class="active-filters-bar"></div>
+            <button id="filter-arrow-right" class="filter-nav-arrow right"><i class="fas fa-chevron-right"></i></button>
+        </div>
     </header>
 
     <div id="map-container">
@@ -163,8 +167,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
-    <script src="js/local_app.js?v=0.2.8"></script>
-    <script src="js/pwa_install.js?v=0.2.8"></script>
+    <script src="js/local_app.js?v=0.2.9"></script>
+    <script src="js/pwa_install.js?v=0.2.9"></script>
     <!-- Force GitHub Pages Refresh v60 - Resetting Build Queue -->
     <script>
         if ('serviceWorker' in navigator) {

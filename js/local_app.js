@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.8"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.9"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -569,12 +569,69 @@ window.SVR_PWA_VERSION = "0.2.8"; // Increment this number with each commit
         return div;
     }
 
+    // Functie om de navigatiepijltjes van de filterbalk bij te werken
+    function updateFilterArrows() {
+        const bar = document.getElementById('active-filters-bar');
+        const leftArrow = document.getElementById('filter-arrow-left');
+        const rightArrow = document.getElementById('filter-arrow-right');
+        
+        if (!bar || !leftArrow || !rightArrow) return;
+
+        // Check if there is overflow
+        const hasOverflow = bar.scrollWidth > bar.clientWidth;
+        
+        if (!hasOverflow) {
+            leftArrow.classList.remove('visible');
+            rightArrow.classList.remove('visible');
+            return;
+        }
+
+        // Show/hide left arrow
+        if (bar.scrollLeft > 5) {
+            leftArrow.classList.add('visible');
+        } else {
+            leftArrow.classList.remove('visible');
+        }
+
+        // Show/hide right arrow
+        // Gebruik een marge van 5px voor afrondingsverschillen
+        if (bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 5) {
+            rightArrow.classList.add('visible');
+        } else {
+            rightArrow.classList.remove('visible');
+        }
+    }
+
+    // Initialiseer de navigatiepijltjes
+    function initFilterNav() {
+        const bar = document.getElementById('active-filters-bar');
+        const leftArrow = document.getElementById('filter-arrow-left');
+        const rightArrow = document.getElementById('filter-arrow-right');
+
+        if (bar) {
+            bar.addEventListener('scroll', updateFilterArrows);
+            // Ook checken bij resize van het venster
+            window.addEventListener('resize', updateFilterArrows);
+        }
+
+        if (leftArrow) {
+            leftArrow.onclick = () => {
+                if (bar) bar.scrollBy({ left: -150, behavior: 'smooth' });
+            };
+        }
+
+        if (rightArrow) {
+            rightArrow.onclick = () => {
+                if (bar) bar.scrollBy({ left: 150, behavior: 'smooth' });
+            };
+        }
+    }
+
     // Functie om de actieve filters UI bij te werken
-    // updateHeaderOnly: if true, only update the top bar chips. If false, update both.
-    function updateActiveFiltersUI(selectedItems, updateHeaderOnly = false) {
-        // --- 1. Overlay Tags (Original logic) ---
-        // Alleen updaten als we NIET in 'updateHeaderOnly' mode zijn
-        if (!updateHeaderOnly) {
+    // target: 'overlay' (menu tags), 'header' (top chips), or 'both'
+    function updateActiveFiltersUI(selectedItems, target = 'both') {
+        // --- 1. Overlay Tags (Inside the filter menu) ---
+        if (target === 'overlay' || target === 'both') {
             const tagsContainer = overlay.querySelector('#active-tags-container');
             const activeHolder = overlay.querySelector('#active-filters-holder');
             const overlayContent = overlay.querySelector('#svr-filter-overlay-content');
@@ -594,48 +651,49 @@ window.SVR_PWA_VERSION = "0.2.8"; // Increment this number with each commit
                 activeHolder.style.display = 'none';
             }
 
-            // Gebruik een kleine delay om de browser de nieuwe hoogte te laten berekenen
             setTimeout(() => {
                 const newHeight = activeHolder.style.display !== 'none' ? activeHolder.offsetHeight : 0;
                 const diff = newHeight - oldHeight;
-
                 if (newHeight > 0) {
                     overlayContent.style.scrollPaddingTop = (newHeight + 15) + 'px';
                 } else {
                     overlayContent.style.scrollPaddingTop = '15px';
                 }
-
                 if (diff !== 0 && overlayContent.scrollTop > 0) {
                     overlayContent.scrollBy({ top: -diff, behavior: 'instant' });
                 }
             }, 1);
         }
 
-        // --- 2. Header Chips (New Filter Chips Logic) ---
-        // Deze sectie wordt ALTIJD uitgevoerd bij Toepassen of bij verwijderen via een chip
-        const headerBar = document.getElementById('active-filters-bar');
-        const svrHeader = document.querySelector('.svr-header');
-        
-        if (headerBar) {
-            headerBar.innerHTML = '';
-            if (selectedItems.length > 0) {
-                document.body.classList.add('has-filters'); // Moved class to body for global scope
-                svrHeader.classList.add('has-filters');
-                selectedItems.forEach(item => {
-                    const chip = document.createElement('div');
-                    chip.className = 'active-filter-chip';
-                    chip.innerHTML = `${item.name}<i class="fas fa-times-circle" data-guid="${item.guid}"></i>`;
-                    headerBar.appendChild(chip);
+        // --- 2. Header Chips (Top search bar) ---
+        if (target === 'header' || target === 'both') {
+            const headerBar = document.getElementById('active-filters-bar');
+            const svrHeader = document.querySelector('.svr-header');
+            
+            if (headerBar) {
+                headerBar.innerHTML = '';
+                if (selectedItems.length > 0) {
+                    document.body.classList.add('has-filters');
+                    svrHeader.classList.add('has-filters');
+                    selectedItems.forEach(item => {
+                        const chip = document.createElement('div');
+                        chip.className = 'active-filter-chip';
+                        chip.innerHTML = `${item.name}<i class="fas fa-times-circle" data-guid="${item.guid}"></i>`;
+                        headerBar.appendChild(chip);
 
-                    chip.querySelector('i').onclick = (e) => {
-                        e.stopPropagation();
-                        const guid = e.target.getAttribute('data-guid');
-                        window.removeFilterByGuid(guid);
-                    };
-                });
-            } else {
-                document.body.classList.remove('has-filters');
-                svrHeader.classList.remove('has-filters');
+                        chip.querySelector('i').onclick = (e) => {
+                            e.stopPropagation();
+                            const guid = e.target.getAttribute('data-guid');
+                            window.removeFilterByGuid(guid);
+                        };
+                    });
+                    
+                    // Check pijltjes na het vullen van de chips
+                    setTimeout(updateFilterArrows, 100);
+                } else {
+                    document.body.classList.remove('has-filters');
+                    svrHeader.classList.remove('has-filters');
+                }
             }
         }
     }
@@ -644,44 +702,36 @@ window.SVR_PWA_VERSION = "0.2.8"; // Increment this number with each commit
      * Verwijdert een enkel filter via de chip en ververst de resultaten.
      */
     window.removeFilterByGuid = function(guid) {
-        logDebug(`Verwijderen filter: ${guid}`);
+        logDebug(`Verwijderen filter via chip: ${guid}`);
         
-        // 1. Update de checkbox in de overlay
         const cb = overlay.querySelector(`input[type="checkbox"][value="${guid}"]`);
         if (cb) cb.checked = false;
 
-        // 2. Update de globale state
         window.currentFilters = (window.currentFilters || []).filter(f => f !== guid);
 
-        // 3. Update de Filter Button styling
         const btn = document.getElementById('filterBtn');
         if (window.currentFilters.length === 0) {
             btn.style.background = 'white';
             btn.style.color = '#333';
         }
 
-        // 4. Update de UI (Chips & Overlay Tags) - forceer update van beide
         const selected = [];
         overlay.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
             selected.push({ guid: cb.value, name: cb.parentElement.querySelector('label').innerText });
         });
-        updateActiveFiltersUI(selected, false);
+        // Update BEIDE UI locaties bij handmatige verwijdering
+        updateActiveFiltersUI(selected, 'both');
 
-        // 5. Trigger nieuwe zoekopdracht
         window.performSearch(true);
     };
 
-    // Functie die wordt aangeroepen wanneer een filter verandert in de overlay
     window.onFilterChange = function() {
         const selected = [];
         overlay.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
             selected.push({ guid: cb.value, name: cb.parentElement.querySelector('label').innerText });
         });
-        // Update alleen de tags IN de overlay, nog niet de chips in de header
-        updateActiveFiltersUI(selected, false); 
-        
-        // Let op: We overschrijven de header chips hier NIET. 
-        // Ze worden pas bij 'Apply' aangeroepen via de onclick handler beneden.
+        // CRITICAL FIX: Update alleen de 'overlay', nog GEEN chips in de header
+        updateActiveFiltersUI(selected, 'overlay'); 
     };
 
     overlay.querySelector('#svr-filter-apply-btn').onclick = function() {
@@ -703,7 +753,7 @@ window.SVR_PWA_VERSION = "0.2.8"; // Increment this number with each commit
         }
 
         // NU pas de header chips updaten
-        updateActiveFiltersUI(selectedItems, true);
+        updateActiveFiltersUI(selectedItems, 'header');
 
         window.closeFilterOverlay();
         window.performSearch(true); 
@@ -717,21 +767,23 @@ window.SVR_PWA_VERSION = "0.2.8"; // Increment this number with each commit
         btn.style.background = 'white';
         btn.style.color = '#333';
 
-        // Leeg de UI (Chips & Overlay Tags)
-        updateActiveFiltersUI([]);
+        // Leeg de UI overal
+        updateActiveFiltersUI([], 'both');
 
-        // Verwijder cookies zoals in de originele Android app
         const expires = "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         document.cookie = "filters=[]; expires=" + expires + "; path=/; domain=svr.nl";
 
         window.closeFilterOverlay();
-        window.performSearch(true); // Force API call for resetting filters
+        window.performSearch(true); 
     };
 
     // Voeg click handler toe aan de reset knop
     overlay.querySelector('#svr-filter-reset-btn').onclick = window.resetFilters;
 
     window.fetchFilterData = fetchFilterData;
+
+    // Start de navigatiepijltjes logica
+    initFilterNav();
 
 })();
 
