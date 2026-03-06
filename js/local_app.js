@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.12"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.13"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -1258,6 +1258,12 @@ async function renderDetail(objectId) {
                 let url = element.getAttribute(attr);
                 if (url && url.startsWith('/') && !url.startsWith('//')) {
                     element.setAttribute(attr, SVR_BASE + url);
+                }
+
+                // NEW: Ensure all links open in a new tab/Chrome Custom Tab
+                if (element.tagName === 'A' && element.hasAttribute('href')) {
+                    element.setAttribute('target', '_blank');
+                    element.setAttribute('rel', 'noopener noreferrer'); // Security best practice
                 }
             });
 
