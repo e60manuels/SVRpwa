@@ -127,8 +127,25 @@
         </div>
     </div>
 
+    <!-- External Webview Overlay -->
+    <div id="external-webview-container" class="detail-overlay">
+        <div class="detail-sheet-content">
+            <div class="detail-header">
+                <div class="drag-handle"></div>
+                <div class="header-row">
+                    <button onclick="window.closeExternalSVR()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; color: #333;"><i class="fas fa-times"></i></button>
+                    <h3 style="margin: 0; font-family: 'Befalow'; color: #333; font-size: 1.2rem;">SVR Website</h3>
+                    <div style="width: 30px;"></div>
+                </div>
+            </div>
+            <div id="external-iframe-wrapper" style="flex-grow: 1; overflow: hidden; display: flex; flex-direction: column;">
+                <!-- Iframe will be injected here -->
+            </div>
+        </div>
+    </div>
+
     <div class="map-actions-stack">
-        <button class="map-stack-btn" onclick="window.location.href='https://www.svr.nl';">
+        <button class="map-stack-btn" onclick="window.openSVRWeb();">
             <i class="fas fa-globe"></i>
         </button>
         <button class="map-stack-btn" id="locateBtn">
@@ -167,8 +184,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
-    <script src="js/local_app.js?v=0.2.9"></script>
-    <script src="js/pwa_install.js?v=0.2.9"></script>
+    <script src="js/local_app.js?v=0.2.10"></script>
+    <script src="js/pwa_install.js?v=0.2.10"></script>
     <!-- Force GitHub Pages Refresh v60 - Resetting Build Queue -->
     <script>
         if ('serviceWorker' in navigator) {
