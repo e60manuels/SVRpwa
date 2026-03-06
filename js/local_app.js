@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.13"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.14"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -289,6 +289,17 @@ window.SVR_PWA_VERSION = "0.2.13"; // Increment this number with each commit
         #svr-filter-apply-btn { background-color: #FDCC01; color: #333; }
         #svr-filter-reset-btn { background-color: white; color: #c0392b; border: 1px solid #ddd; }
         .filter-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f9f9f9; }
+        
+        /* Filter Sub-Dropdown Styles */
+        .filter-sub-toggle { 
+            padding: 10px 0; border-bottom: 1px solid #f9f9f9; cursor: pointer; 
+            display: flex; justify-content: space-between; align-items: center; 
+            font-size: 15px; color: #333; 
+        }
+        .filter-sub-toggle i { transition: transform 0.3s ease; color: #008AD3; }
+        .filter-sub-toggle.active i { transform: rotate(90deg); }
+        .filter-sub-content { display: none; padding-left: 20px; background: #fafafa; }
+        .filter-sub-content.show { display: block; }
     `;
     const style = document.createElement('style'); style.appendChild(document.createTextNode(css)); document.head.appendChild(style);
 
