@@ -66,7 +66,7 @@
         /* Navigation Arrows */
         .filter-nav-arrow {
             position: absolute;
-            top: 50%;
+            top: 48%;
             transform: translateY(-50%);
             width: 24px;
             height: 24px;
@@ -332,40 +332,6 @@
             flex-grow: 1;
             overscroll-behavior: none;
         }
-        
-        /* New explicit styling for the sticky header in overlays */
-        .detail-header {
-            position: sticky;
-            top: 0;
-            background: var(--svr-yellow);
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            z-index: 10001;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            cursor: grab;
-            flex-shrink: 0; /* Header doesn't shrink */
-        }
-        
-        .detail-header .drag-handle {
-            width: 40px;
-            height: 5px;
-            background: #BBB;
-            border-radius: 3px;
-            margin-bottom: 8px;
-            pointer-events: none;
-        }
-        
-        .detail-header .header-row {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 5px;
-        }
-
         .detail-overlay.open .detail-sheet-content {
             transform: translateY(0%); /* Slide into view */
         }

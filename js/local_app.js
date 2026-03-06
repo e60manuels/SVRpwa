@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.10"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.11"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -942,68 +942,6 @@ window.showSVRDetailPage = function(objectId) {
     }, 10);
 };
 
-// Function to handle the SVR Website overlay
-window.openSVRWeb = function() {
-    const externalOverlay = document.getElementById('external-webview-container');
-    const externalSheet = externalOverlay.querySelector('.detail-sheet-content');
-    const backdrop = document.getElementById('svr-filter-backdrop');
-    const iframeWrapper = document.getElementById('external-iframe-wrapper');
-
-    // Reset sheet state
-    externalSheet.style.removeProperty('transform');
-    $(iframeWrapper).empty();
-
-    // Show backdrop and overlay
-    if (backdrop) {
-        backdrop.style.display = 'block';
-        setTimeout(() => backdrop.classList.add('open'), 10);
-    }
-    externalOverlay.style.display = 'block';
-
-    setTimeout(() => {
-        externalOverlay.classList.add('open');
-        externalSheet.classList.add('open');
-        
-        // Push state
-        history.pushState({ view: 'external_svr' }, "", "#website");
-
-        // Try direct iframe first as requested
-        const iframe = document.createElement('iframe');
-        iframe.src = "https://www.svr.nl";
-        iframe.style.width = "100%";
-        iframe.style.height = "100%";
-        iframe.style.border = "none";
-        iframeWrapper.appendChild(iframe);
-
-        // Initialize swipe-to-close for this overlay
-        if (window.enableSwipeToClose) {
-            window.enableSwipeToClose(externalSheet, window.closeExternalSVR, '.detail-header');
-        }
-    }, 10);
-};
-
-// Function to close the SVR Website overlay
-window.closeExternalSVR = function() {
-    const externalOverlay = document.getElementById('external-webview-container');
-    const externalSheet = externalOverlay.querySelector('.detail-sheet-content');
-    const backdrop = document.getElementById('svr-filter-backdrop');
-
-    externalSheet.classList.remove('open');
-    externalOverlay.classList.remove('open');
-    if (backdrop) backdrop.classList.remove('open');
-
-    setTimeout(() => {
-        externalOverlay.style.display = 'none';
-        if (backdrop && !document.getElementById('svr-filter-overlay').classList.contains('open') && 
-            !document.getElementById('detail-container').classList.contains('open')) {
-            backdrop.style.display = 'none';
-        }
-        if (history.state && history.state.view === 'external_svr') {
-            history.back();
-        }
-    }, 400);
-};
-
 // Function to handle the back action for the detail sheet (no changes here)
 window.handleDetailBack = function() {
     const detailOverlay = document.getElementById('detail-container');
@@ -1038,8 +976,6 @@ window.handleDetailBack = function() {
 window.onpopstate = (e) => {
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
-    const externalOverlay = document.getElementById('external-webview-container');
-    const externalSheet = externalOverlay.querySelector('.detail-sheet-content');
     const backdrop = document.getElementById('svr-filter-backdrop');
     const splashScreen = document.getElementById('detail-splash');
     const filterOverlay = document.getElementById('svr-filter-overlay');
@@ -1060,22 +996,6 @@ window.onpopstate = (e) => {
             if (filterOverlay && filterOverlay.classList.contains('open')) {
                 window.hideFilterOverlay();
             }
-        }
-
-        // Handle External SVR View
-        if (e.state.view === 'external_svr') {
-            if (backdrop) {
-                backdrop.style.display = 'block';
-                setTimeout(() => backdrop.classList.add('open'), 10);
-            }
-            externalOverlay.style.display = 'block';
-            setTimeout(() => {
-                externalOverlay.classList.add('open');
-                externalSheet.classList.add('open');
-            }, 10);
-        } else {
-            externalSheet.classList.remove('open');
-            externalOverlay.classList.remove('open');
         }
 
         // Handle Detail View
