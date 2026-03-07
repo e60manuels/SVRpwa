@@ -17,7 +17,13 @@
             --header-height: var(--header-expanded-height);
         }
 
-        body { margin: 0; padding: 0; font-family: sans-serif; background-color: transparent; overflow: hidden; }
+        html, body { 
+            margin: 0; padding: 0; 
+            font-family: sans-serif; 
+            background-color: var(--svr-yellow); 
+            height: 100%; width: 100%;
+            overflow: hidden; 
+        }
 
         .svr-header {
             position: fixed; top: 0; left: 0; width: 100%; height: var(--header-height);
