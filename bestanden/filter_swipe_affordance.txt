@@ -1,0 +1,28 @@
+Ik gebruik een vertikale regel om actieve filters te tonen in mijn app. De filters zijn swipable van links naar rechts, visa-versa. 
+Hoe "suggereer" ik optisch naar de gebruiker dat de regel/filters swipable is?
+
+Gemini zei
+Het suggereeren van interactiviteit zonder expliciete tekst (zogenaamde affordance) is essentieel voor een goede User Experience. 
+Bij een horizontale lijst met filters wil je dat de gebruiker in één oogopslag ziet: "er is hier meer te beleven."
+
+Hieronder een effectieve optische techniek om die 'swipe-drang' op te wekken:
+
+Horizontale Pijlen (De klassieke weg)
+Een kleine, semi-transparante chevron (>) aan de rechterkant van de filterbalk kan wonderen doen.
+
+Voor de positionering van de chevron zijn er twee gangbare methodes, afhankelijk van je UI-stijl:
+
+De "Sticky End-Cap" met "Auto-hide" (Meest Duidelijk):
+
+Hierbij staat de pijl op een vaste plek buiten het scroll-gebied, of vormt het de fysieke grens van de regel.
+Positionering: De pijl staat in een eigen kolom naast de scrollbare lijst.
+Interactie: Vaak fungeert deze pijl niet alleen als indicator, maar ook als knop. Als de gebruiker erop tikt, schuift de lijst een stukje op.
+Gedrag: De pijl is altijd 100% dekkend en de filters stoppen exact tegen de rand van de pijl-container.
+
+De "Auto-hide", maak de indicator intelligent:
+
+Rechter pijl tonen: Alleen als er rechts nog filters buiten beeld staan.
+Linker pijl tonen: Zodra de gebruiker naar rechts is gescrold, verschijnt er links een pijl om aan te geven dat ze terug kunnen.
+Verdwijnen: Als het einde van de lijst is bereikt, verdwijnt de pijl aan die kant volledig.
+
+Pro-tip: Maak de pijl niet te groot of te fel. Een lichtgrijze chevron op een semi-transparante witte cirkel is vaak al genoeg om de suggestie te wekken zonder de aandacht van de filters zelf af te leiden.

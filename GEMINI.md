@@ -10,7 +10,7 @@ The **SVR PWA** provides an interactive map and list view of campsites across th
 *   **Key Features:**
     *   **Instant Load:** Uses `assets/campsites_preset.json` and `localStorage` to show results immediately upon startup.
     *   **Smart Search:** Local search suggestions using `assets/Woonplaatsen_in_Nederland.csv` for high-performance location lookups.
-    *   **Offline Support:** Service worker (`sw.js`) caches all core assets and provides an `offline.html` fallback.
+    *   **Offline Support:** Service worker (`sw.js`) caches all core assets and ensures the app starts fully (App Shell) even without internet.
     *   **Android Parity:** UI elements like the "Gele Veeg" (Yellow Swipe) and layout components are styled to match the native Android experience.
 
 ## Building and Running
@@ -23,29 +23,35 @@ The project consists of static files and does not require a complex build step.
     # Using Node.js
     npx http-server
     ```
-*   **Deployment:** Files are hosted on GitHub Pages (at `e60manuels.github.io/SVRpwa/`). Deployment is handled by pushing to the `main` branch.
-*   **Version Management:** The app uses a manual version counter in `js/local_app.js` (`window.SVR_PWA_VERSION`) and `sw.js` (`CACHE_NAME`) to force cache refreshes on clients.
+*   **Deployment:** Files are hosted on GitHub Pages. Staging is at `e60manuels.github.io/SVRpwa-test/` and Production is at `e60manuels.github.io/SVRpwa/`.
+*   **Version Management:** The app uses **Semantic Versioning (SemVer)** (e.g., `v0.2.18`). Versions are updated in `js/local_app.js`, `sw.js`, and `index.html`.
 
 ## Development Conventions
 *   **Coding Style:**
     *   **JavaScript:** Primarily uses a single-file logic approach in `js/local_app.js` with IIFEs and jQuery.
     *   **CSS:** Uses CSS variables for branding colors (e.g., `--svr-yellow: #FDCC01`, `--svr-blue: #008AD3`).
-    *   **Language:** User-facing strings and internal comments are in Dutch, matching the target audience.
 *   **PWA Standards:**
-    *   All icon changes must be reflected in `manifest.json`.
-    *   Any new static assets (JS/CSS/Images) must be added to the `ASSETS_TO_CACHE` array in `sw.js`.
+    *   `manifest.json` uses **relative paths** (`./`) for `start_url` and `scope` to ensure compatibility across different repository subfolders.
 *   **API Interactions:**
-    *   Requests to `svr.nl` must go through the Cloudflare Worker proxy (`svr-proxy-worker.e60-manuels.workers.dev`).
-    *   Filter state is managed via URL parameters and converted to cookies by the proxy.
+    *   Requests to `svr.nl` must go through the Cloudflare Worker proxy.
+*   **Deployment Workflow (Staging & Production):**
+    *   **Staging:** Push to `SVRpwa-test.git`. Increments patch version.
+    *   **Production:** Push current tested state to `SVRpwa.git`.
+
+## Recent Development & Current Status (v0.2.19)
+
+### Key Achievements:
+*   **Transparent Navigation Bar:** Set `theme-color` to `transparent` in `index.html` and `manifest.json` to allow the map to be visible through the Android system navigation bar (when supported by the OS).
+*   **Safe Area Adjustments:** Updated the `map-actions-stack` bottom position to use `calc(20px + env(safe-area-inset-bottom))` for better compatibility with gesture navigation and notched displays.
+*   **Removed Diagnostic Labels:** Deleted the temporary `Status: [reason]` labels from the login screen for a cleaner production UI.
+*   **Version Increment:** Updated app version to `v0.2.19` across `local_app.js`, `sw.js`, and `index.html`.
+
+### Future Work:
+*   Continue with the **Modernization Plan** (located in `bestanden/modernization_plan.md`).
 
 ## Key Files
-*   `index.html`: Main entry point and UI structure.
-*   `js/local_app.js`: Core application logic (Map, Search, API, Render).
-*   `css/local_style.css`: Primary styling and layout.
-*   `sw.js`: Service worker for caching and offline functionality.
-*   `assets/Woonplaatsen_in_Nederland.csv`: Dataset for local search suggestions.
-*   `bestanden/`: Contains reference files from the Android project (e.g., `MainActivity.kt`) and server-side logs.
-
-## Known Constraints & Debugging
-*   **Cross-Domain Cookies:** Standard browser security prevents the PWA from setting cookies directly for `svr.nl`. All cookie-based logic (like authentication and filters) must be handled via the Cloudflare Worker header injection.
-*   **Map Performance:** High marker counts are handled using `Leaflet.markercluster` to ensure smooth performance on mobile devices.
+*   `index.html`: Main entry point.
+*   `js/local_app.js`: Core logic (v0.2.18).
+*   `css/local_style.css`: Primary styling.
+*   `sw.js`: Service worker (v0.2.18).
+*   `manifest.json`: PWA configuration (relative paths).

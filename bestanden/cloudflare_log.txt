@@ -1,0 +1,155 @@
+[d9ymfs] Proxied response sent to PWA with status 500
+[d9ymfs] Proxied response sent to PWA with status 500.
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] x-xss-protection: 1; mode=block
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] x-content-type-options: nosniff
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] transfer-encoding: chunked
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] strict-transport-security: max-age=31536000; includeSubDomains
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] server: cloudflare
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] referrer-policy: no-referrer-when-downgrade
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] permissions-policy: interest-cohort=()
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] date: Tue, 27 Jan 2026 21:12:41 GMT
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] content-type: text/html; charset=utf-8
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] content-security-policy: default-src 'self' http: https: ws: wss: data: blob: 'unsafe-inline'; frame-ancestors 'self';
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] connection: keep-alive
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] cf-ray: 9c4b3fe836c56621-AMS
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] cf-cache-status: DYNAMIC
+2026-01-27 22:12:41:307
+CET
+[d9ymfs] SVR proxied response headers:
+2026-01-27 22:12:41:307
+CET[d9ymfs] Received SVR response status for https://svr.nl/api/objects?page=0&lat=52.1326&lng=5.2913&distance=50000&limit=1500: 500
+2026-01-27 22:12:40:994
+CET
+[d9ymfs] PWA Cookie header for proxied request: null
+2026-01-27 22:12:40:994
+CET
+[d9ymfs] Proxying request for https://svr.nl/api/objects?page=0&lat=52.1326&lng=5.2913&distance=50000&limit=1500
+2026-01-27 22:12:40:994
+CET
+[d9ymfs] Incoming request: GET https://svr-proxy-worker.e60-manuels.workers.dev/api/objects?page=0&lat=52.1326&lng=5.2913&distance=50000&limit=1500
+2026-01-27 22:12:40:994
+CET
+error
+GET https://svr-proxy-worker.e60-manuels.workers.dev/api/objects?page=0&lat=52.1326&lng=5.2913&distance=50000&limit=1500
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] Login response sent to PWA with status 200.
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] Forwarded Set-Cookie from SVR to PWA: session=eyJiZXRhYWxqYWFyIjoyMDI2LCJjaGFuZ2VkIjoxLC...
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] SVR login response parsed as JSON.
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] SVR login response body (first 200 chars): {"login":true}
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] x-xss-protection: 1; mode=block
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] x-content-type-options: nosniff
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] vary: Cookie
+
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] referrer-policy: no-referrer-when-downgrade
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] permissions-policy: interest-cohort=()
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] date: Tue, 27 Jan 2026 21:12:40 GMT
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] content-type: application/json
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] content-security-policy: default-src 'self' http: https: ws: wss: data: blob: 'unsafe-inline'; frame-ancestors 'self';, frame-ancestors *
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] content-length: 15
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] connection: keep-alive
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] cf-ray: 9c4b3fe2a62e6621-AMS
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] cf-cache-status: DYNAMIC
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] SVR login response headers:
+2026-01-27 22:12:40:458
+CET
+[0qw6qz] Received login response status from SVR: 200
+2026-01-27 22:12:40:104
+CET
+[0qw6qz] Sending login POST to svr.nl/check_password.
+2026-01-27 22:12:40:104
+CET
+[0qw6qz] PWA Cookie header for login (if any): null
+2026-01-27 22:12:40:104
+CET
+[0qw6qz] Login data received: email=jdmanuels@gmail.com, password_length=10
+2026-01-27 22:12:40:104
+CET
+[0qw6qz] Handling /login POST request from PWA.
+2026-01-27 22:12:40:104
+CET
+[0qw6qz] Incoming request: POST https://svr-proxy-worker.e60-manuels.workers.dev/login
+2026-01-27 22:12:40:104
+CET
+info
+POST https://svr-proxy-worker.e60-manuels.workers.dev/login
+2026-01-27 22:12:40:039
+CET
+[pdjcj2] Handling OPTIONS preflight for https://svr-proxy-worker.e60-manuels.workers.dev/login
+2026-01-27 22:12:40:039
+CET
+[pdjcj2] Incoming request: OPTIONS https://svr-proxy-worker.e60-manuels.workers.dev/login
+2026-01-27 22:12:40:039
+CET
+info
+OPTIONS https://svr-proxy-worker.e60-manuels.workers.dev/login
+2026-01-27 22:12:16:466
+CET
+[m5r1sz] Proxied response sent to PWA with status 500.
+2026-01-27 22:12:16:466
+CET
+[m5r1sz] x-xss-protection: 1; mode=block
+2026-01-27 22:12:16:466
+CET
+[m5r1sz] x-content-type-options: nosniff
+2026-01-27 22:12:16:466
+CET
+[m5r1sz] transfer-encoding: chunked

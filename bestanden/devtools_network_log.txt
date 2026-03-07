@@ -1,0 +1,243 @@
+General:
+
+Request URL
+https://svr-proxy-worker.e60-manuels.workers.dev/object/64fee3e2-224b-4463-9113-3ec91a683643
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+[2606:4700:3035::6815:3476]:443
+Referrer Policy
+strict-origin-when-cross-origin
+
+Response Headers:
+
+access-control-allow-credentials
+true
+access-control-allow-headers
+Content-Type, Authorization, Cookie, X-Requested-With, X-SVR-Session
+access-control-allow-methods
+GET, HEAD, POST, OPTIONS
+access-control-allow-origin
+https://e60manuels.github.io
+alt-svc
+h3=":443"; ma=86400
+cf-cache-status
+DYNAMIC
+cf-ray
+9c58f474bfe3ae32-AMS
+content-encoding
+zstd
+content-type
+text/html; charset=utf-8
+date
+Thu, 29 Jan 2026 13:07:51 GMT
+nel
+{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+permissions-policy
+interest-cohort=()
+priority
+u=1,i
+referrer-policy
+no-referrer-when-downgrade
+report-to
+{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=atxIJIGpd8amFCRy4IARpPm2qB3zIVZsFcq2nsB2TMtVZQYwZIkktFTnE9Hclq1cNj6vAA2T6UogmWU%2Bt7%2B4BR17XGpo5vUMsKqg1e1IqFN%2BS3%2BTyhpZQK9LOvdUfV1dvgJHmE18j5BplRwxL3v8Ot63ZDw%3D"}]}
+server
+cloudflare
+server-timing
+cfExtPri
+strict-transport-security
+max-age=31536000; includeSubDomains
+vary
+Accept-Encoding, Cookie
+x-content-type-options
+nosniff
+x-debug-target-url
+https://www.svr.nl/object/64fee3e2-224b-4463-9113-3ec91a683643
+x-xss-protection
+1; mode=block
+
+Request Headers:
+
+:authority
+svr-proxy-worker.e60-manuels.workers.dev
+:method
+GET
+:path
+/object/64fee3e2-224b-4463-9113-3ec91a683643
+:scheme
+https
+accept
+*/*
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7
+cache-control
+no-cache
+origin
+https://e60manuels.github.io
+pragma
+no-cache
+priority
+u=1, i
+referer
+https://e60manuels.github.io/
+sec-ch-ua
+"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"
+sec-ch-ua-mobile
+?1
+sec-ch-ua-platform
+"Android"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+cross-site
+user-agent
+Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36
+x-svr-session
+eyJiZXRhYWxqYWFyIjoyMDI2LCJjaGFuZ2VkIjoxLCJkb19pZCI6NTY0NzQ5LCJlbWFpbCI6ImpkbWFudWVsc0BnbWFpbC5jb20iLCJsYXN0X25hbWUiOiJNQU5VRUxTIiwidHlwZSI6bnVsbH0.aXo8ug.L_j0tBHEUfwYVh-ZylCBvODuvoY
+
+Response HTML:
+
+<!doctype html>
+<html lang="nl">
+    <head>
+        <script src="https://js-de.sentry-cdn.com/90c314124a3bc2b208fb2b6c424d8e89.min.js" crossorigin="anonymous"></script>
+        <script>
+            Sentry.onLoad(function() {
+
+                Sentry.init({
+                    // Tracing
+                    tracesSampleRate: 1.0,
+                    // Capture 100% of the transactions
+                    // Session Replay
+                    replaysSessionSampleRate: 0.1,
+                    // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
+                    replaysOnErrorSampleRate: 1.0,
+                    // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
+                    integrations: [Sentry.replayIntegration({
+                        // Additional SDK configuration goes in here, for example:
+                        maskAllText: true,
+                        blockAllMedia: true,
+                    }), ]
+                });
+
+                Sentry.setUser({
+                    email: "jdmanuels@gmail.com"
+                });
+
+            });
+        </script>
+        <link rel="apple-touch-icon" sizes="180x180" href="https://svr.nl/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="https://svr.nl/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="https://svr.nl/favicon-16x16.png">
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/introjs.min.css" rel="stylesheet">
+        <link rel="stylesheet" id="google-webfont-css" href="//fonts.googleapis.com/css?family=Muli%3A400%2C400i%2C600%2C600i%2C700%2C700i%2C800%2C800i%2C900%2C900i&amp;ver=all" type="text/css" media="all">
+        <link href="/static/css/campings.css" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,500&display=swap" rel="stylesheet">
+        <!--<script src="https://kit.fontawesome.com/d69fdce6bd.js" crossorigin="anonymous"></script>-->
+        <link href='/fonts/fontawesome/css/all.css' rel="stylesheet">
+        <title>Camping zoeker - SVR - Stichting Vrije Recreatie</title>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+        <!-- leaflet (map) -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
+        <script src="/static/spin.js"></script>
+        <script src="https://makinacorpus.github.io/Leaflet.Spin/leaflet.spin.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css"/>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css"/>
+    </head>
+    <body>
+        <div class="container-fluid p-0 text-center" style="min-height: 20em;  margin-bottom: 1em; padding-top: 3em !important; background-size: cover !important; background-position: center !important; background: url('https://svr.nl/ajax/temp_pic.php?camping_id=1105039&first=1&header=1');">
+            <span class="" style="position: absolute; top: 0; right:0; background-color: #018BD3 ; padding: 0.25em; border-bottom: 3px solid #FDCC01;">
+                <small>
+                    <span style="color: white; font-weight: 600;">
+                        Ingelogd als:
+        
+
+        <i class="fa-solid fa-user"></i>
+                        <a style="color: white;" href="">MANUELS</a>
+                    </span>
+                    | 
+                    <a href="/logout" style="color: white; font-weight: 600;">
+                        Uitloggen
+        
+        <i class="fa-solid fa-right-from-bracket"></i>
+                    </a>
+                </small>
+            </span>
+            <div class="p-0" style="background-color: rgba(253, 204, 1, .7); font-size: 102%; border-bottom: 3px solid #018BD3; font-weight: 400; color: #2e2e2e; z-index: 99999999 !important;">
+                <nav class="navbar navbar-expand-xl p-0">
+                    <div class="container-fluid">
+                        <a class="navbar-brand " style="padding-left: 1.6rem!important;" href="/">
+                            <img src="https://svr.nl/images/2022/svr_2018.png" style="" class=" mx-auto" width="115">
+                        </a>
+                        <span></span>
+                        <button class="navbar-toggler " type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                            <ul class="navbar-nav ms-auto navbar-light">
+                                <li class="nav-item dropdown fw-600 d-none" style="">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-search"></i>
+                                        Camping zoeken
+                      
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="/objects">
+                                                <i class="fas fa-search"></i>
+                                                Camping zoeke<i class="fas fa-search"></i>
+                                                Camping zoeken
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="/reservations">
+                                                <i class="fas fa-calendar-check"></i>
+                                                Reserveringen
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item fw-600">
+                                    <a class="nav-link" href="/objects_check">
+                                        <i class="fas fa-search"></i>
+                                        Camping zoeken
+                
+
+			
+                                    </a>
+                                </li>
+                                <li class="nav-item fw-600 d-none">
+                                    <a class="nav-link" href="/donateur-worden" target="_self">Donateur worden</a>
+                                </li>
+                                <li class="nav-item fw-600">
+                                    <a class="nav-link" href="/voordelen-svr-donateur?email=jdmanuels@gmail.com" target="_self">Voordelen voor donateurs
+                      
+
+
+                      </a>
+                                </li>
+                                <li class="nav-item fw-600 d-none">
+                                    <a class="nav-link" href="/over-svr?email=jdmanuels@gmail.com" target="_self">Over SVR</a>
+                                </li>
+                                <li class="nav-item dropdown fw-600" style="">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Over SVR
+                            
+
+
+                      </a>
+
