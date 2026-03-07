@@ -24,7 +24,7 @@ The project consists of static files and does not require a complex build step.
     npx http-server
     ```
 *   **Deployment:** Files are hosted on GitHub Pages. Staging is at `e60manuels.github.io/SVRpwa-test/` and Production is at `e60manuels.github.io/SVRpwa/`.
-*   **Version Management:** The app uses **Semantic Versioning (SemVer)** (e.g., `v0.2.18`). Versions are updated in `js/local_app.js`, `sw.js`, and `index.html`.
+*   **Version Management:** The app uses **Semantic Versioning (SemVer)** (e.g., `v0.2.20`). Versions are updated in `js/local_app.js`, `sw.js`, and `index.html`.
 
 ## Development Conventions
 *   **Coding Style:**
@@ -38,20 +38,20 @@ The project consists of static files and does not require a complex build step.
     *   **Staging:** Push to `SVRpwa-test.git`. Increments patch version.
     *   **Production:** Push current tested state to `SVRpwa.git`.
 
-## Recent Development & Current Status (v0.2.19)
+## Recent Development & Current Status (v0.2.20)
 
 ### Key Achievements:
-*   **Transparent Navigation Bar:** Set `theme-color` to `transparent` in `index.html` and `manifest.json` to allow the map to be visible through the Android system navigation bar (when supported by the OS).
-*   **Safe Area Adjustments:** Updated the `map-actions-stack` bottom position to use `calc(20px + env(safe-area-inset-bottom))` for better compatibility with gesture navigation and notched displays.
+*   **Reverted Navigation Bar Color:** Set `theme-color` back to `#FDCC01` in `index.html` and `manifest.json`. This ensures both the top status bar and bottom navigation bar on Android are yellow, matching the header branding and fixing the "optical white" issue.
+*   **Safe Area Maintenance:** Retained the `map-actions-stack` bottom position using `calc(20px + env(safe-area-inset-bottom))` to ensure buttons remain accessible and correctly placed above the navigation area.
+*   **Version Increment:** Updated app version to `v0.2.20` across `local_app.js`, `sw.js`, and `index.html`.
 *   **Removed Diagnostic Labels:** Deleted the temporary `Status: [reason]` labels from the login screen for a cleaner production UI.
-*   **Version Increment:** Updated app version to `v0.2.19` across `local_app.js`, `sw.js`, and `index.html`.
 
 ### Future Work:
 *   Continue with the **Modernization Plan** (located in `bestanden/modernization_plan.md`).
 
 ## Key Files
 *   `index.html`: Main entry point.
-*   `js/local_app.js`: Core logic (v0.2.18).
+*   `js/local_app.js`: Core logic (v0.2.20).
 *   `css/local_style.css`: Primary styling.
-*   `sw.js`: Service worker (v0.2.18).
+*   `sw.js`: Service worker (v0.2.20).
 *   `manifest.json`: PWA configuration (relative paths).
