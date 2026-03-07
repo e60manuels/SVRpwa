@@ -1,0 +1,156 @@
+Je CSS-bestanden blokkeren je render volledig. Dit is NIET "works-as-designed" - het is oplosbaar.
+
+🔴 Het Probleem
+Render-blocking CSS betekent: de browser wacht met tekenen totdat ALLE CSS binnen is:
+1. HTML parser start
+2. Ziet <link rel="stylesheet" href="unpkg.com/swiper.css">
+3. ⏸️ PAUZEERT rendering
+4. Wacht 1590ms op Swiper CSS van unpkg.com
+5. Wacht 800ms op Leaflet CSS van unpkg.com
+6. Wacht 1000ms op FontAwesome van Cloudflare
+7. ✅ Nu pas eerste pixels tekenen
+---
+Totaal gewacht: ~3.4 seconden voor NIETS TE ZIEN
+
+✅ De Oplossing: Critical CSS + Deferred Loading
+Strategie:
+
+Critical CSS = inline in <head> (layout, above-the-fold)
+Non-critical CSS = asynchroon laden (Swiper, Leaflet, icons)
+
+
+🎯 Concrete Implementatie
+1. Maak Critical CSS Inline
+In je <head>:
+html<style>
+/* Critical CSS - alleen wat direct zichtbaar is */
+body { 
+    margin: 0; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+#map { 
+    width: 100vw; 
+    height: 100vh; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+}
+
+/* Splash screen basics */
+#splash { 
+    position: fixed; 
+    inset: 0; 
+    background: white; 
+    z-index: 9999; 
+}
+</style>
+2. Laad Non-Critical CSS Asynchroon
+Vervang je huidige <link> tags:
+html<!-- ❌ OUD (blokkerend): -->
+<link rel="stylesheet" href="https://unpkg.com/swiper@12.1.0/swiper-bundle.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- ✅ NIEUW (non-blocking): -->
+<link rel="preload" href="https://unpkg.com/swiper@12.1.0/swiper-bundle.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://unpkg.com/swiper@12.1.0/swiper-bundle.min.css"></noscript>
+
+<link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"></noscript>
+
+<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+Of gebruik dit helper script:
+html<script>
+// Async CSS loader
+function loadCSS(href) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+}
+
+// Laad na DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+    loadCSS('https://unpkg.com/swiper@12.1.0/swiper-bundle.min.css');
+    loadCSS('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+    loadCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+});
+</script>
+3. Eigen CSS Behouden Als Blocking
+html<!-- Deze zijn klein (8.2KB totaal) en lokaal - houd blocking: -->
+<link rel="stylesheet" href="css/local_style.css">
+<link rel="stylesheet" href="css/custom_styles.css">
+<link rel="stylesheet" href="css/MarkerCluster.Default.css">
+<link rel="stylesheet" href="css/MarkerCluster.css">
+
+🚀 Geavanceerde Optimalisatie: Font Awesome Subsetten
+Je laadt 19KB FontAwesome voor waarschijnlijk 5-10 iconen.
+Alternatief 1: Gebruik alleen de iconen die je nodig hebt:
+html<!-- In plaats van all.min.css (19KB): -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/solid.min.css">
+<!-- Totaal: ~8KB in plaats van 19KB -->
+Alternatief 2: Inline kritieke iconen als SVG:
+html<!-- In plaats van <i class="fa-solid fa-map-pin"></i> -->
+<svg width="30" height="30" viewBox="0 0 384 512">
+    <path fill="#c0392b" d="M384 192c0 87.4-117 243-168.3 307.2c-12.3 15.3-35.1 15.3-47.4 0C117 435 0 279.4 0 192C0 86 86 0 192 0S384 86 384 192z"/>
+</svg>
+
+📊 Verwachte Impact
+OptimalisatieTijd BespaardMoeilijkheidCSS async laden~2-3s LCP⭐⭐ MiddenCritical CSS inline~500ms FCP⭐⭐ MiddenFontAwesome subset~200ms⭐ Makkelijk
+Totaal mogelijk: van 59 → 75-85 score
+
+⚠️ Let Op: FOUC (Flash of Unstyled Content)
+Als je CSS asynchroon laadt, kan je even onstyled content zien. Oplossing:
+html<style>
+/* Toon splash totdat alles geladen is */
+#splash {
+    position: fixed;
+    inset: 0;
+    background: white;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Verberg zodra CSS geladen is */
+body.css-loaded #splash {
+    display: none;
+}
+</style>
+
+<script>
+let cssLoaded = 0;
+const totalCSS = 3; // Swiper, Leaflet, FontAwesome
+
+function checkAllCSSLoaded() {
+    cssLoaded++;
+    if (cssLoaded === totalCSS) {
+        document.body.classList.add('css-loaded');
+    }
+}
+
+function loadCSS(href) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.onload = checkAllCSSLoaded;
+    document.head.appendChild(link);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadCSS('https://unpkg.com/swiper@12.1.0/swiper-bundle.min.css');
+    loadCSS('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+    loadCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+});
+</script>
+
+🎯 Actieplan
+
+✅ Vandaag: Maak CSS asynchroon met preload methode
+✅ Test: Draai Lighthouse opnieuw
+🔄 Itereer: Als FOUC optreedt, voeg splash screen toe
+🎨 Optimaliseer: Vervang FontAwesome door SVG iconen

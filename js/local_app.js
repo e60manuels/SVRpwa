@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.18"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.19"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -1756,7 +1756,7 @@ window.showLoginScreen = function(reason = "") {
       ">
         <h2 style="margin-top: 0; color: #333;">SVR Login</h2>
         <p style="color: #666; margin-bottom: 5px;">Log in om de app te gebruiken</p>
-        ${reason ? `<p style="color: #c0392b; font-size: 12px; margin-bottom: 15px;"><i>Status: ${reason}</i></p>` : '<div style="margin-bottom: 20px;"></div>'}
+        <div style="margin-bottom: 20px;"></div>
         
         <input type="email" id="svr-email" placeholder="Email" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-size: 16px;">
         <div style="position: relative; margin-bottom: 20px;">

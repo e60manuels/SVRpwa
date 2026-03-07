@@ -1,0 +1,49 @@
+Reducing the download time of images can improve the perceived load time of the page and LCP. Learn more about optimizing image sizeFCPLCPUnscored
+URL
+openstreetmap.org
+323.6 KiB	249.0 KiB
+div.leaflet-pane > div.leaflet-layer > div.leaflet-tile-container > img.leaflet-tile
+<img alt="" src="https://b.tile.openstreetmap.org/8/132/85.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(267px, 533px, 0px);">
+…132/85.png(b.tile.openstreetmap.org)
+52.5 KiB
+41.8 KiB
+Using a modern image format (WebP, AVIF) or increasing the image compression could improve this image's download size.
+41.8 KiB
+img.leaflet-tile.leaflet-tile-loaded
+…132/84.png(a.tile.openstreetmap.org)
+52.3 KiB
+41.6 KiB
+Using a modern image format (WebP, AVIF) or increasing the image compression could improve this image's download size.
+41.6 KiB
+div.leaflet-pane > div.leaflet-layer > div.leaflet-tile-container > img.leaflet-tile
+<img alt="" src="https://a.tile.openstreetmap.org/8/131/85.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(11px, 533px, 0px);">
+…131/85.png(a.tile.openstreetmap.org)
+51.9 KiB
+41.2 KiB
+Using a modern image format (WebP, AVIF) or increasing the image compression could improve this image's download size.
+41.2 KiB
+img.leaflet-tile.leaflet-tile-loaded
+…132/83.png(c.tile.openstreetmap.org)
+51.0 KiB
+40.4 KiB
+Using a modern image format (WebP, AVIF) or increasing the image compression could improve this image's download size.
+40.4 KiB
+img.leaflet-tile.leaflet-tile-loaded
+…131/84.png(c.tile.openstreetmap.org)
+48.3 KiB
+37.7 KiB
+Using a modern image format (WebP, AVIF) or increasing the image compression could improve this image's download size.
+37.7 KiB
+div.leaflet-pane > div.leaflet-layer > div.leaflet-tile-container > img.leaflet-tile
+<img alt="" src="https://c.tile.openstreetmap.org/8/130/85.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-245px, 533px, 0px);">
+…130/85.png(c.tile.openstreetmap.org)
+42.5 KiB
+31.8 KiB
+Using a modern image format (WebP, AVIF) or increasing the image compression could improve this image's download size.
+31.8 KiB
+img.leaflet-tile.leaflet-tile-loaded
+…131/83.png(b.tile.openstreetmap.org)
+25.2 KiB
+14.5 KiB
+Using a modern image format (WebP, AVIF) or increasing the image compression could improve this image's download size.
+14.5 KiB

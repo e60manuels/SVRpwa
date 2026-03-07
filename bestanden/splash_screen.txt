@@ -1,0 +1,75 @@
+Wat je wél kunt doen (best practices)
+1️⃣ Maak de default splash “onzichtbaar”
+Zorg dat hij visueel samenvalt met je custom splash:
+manifest.json
+{
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/icons/splash-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
+✔ Gebruik:
+
+
+Exact dezelfde achtergrondkleur
+
+
+Exact hetzelfde logo
+
+
+Geen transparantie
+
+
+➡️ Resultaat: de overgang lijkt naadloos, alsof er maar één splash is.
+
+2️⃣ Gebruik window.matchMedia('(display-mode: standalone)')
+Laat je custom splash alleen zien in PWA-modus, niet in de browser:
+if (window.matchMedia('(display-mode: standalone)').matches) {
+  showCustomSplash();
+}
+
+Zo voorkom je dubbele splash-ervaringen.
+
+3️⃣ Houd je custom splash ultrakort
+Browsers verwachten dat:
+
+
+De default splash snel verdwijnt
+
+
+De app direct “iets” laat zien
+
+
+➡️ Toon je custom splash alleen totdat:
+
+
+critical JS geladen is
+
+
+eerste screen klaarstaat
+
+
+Lang wachten = browser splash blijft langer zichtbaar.
+
+4️⃣ iOS? Daar is het anders
+Op iOS Safari:
+
+
+Bestaat géén automatische splash
+
+
+Moet je splash screens expliciet definiëren via <link rel="apple-touch-startup-image">
+
+
+Daar heb je dus volledige controle.
+
+Conclusie (eerlijk antwoord)
+❌ De default PWA splash kan niet worden uitgeschakeld of verwijderd
+✅ Je kunt hem perfect camoufleren zodat hij praktisch onzichtbaar is
+✅ Dat is ook wat Google zelf aanbeveelt

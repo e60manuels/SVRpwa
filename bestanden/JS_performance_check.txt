@@ -1,0 +1,222 @@
+Analyse van je JavaScript - De Echte Performance Killers
+Ik heb je code geanalyseerd. Hier zijn de concrete problemen die je 15 seconden laadtijd veroorzaken:
+
+🔴 KRITIEKE PROBLEMEN
+1. jQuery wordt ALLEEN gebruikt voor $(document).ready() (regel 1693)
+javascript$(document).ready(() => {
+    initApp();
+});
+Dit is EXTREEM inefficiënt. Je laadt 87KB jQuery alleen voor dit:
+Fix (direct toepassen):
+javascript// Vervang regel 1693-1695 door:
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
+Verwijder dan jQuery volledig uit je HTML → Instant 87KB besparing
+
+2. Gigantisch Bestand Blokkeert Alles
+Je local_app.js is 1517 regels en wordt SYNCHROON geladen. Dit blokkeert je hele pagina.
+Fix in je HTML:
+html<!-- OUD (blokkerend): -->
+<script src="local_app.js"></script>
+
+<!-- NIEUW (non-blocking): -->
+<script src="local_app.js" defer></script>
+
+3. Session Check Blokkeert App Start (regel 1627-1638)
+Je app doet NIETS totdat de session check klaar is:
+javascriptasync function initApp() {
+  const hasValidSession = await checkSession(); // ⏳ Wacht hier...
+  if (hasValidSession) {
+    window.initializeApp(); // ✅ Pas dan starten
+  }
+}
+Fix (parallel laden):
+javascriptasync function initApp() {
+  // Start UI direct, check session op de achtergrond
+  window.initializeApp(); // ✅ Start meteen!
+  
+  // Session check parallel
+  checkSession().then(valid => {
+    if (!valid) {
+      window.showLoginScreen(); // Toon login als nodig
+    }
+  });
+}
+
+4. Typewriter Effect is Nutteloos Werk (regel 6-20)
+Je splash screen doet een letter-voor-letter animatie die de CPU belast:
+javascriptfunction typewriterEffect(elementId, text, speed) {
+    // Recursieve setTimeout calls = CPU bezig houden
+}
+Als dit op je LCP element zit = 15 seconden delay verklaard!
+Fix:
+javascript// Simpelweg:
+function typewriterEffect(elementId, text) {
+    document.getElementById(elementId).textContent = text;
+    // Of gebruik CSS animation als je het effect wilt behouden
+}
+
+5. LocalStorage JSON Parse Kan Crashen (regel 62)
+javascriptdata = { objects: JSON.parse(cached) }; // Geen error handling!
+Als je localStorage corrupt is → app crasht → witte pagina.
+Fix:
+javascripttry {
+    data = { objects: JSON.parse(cached) };
+} catch(e) {
+    localStorage.removeItem('svr_cache_campsites'); // Clear corrupt data
+    logDebug("Corrupt cache verwijderd");
+}
+
+🎯 ACTIEPLAN - VANDAAG DOEN
+Quick Wins (1 uur werk):
+
+Verwijder jQuery (regels 1693-1695 vervangen)
+Voeg defer toe aan script tag in HTML
+Fix session check (parallel laden zoals hierboven)
+Simpele typewriter (direct tekst tonen)
+
+Dit Weekend (refactor):
+
+Split je bestand op:
+
+javascript// main.js (klein, direct laden)
+- initApp
+- checkSession
+- Basic UI
+
+// map.js (lazy load)
+- Leaflet initialisatie
+- Marker clustering
+- renderResults
+
+// filters.js (lazy load)
+- Filter logic
+- fetchFilterData
+Implementatie:
+javascript// In initializeApp():
+async function loadMapFeatures() {
+    const { initMap } = await import('./map.js');
+    initMap();
+}
+
+document.getElementById('show-map').addEventListener('click', loadMapFeatures);
+
+📊 VERWACHTE IMPACT
+FixTijd BespaardMoeilijkheidjQuery weg~200-500ms⭐ MakkelijkScript defer~1-2s⭐ MakkelijkSession parallel~500ms-1s⭐⭐ MiddenTypewriter fix~500ms⭐ MakkelijkCode splitting~5-10s⭐⭐⭐ Moeilijk
+Totaal mogelijk: van 15s → 3-5s LCP
+
+Wil je dat ik:
+
+✍️ De exacte code schrijf voor de quick wins?
+🔍 Een code-splitting plan maak met voorbeeldcode?
+📈 Een checklist voor je opmaak om stap-voor-stap te volgen?
+jij stelt voor om een aparte main.js en map.js te maken en map.js lazy te loaden. Als de app gestart wordt, wordt als eerste de leaflet map met  (geclusterde) markers getoond, moeten we dan nog steeds splitsen?11:49Nee, dan moet je NIET splitsen!
+Je hebt helemaal gelijk. Als de kaart het eerste is wat de gebruiker ziet bij app-start, dan is het splitsen van map.js contraproductief.
+Waarom?
+javascript// Met code splitting:
+1. Download main.js (50KB) → parse → execute
+2. Start import('./map.js')
+3. Download map.js (200KB) → parse → execute
+4. Toon kaart
+⏱️ Totaal: ~3 seconden
+
+// Zonder code splitting (maar met defer):
+1. Download local_app.js (250KB) parallel → parse → execute
+2. Toon kaart direct
+⏱️ Totaal: ~1.5 seconden
+Code splitting helpt alleen bij features die NIET direct nodig zijn.
+
+🎯 Aangepast Actieplan
+✅ WEL Doen:
+
+jQuery verwijderen (87KB besparing, 0 functionaliteit verlies)
+Script defer in HTML
+Session check parallel (niet wachten op API)
+Typewriter effect vereenvoudigen
+
+❌ NIET Doen:
+
+Map.js splitsen (kaart is je primaire feature)
+Leaflet lazy loaden (wordt direct gebruikt)
+
+
+🤔 Wat WEL Lazy Loaden?
+Kijk naar features die niet bij app-start nodig zijn:
+javascript// Voorbeeld: Login scherm wordt pas geladen als sessie invalid is
+window.showLoginScreen = async function() {
+    const { createLoginUI } = await import('./login.js');
+    createLoginUI();
+}
+
+// Voorbeeld: Filter panel pas laden bij eerste klik
+document.getElementById('filter-btn').addEventListener('click', async () => {
+    if (!window.filtersLoaded) {
+        const { initFilters } = await import('./filters.js');
+        await initFilters();
+        window.filtersLoaded = true;
+    }
+    // Toon filter panel
+}, { once: false });
+
+// Voorbeeld: Help overlay pas laden als nodig
+window.showHelp = async function() {
+    const { renderHelpScreen } = await import('./help.js');
+    renderHelpScreen();
+}
+
+📋 Herziend Actieplan
+Fase 1: Quick Wins (vandaag, 30 min)
+javascript// 1. Vervang jQuery (regel 1693-1695)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
+
+// 2. Session check parallel (regel 1627)
+async function initApp() {
+    console.log('🚀 SVR PWA Start');
+    
+    // Start UI DIRECT
+    window.initializeApp();
+    
+    // Check session op achtergrond
+    const hasValidSession = await checkSession();
+    if (!hasValidSession) {
+        console.log('❌ Sessie verlopen, toon login');
+        window.showLoginScreen();
+    }
+}
+
+// 3. Typewriter simpel maken (regel 6)
+function typewriterEffect(elementId, text, speed) {
+    const el = document.getElementById(elementId);
+    if (el) el.textContent = text; // Direct, geen animatie
+}
+In je HTML:
+html<script src="local_app.js" defer></script>
+<!-- Verwijder jQuery script tag volledig -->
+Fase 2: Lazy Load Non-Essentials (weekend)
+Alleen dingen die niet direct zichtbaar zijn:
+
+Login UI code (regel 1567-1625)
+Help overlay HTML generatie
+Filter fetch logic (als filters pas na interactie worden getoond)
+
+
+🎯 Verwachte Impact na Quick Wins
+
+jQuery weg: -87KB → ~300ms sneller
+Script defer: Parse blokkeert niet → ~500ms sneller
+Session parallel: UI start direct → ~800ms sneller
+Typewriter fix: CPU vrij → ~200ms sneller
+
+Totaal: van 15s → waarschijnlijk 7-10s LCP
+De resterende tijd komt waarschijnlijk van:
+
+Externe dependencies (Leaflet, Swiper, Font Awesome)
+Network requests (campsites_preset.json, CSV, nominatim)
+Rendering (500+ markers op kaart tekenen)

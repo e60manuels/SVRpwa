@@ -1,0 +1,15 @@
+After the Git push a user will automaticcaly upgrade to the latest version by starting the app. 
+Is there a way to avoid this temporarily? Could the versions be incremented for me only and decide when I want to make a version "global" available.
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+✦ You are absolutely right. Because GitHub Pages is served directly from the main branch, every git push I perform
+  effectively becomes a "Global Production Release." Any user opening the PWA will be prompted to update to the version
+  I just pushed.
+
+  To avoid this and allow you to test privately before a global rollout, I suggest the following "Staging" strategy:
+
+	 (Recommended for Mobile Testing)
+  We create a second repository (e.g., SVRpwa-test).
+   1. Workflow: I push all "tricky" or new features to SVRpwa-test first.
+   2. Private Testing: You open e60manuels.github.io/SVRpwa-test/ on your phone. This version is only for you.
+   3. Promotion: Once you say "It works!", I then push those same changes to the real SVRpwa repository for the world to
+      see.

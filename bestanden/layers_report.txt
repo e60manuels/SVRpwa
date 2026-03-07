@@ -1,0 +1,26 @@
+LAYER_REPORT:
+VM3633:32 {
+  "backdrop": {
+    "display": "none",
+    "opacity": "0",
+    "zIndex": "9990",
+    "classList": ""
+  },
+  "overlay": {
+    "display": "block",
+    "opacity": "1",
+    "zIndex": "9995",
+    "bg": "rgb(248, 249, 250)",
+    "pointerEvents": "none"
+  },
+  "content": {
+    "top": "88px",
+    "height": "1082px",
+    "zIndex": "auto",
+    "transform": "matrix(1, 0, 0, 1, 0, 0)"
+  },
+  "window": {
+    "innerHeight": 1170,
+    "innerWidth": 773
+  }
+}
