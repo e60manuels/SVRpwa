@@ -49,6 +49,18 @@ The project consists of static files and does not require a complex build step.
 *   **Version Increment:** Updated app version to `v0.2.26` across `local_app.js`, `sw.js`, and `index.html`.
 
 ### Future Work:
+*   **Plan for Enhanced Offline Search Capabilities:**
+    *   **Problem Statement**: Currently, offline searches with a query (e.g., "Apeldoorn") fail because the app relies solely on online geocoding (Nominatim) to convert place names into coordinates. The existing `Woonplaatsen_in_Nederland.csv` only contains names, not coordinates.
+    *   **Proposed Solution**: Introduce a new local data source containing Dutch city names and their geographic coordinates to enable offline geocoding.
+    *   **Implementation Steps**:
+        1.  **Data Preparation**: Process a provided CSV file (with Dutch city postal codes and geo coordinates) into an optimized JSON or CSV format (e.g., `assets/dutch_city_coordinates.json`). This preprocessing would handle deduplication and select representative coordinates for each city/postal code.
+        2.  **New `window.getCoordinatesLocal(query)` Function**: Implement a new function in `js/local_app.js` to load and search this `dutch_city_coordinates.json` file in memory. This function would return `lat`/`lng` for a matching city or `null` if no local match is found.
+        3.  **Modify `performSearch`**: Update the `sLat`/`sLng` determination logic within `performSearch` to:
+            *   **Offline Scenario**: If `navigator.onLine` is false, prioritize `window.getCoordinatesLocal(q)`.
+            *   **Online Scenario**: First attempt `window.getCoordinatesWeb(q)`. If online geocoding fails (e.g., no result, API error), fall back to `window.getCoordinatesLocal(q)`.
+            *   **No Local Match**: If `window.getCoordinatesLocal(q)` yields no results, the map's current center and markers should be preserved, displaying a message indicating the query was not found locally.
+            *   **Ensure Robustness**: The `performSearch` function will be refactored to handle these different coordinate sources gracefully, ensuring that `centerMarker` is always updated and `renderResults` is always called (even if with a default location and message) to prevent map regressions.
+    *   **Expected Outcome**: Users will be able to search for Dutch cities offline, and the app will either pinpoint the city using local data or clearly indicate that the city was not found in the local cache, while maintaining a functional map view.
 *   Continue with the **Modernization Plan** (located in `bestanden/modernization_plan.md`).
 
 ## Key Files
