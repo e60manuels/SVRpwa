@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.33"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.34"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -391,13 +391,23 @@ window.SVR_PWA_VERSION = "0.2.33"; // Increment this number with each commit
     window.enableSwipeToClose(overlay, window.closeFilterOverlay, '.svr-overlay-header');
 
     window.toggle_filters = async function() {
-        backdrop.style.display = 'block';
-        overlay.style.transform = ''; // Reset any residual swipe transforms
-        setTimeout(() => { overlay.classList.add('open'); backdrop.classList.add('open'); }, 10);
+        const isDesktop = window.innerWidth >= 768;
         
+        if (isDesktop) {
+            // Desktop: Open as panel on right side (replaces list)
+            overlay.style.display = 'block';
+            overlay.classList.add('open');
+            // Don't show backdrop on desktop
+        } else {
+            // Mobile: Fullscreen overlay with backdrop
+            backdrop.style.display = 'block';
+            overlay.style.transform = ''; // Reset any residual swipe transforms
+            setTimeout(() => { overlay.classList.add('open'); backdrop.classList.add('open'); }, 10);
+        }
+
         // Push state for Android back-button support
         history.pushState({ view: 'filters' }, "");
-        
+
         if (content.children.length === 0 && !window.isFetchingFilters) await fetchFilterData();
     };
 
@@ -915,12 +925,58 @@ $('#scroll_top_btn').on('click', function() {
     $('#list-container').animate({ scrollTop: 0 }, 400);
 });
 
-// Function to handle showing the detail page with bottom-up animation
-window.showSVRDetailPage = function(objectId) {
+// Function to handle showing the detail page with context-aware positioning
+// source: 'map' (clicked from map marker) or 'list' (clicked from list card) or 'auto' (detect)
+window.showSVRDetailPage = function(objectId, source = 'auto') {
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
     const splashScreen = document.getElementById('detail-splash');
     const backdrop = document.getElementById('svr-filter-backdrop');
+    const isDesktop = window.innerWidth >= 768;
+
+    // Determine source context
+    if (source === 'auto') {
+        if (isDesktop) {
+            // On desktop, detect based on current mode
+            if (document.body.classList.contains('list-only-mode')) {
+                source = 'list';
+            } else if (document.body.classList.contains('map-only-mode')) {
+                source = 'map';
+            } else {
+                // Split mode - default to opening in list panel
+                source = 'map'; // Clicked from map, open in list panel
+            }
+        } else {
+            source = isListView ? 'list' : 'map';
+        }
+    }
+
+    // Desktop: Open as panel, Mobile: Open as fullscreen overlay
+    if (isDesktop) {
+        // Remove previous context classes
+        detailOverlay.classList.remove('detail-from-map', 'detail-from-list');
+        
+        // Add context class based on source
+        if (source === 'map') {
+            // Open in right panel (replaces list)
+            detailOverlay.classList.add('detail-from-map');
+        } else {
+            // Open in left panel (replaces map)
+            detailOverlay.classList.add('detail-from-list');
+        }
+        
+        // Hide splash on desktop (we're in a panel, not fullscreen)
+        if (splashScreen) {
+            splashScreen.style.display = 'none';
+        }
+    } else {
+        // Mobile: Ensure splash is visible
+        if (splashScreen) {
+            splashScreen.style.display = 'block';
+            splashScreen.classList.remove('hide');
+            typewriterEffect('detail-splash-text', 'Kamperen bij de boer');
+        }
+    }
 
     // CRITICAL FIX: Explicitly remove transform property and force reflow
     detailSheet.style.removeProperty('transform');
@@ -928,60 +984,75 @@ window.showSVRDetailPage = function(objectId) {
     void detailSheet.offsetWidth;
     detailSheet.style.transition = '';
 
-    // Show splash screen immediately
-    if (splashScreen) {
-        splashScreen.classList.remove('hide'); // Make sure it's visible
-        typewriterEffect('detail-splash-text', 'Kamperen bij de boer'); // Start typewriter effect
-        // Clear actual content area, but don't remove splash
+    // Clear actual content area
+    if (!isDesktop) {
         const elementsToClear = Array.from(detailSheet.children).filter(el => el.id !== 'detail-splash');
         elementsToClear.forEach(el => el.remove());
     } else {
-        // Fallback if splash not found (shouldn't happen with correct HTML)
-        $(detailSheet).empty();
+        // On desktop, clear everything except splash (which is hidden)
+        const elementsToClear = Array.from(detailSheet.children);
+        elementsToClear.forEach(el => el.remove());
     }
 
-    // Show backdrop and overlay
-    if (backdrop) {
+    // Show backdrop (mobile only)
+    if (backdrop && !isDesktop) {
         backdrop.style.display = 'block';
         setTimeout(() => backdrop.classList.add('open'), 10);
     }
+    
     detailOverlay.style.display = 'block';
 
-    setTimeout(() => {
-        detailOverlay.classList.add('open');
-        // Push state and fetch content
-        history.pushState({ view: 'detail', objectId: objectId }, "", `#detail/${objectId}`);
-        renderDetail(objectId); // renderDetail will now hide the splash when content is ready
-    }, 10);
+    if (!isDesktop) {
+        setTimeout(() => {
+            detailOverlay.classList.add('open');
+        }, 10);
+    }
+
+    // Push state and fetch content
+    history.pushState({ view: 'detail', objectId: objectId, source: source }, "", `#detail/${objectId}`);
+    renderDetail(objectId);
 };
 
-// Function to handle the back action for the detail sheet (no changes here)
+// Function to handle the back action for the detail sheet
 window.handleDetailBack = function() {
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
     const backdrop = document.getElementById('svr-filter-backdrop');
     const splashScreen = document.getElementById('detail-splash');
+    const isDesktop = window.innerWidth >= 768;
 
+    // Remove desktop panel context classes
+    detailOverlay.classList.remove('detail-from-map', 'detail-from-list');
 
-    detailSheet.classList.remove('open'); // Trigger slide down
-    detailOverlay.classList.remove('open'); // Trigger background fade out
-    if (backdrop) backdrop.classList.remove('open');
-    if (splashScreen) splashScreen.classList.add('hide'); // Hide splash instantly on back
-
-    setTimeout(() => {
-        detailOverlay.style.display = 'none'; // Hide after animation
-        if (backdrop && !document.getElementById('svr-filter-overlay').classList.contains('open')) {
-            backdrop.style.display = 'none';
-        }
-        if (history.state && history.state.view === 'detail') {
-            history.back(); // Navigate back in history
-        }
-        // Ensure splash is completely gone from DOM after fade-out
+    if (isDesktop) {
+        // Desktop: Just hide the overlay
+        detailOverlay.style.display = 'none';
         if (splashScreen) {
-            splashScreen.classList.remove('hide'); // Reset for next use
-            // The splash screen should remain in the DOM, just hidden, ready for next detail view
+            splashScreen.style.display = 'block';
+            splashScreen.classList.add('hide');
         }
-    }, 400); // Match CSS transition duration
+    } else {
+        // Mobile: Animate out
+        detailSheet.classList.remove('open');
+        detailOverlay.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('open');
+        if (splashScreen) splashScreen.classList.add('hide');
+
+        setTimeout(() => {
+            detailOverlay.style.display = 'none';
+            if (backdrop && !document.getElementById('svr-filter-overlay').classList.contains('open')) {
+                backdrop.style.display = 'none';
+            }
+            if (splashScreen) {
+                splashScreen.classList.remove('hide');
+            }
+        }, 400);
+    }
+
+    // Navigate back in history
+    if (history.state && history.state.view === 'detail') {
+        history.back();
+    }
 };
 
 
@@ -1063,7 +1134,87 @@ window.onpopstate = (e) => {
     }
 };
 
-$('#toggleView').on('click', () => { isListView = !isListView; applyState({ view: isListView ? 'list' : 'map' }); history.pushState({ view: isListView ? 'list' : 'map' }, ""); });
+// Toggle view button - 3 modes on desktop (split/map/list), 2 modes on mobile (map/list)
+$('#toggleView').on('click', () => {
+    const isDesktop = window.innerWidth >= 768;
+    
+    if (isDesktop) {
+        // Desktop: Cycle through split → map-only → list-only → split
+        if (document.body.classList.contains('split-mode') || 
+            (!document.body.classList.contains('map-only-mode') && !document.body.classList.contains('list-only-mode'))) {
+            // Currently in split mode → go to map-only
+            setDesktopViewMode('map-only');
+        } else if (document.body.classList.contains('map-only-mode')) {
+            // Currently in map-only → go to list-only
+            setDesktopViewMode('list-only');
+        } else {
+            // Currently in list-only → go to split
+            setDesktopViewMode('split');
+        }
+    } else {
+        // Mobile: Toggle between map and list
+        isListView = !isListView;
+        applyState({ view: isListView ? 'list' : 'map' });
+        history.pushState({ view: isListView ? 'list' : 'map' }, "");
+    }
+});
+
+// Helper function to set desktop view mode
+function setDesktopViewMode(mode) {
+    document.body.classList.remove('split-mode', 'map-only-mode', 'list-only-mode');
+    
+    switch(mode) {
+        case 'split':
+            document.body.classList.add('split-mode');
+            $('#toggleView i').attr('class', 'fas fa-columns');
+            isListView = false;
+            break;
+        case 'map-only':
+            document.body.classList.add('map-only-mode');
+            $('#toggleView i').attr('class', 'fas fa-list');
+            isListView = false;
+            break;
+        case 'list-only':
+            document.body.classList.add('list-only-mode');
+            $('#toggleView i').attr('class', 'fas fa-map');
+            isListView = true;
+            break;
+    }
+    
+    // Trigger map resize after mode change
+    setTimeout(() => {
+        if (map && typeof map.invalidateSize === 'function') {
+            map.invalidateSize();
+        }
+    }, 100);
+    
+    history.pushState({ view: mode }, "");
+}
+
+// Initialize desktop mode on load
+if (window.innerWidth >= 768) {
+    setDesktopViewMode('split');
+}
+
+// Handle window resize - update Leaflet map size
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        if (map && typeof map.invalidateSize === 'function') {
+            map.invalidateSize();
+        }
+        // Re-initialize desktop mode if crossing breakpoint
+        if (window.innerWidth >= 768) {
+            // Ensure desktop mode classes are applied
+            if (!document.body.classList.contains('split-mode') && 
+                !document.body.classList.contains('map-only-mode') && 
+                !document.body.classList.contains('list-only-mode')) {
+                setDesktopViewMode('split');
+            }
+        }
+    }, 100);
+});
 
 const $searchInput = $('#searchInput'); const $suggestionsList = $('#suggestionsList');
 
@@ -1574,19 +1725,19 @@ function renderResults(objects, cLat, cLng) {
         // See: bestanden/outerHTML_marker_popup.txt
         const address = p.address ? `${p.address}, ${p.city}` : p.city;
         const distDisplay = (obj.distM/1000).toFixed(1);
-        
+
         const popup = `<div style="min-width: 220px;">
             <div style="word-wrap: break-word; margin-top: -5px;">
-                <h5 onclick="window.showSVRDetailPage('${obj.id}')" style="margin: 0; padding: 0; font-family: 'Befalow', sans-serif; font-size: 25px; font-weight: normal; color: #008AD3; cursor: pointer;">${p.name}</h5>
+                <h5 onclick="window.showSVRDetailPage('${obj.id}', 'map')" style="margin: 0; padding: 0; font-family: 'Befalow', sans-serif; font-size: 25px; font-weight: normal; color: #008AD3; cursor: pointer;">${p.name}</h5>
                 <div style="font-size: 13px; color: #666; margin-top: 0px;">${address}</div>
                 <div style="font-size: 13px; color: #333; margin-top: 2px;"><i class="fa-solid fa-map-pin" style="color: #c0392b;"></i> Afstand: ${distDisplay} km</div>
                 <div class="camping-actions" style="display: flex; margin: 8px -15px -15px -15px; border-top: 1px solid #eee;">
                     <a href="#" class="action-btn btn-route" style="flex: 1; text-align: center; padding: 6px 0; color: #c0392b; text-decoration: none; font-weight: bold; font-size: 14px; border-right: 1px solid #eee;" onclick="window.openNavHelper(${lat}, ${lng}, '${safeName}'); return false;"><i class="fa-solid fa-route"></i> ROUTE</a>
-                    <a href="#" class="action-btn btn-info" style="flex: 1; text-align: center; padding: 6px 0; color: #008AD3; text-decoration: none; font-weight: bold; font-size: 14px;" onclick="window.showSVRDetailPage('${obj.id}'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
+                    <a href="#" class="action-btn btn-info" style="flex: 1; text-align: center; padding: 6px 0; color: #008AD3; text-decoration: none; font-weight: bold; font-size: 14px;" onclick="window.showSVRDetailPage('${obj.id}', 'map'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
                 </div>
             </div>
         </div>`;
-        
+
         marker.bindPopup(popup);
         if (index < 10) { top10Layer.addLayer(marker); bounds.extend([lat, lng]); } else markerCluster.addLayer(marker);
 
@@ -1599,7 +1750,7 @@ function renderResults(objects, cLat, cLng) {
             <div class="camping-actions">
                 <a href="#" class="action-btn btn-kaart" onclick="window.focusOnMarker(${lat},${lng}, '${obj.id}'); return false;"><i class="fa-solid fa-map"></i> KAART</a>
                 <a href="#" class="action-btn btn-route" onclick="window.openNavHelper(${lat}, ${lng}, '${safeName}'); return false;"><i class="fa-solid fa-route"></i> ROUTE</a>
-                <a href="#" class="action-btn btn-info" onclick="window.showSVRDetailPage('${obj.id}'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
+                <a href="#" class="action-btn btn-info" onclick="window.showSVRDetailPage('${obj.id}', 'list'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
             </div>
         </div>`;
         $('#resultsList').append(card);
