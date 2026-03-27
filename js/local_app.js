@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.34"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.35"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -861,6 +861,8 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 function applyState(state) {
     if (!state) return;
+    
+    const isDesktop = window.innerWidth >= 768;
 
     // Only hide detail container if the new state is NOT a detail view
     // This prevents the hide/show flash when updating detail content
@@ -868,44 +870,54 @@ function applyState(state) {
         $('#detail-container').hide().removeClass('open');
     }
 
-    // Hide main containers
-    $('#map-container').hide();
-    $('#list-container').hide();
+    // On desktop, don't hide containers - let CSS handle visibility via body classes
+    if (!isDesktop) {
+        // Hide main containers (mobile only)
+        $('#map-container').hide();
+        $('#list-container').hide();
 
-    // Reset button visibility
-    $('#locateBtn').hide();
-    $('#scroll_top_btn').removeClass('visible').hide();
+        // Reset button visibility
+        $('#locateBtn').hide();
+        $('#scroll_top_btn').removeClass('visible').hide();
+    }
 
     switch (state.view) {
         case 'list':
             isListView = true;
-            $('#list-container').show();
-            $('#toggleView i').attr('class', 'fas fa-map');
-            // Show scroll button on list view to maintain stack size
-            $('#scroll_top_btn').addClass('visible').show();
+            if (!isDesktop) {
+                $('#list-container').show();
+                $('#toggleView i').attr('class', 'fas fa-map');
+                $('#scroll_top_btn').addClass('visible').show();
+            }
             break;
         case 'map':
             isListView = false;
-            $('#map-container').show();
-            $('#locateBtn').show(); // Show locate only on map
-            $('#toggleView i').attr('class', 'fas fa-list');
-            setTimeout(() => {
-                map.invalidateSize();
-                if (window.lastMapBounds) {
-                    map.fitBounds(window.lastMapBounds, { padding: [50, 50] });
-                }
-            }, 100);
+            if (!isDesktop) {
+                $('#map-container').show();
+                $('#locateBtn').show(); // Show locate only on map
+                $('#toggleView i').attr('class', 'fas fa-list');
+                setTimeout(() => {
+                    map.invalidateSize();
+                    if (window.lastMapBounds) {
+                        map.fitBounds(window.lastMapBounds, { padding: [50, 50] });
+                    }
+                }, 100);
+            }
             break;
         case 'detail':
             isListView = false;
-            $('#detail-container').show(); // Ensure visible, but showSVRDetailPage handles the 'open' class
+            if (!isDesktop) {
+                $('#detail-container').show(); // Ensure visible, but showSVRDetailPage handles the 'open' class
+            }
             break;
         default:
             isListView = false;
-            $('#map-container').show();
-            $('#locateBtn').show();
-            $('#toggleView i').attr('class', 'fas fa-list');
-            setTimeout(() => map.invalidateSize(), 100);
+            if (!isDesktop) {
+                $('#map-container').show();
+                $('#locateBtn').show();
+                $('#toggleView i').attr('class', 'fas fa-list');
+                setTimeout(() => map.invalidateSize(), 100);
+            }
             break;
     }
 }
@@ -1134,22 +1146,21 @@ window.onpopstate = (e) => {
     }
 };
 
-// Toggle view button - 3 modes on desktop (split/map/list), 2 modes on mobile (map/list)
+// Toggle view button - Desktop: toggle between split/map-only/list-only, Mobile: toggle between map/list
 $('#toggleView').on('click', () => {
     const isDesktop = window.innerWidth >= 768;
     
     if (isDesktop) {
         // Desktop: Cycle through split → map-only → list-only → split
-        if (document.body.classList.contains('split-mode') || 
-            (!document.body.classList.contains('map-only-mode') && !document.body.classList.contains('list-only-mode'))) {
-            // Currently in split mode → go to map-only
-            setDesktopViewMode('map-only');
+        if (document.body.classList.contains('list-only-mode')) {
+            // From list-only → back to split
+            setDesktopViewMode('split');
         } else if (document.body.classList.contains('map-only-mode')) {
-            // Currently in map-only → go to list-only
+            // From map-only → list-only
             setDesktopViewMode('list-only');
         } else {
-            // Currently in list-only → go to split
-            setDesktopViewMode('split');
+            // From split (or default) → map-only
+            setDesktopViewMode('map-only');
         }
     } else {
         // Mobile: Toggle between map and list
@@ -1171,12 +1182,12 @@ function setDesktopViewMode(mode) {
             break;
         case 'map-only':
             document.body.classList.add('map-only-mode');
-            $('#toggleView i').attr('class', 'fas fa-list');
+            $('#toggleView i').attr('class', 'fas fa-map');
             isListView = false;
             break;
         case 'list-only':
             document.body.classList.add('list-only-mode');
-            $('#toggleView i').attr('class', 'fas fa-map');
+            $('#toggleView i').attr('class', 'fas fa-list');
             isListView = true;
             break;
     }

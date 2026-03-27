@@ -564,7 +564,7 @@
 }
 
 /* ========================================
-   DESKTOP RESPONSIVE - SPLIT SCREEN (v0.2.34)
+   DESKTOP RESPONSIVE - SPLIT SCREEN (v0.2.35)
    ======================================== */
 
 /* Tablet & Desktop (768px+) - Compact UI elements + Split Screen */
@@ -587,38 +587,43 @@
     /* Smaller help text */
     .help-text { font-size: 12px; }
     
-    /* === SPLIT SCREEN LAYOUT === */
-    /* Map container takes full width by default (mobile first) */
-    #map-container {
-        left: 0 !important;
-        right: 0 !important;
+    /* === SPLIT SCREEN LAYOUT - List Left, Map Right === */
+    /* List container on LEFT side (50%) */
+    #list-container {
+        position: absolute;
+        top: var(--header-height);
+        left: 0;
+        width: 50%;
+        height: calc(100vh - var(--header-height));
+        background: #f5f5f5;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+        right: auto !important;
         transform: none !important;
         max-width: none !important;
     }
     
-    /* List container positioned on right side */
-    #list-container {
+    /* Map container on RIGHT side (50%) */
+    #map-container {
         position: absolute;
         top: var(--header-height);
         right: 0;
-        width: 40%;
+        width: 50%;
         height: calc(100vh - var(--header-height));
-        background: #f5f5f5;
-        box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+        left: auto !important;
+        transform: none !important;
+        max-width: none !important;
     }
     
-    /* Map takes left 60% in split mode */
+    /* Split mode - both visible */
+    body.split-mode #list-container,
     body.split-mode #map-container {
-        width: 60%;
-    }
-    
-    body.split-mode #list-container {
         display: block;
     }
     
     /* Fullscreen map mode */
     body.map-only-mode #map-container {
         width: 100%;
+        left: 0;
     }
     
     body.map-only-mode #list-container {
@@ -626,18 +631,18 @@
     }
     
     /* Fullscreen list mode */
+    body.list-only-mode #list-container {
+        width: 100%;
+        right: 0;
+    }
+    
     body.list-only-mode #map-container {
         display: none;
     }
     
-    body.list-only-mode #list-container {
-        width: 100%;
-        left: 0;
-    }
-    
-    /* Action buttons repositioned for split screen */
+    /* Action buttons positioned between list and map in split mode */
     .map-actions-stack {
-        right: calc(60% + 12px) !important;
+        right: calc(50% + 12px) !important;
         bottom: calc(20px + var(--safe-area-inset-bottom));
     }
     
@@ -676,24 +681,23 @@
 
 /* Detail Panel - Desktop Split Screen */
 @media (min-width: 768px) {
-    /* Detail panel replaces either map or list depending on context */
-    #detail-container.detail-from-map {
-        /* Opens in list panel area (right side) */
+    /* Detail panel opens on RIGHT side (map side) when clicked from list */
+    #detail-container.detail-from-list {
         position: absolute;
         top: var(--header-height);
         right: 0;
-        width: 40%;
+        width: 50%;
         height: calc(100vh - var(--header-height));
         background: white;
         z-index: 1500;
     }
     
-    #detail-container.detail-from-list {
-        /* Opens in map panel area (left side) */
+    /* Detail panel opens on LEFT side (list side) when clicked from map */
+    #detail-container.detail-from-map {
         position: absolute;
         top: var(--header-height);
         left: 0;
-        width: 60%;
+        width: 50%;
         height: calc(100vh - var(--header-height));
         background: white;
         z-index: 1500;
@@ -715,16 +719,16 @@
 
 /* Filter Panel - Desktop Split Screen */
 @media (min-width: 768px) {
-    /* Filter overlay becomes a panel on right side */
+    /* Filter overlay becomes a panel on LEFT side (list side) */
     #svr-filter-overlay {
         position: absolute;
         top: var(--header-height);
-        right: 0;
-        width: 40%;
+        left: 0;
+        width: 50%;
         height: calc(100vh - var(--header-height));
         background: white;
         z-index: 1400;
-        box-shadow: -2px 0 8px rgba(0,0,0,0.15);
+        box-shadow: 2px 0 8px rgba(0,0,0,0.15);
     }
     
     #svr-filter-overlay .filter-content {
@@ -734,7 +738,7 @@
     }
 }
 
-/* Large Desktop (1440px+) - Optional background for margins */
+/* Large Desktop (1440px+) - Keep same layout */
 @media (min-width: 1440px) {
-    /* Keep full-width layout, no gray background needed */
+    /* Keep 50/50 split, no changes needed */
 }
