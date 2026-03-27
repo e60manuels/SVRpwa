@@ -1,0 +1,38 @@
+  Het nieuwe ontwerp voor v0.2.29:
+
+✦ De codebase_investigator heeft een scherpe en kritische analyse gegeven die precies de "vinger op de zere plek" legt.
+
+  De belangrijkste conclusies van de Investigator:
+
+   1. Redundantie & Verwarring: We hebben momenteel drie bronnen (localStorage, preset.json en campings.json). De
+      Investigator zag dat ik per ongeluk loadCachedCampsites twee keer had gedefinieerd in de vorige turn (een
+      kopie-fout). Dit veroorzaakt onvoorspelbaar gedrag.
+   2. De 'Hanging' Bug: De fix om de cache te negeren bij een zoekterm (q) is een goed begin, maar de Investigator
+      adviseert om de localStorage cache (svr_cache_campsites) helemaal te verwijderen. Waarom? Omdat we nu de
+      super-complete campings.json hebben. Twee caches naast elkaar zorgt alleen maar voor inconsistenties (zoals de
+      Franse campings die "blijven plakken").
+   3. Single Source of Truth: Het advies is om campings.json (via de Service Worker) de enige bron te maken voor zowel
+      het opstarten als het filteren. assets/campsites_preset.json kan inderdaad met pensioen.
+   4. Race Conditions: loadCachedCampsites en loadStaticCampsites vechten nu om wie het eerst mag renderen. Dit moet één
+      vloeiende beweging worden.
+ 
+ Het herziene plan voor v0.2.29 (De Grote Schoonmaak):
+
+   1. Verwijderen: We verwijderen assets/campsites_preset.json uit het project en uit de Service Worker (sw.js).
+   2. Opschonen localStorage: We stoppen met het opslaan van campings in svr_cache_campsites. Dit bespaart ook nog eens
+      kostbare opslagruimte (5MB limiet) op de telefoon.
+   3. Nieuwe Opstart-flow: De app laadt data/campings.json (via Service Worker) en zet Nederland op de kaart.
+   4. Waterdichte performSearch:
+       * Vraag coördinaten op bij Nominatim (internet nodig).
+       * Directe kaart-update: Bereken afstanden van de 1300 campings naar Brucht lokaal. Sorteer ze. Render ze. (Geen
+         internet meer nodig voor de lijst).
+   5. Filteren:
+       * Filter de 1300 campings lokaal op basis van de JSON-data. (Geen internet nodig).
+   6. resetFilters: Wissen van alle actieve filters en de kaart herstellen naar de standaard weergave van alle 1300 campings.
+   7. Offline-ready: De app werkt nu volledig (kaart, filters, zoeken) zolang de gebruiker een plaatsnaam zoekt die al
+      in de cache zit (zoals de huidige kaartlocatie) of we de coördinaten-json nog toevoegen.
+
+  Wat ik nu ga doen:
+   * Opschonen: Ik haal assets/campsites_preset.json uit het project.
+   * Implementeren: Ik herschrijf js/local_app.js zodat deze volledig op data/campings.json leunt. De SVR API voor
+     campings (markers) gaat definitief de prullenbak in!

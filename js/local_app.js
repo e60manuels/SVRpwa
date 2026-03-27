@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.28"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.30"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -18,7 +18,7 @@ window.SVR_PWA_VERSION = "0.2.28"; // Increment this number with each commit
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
     window.SVR_FILTER_OVERLAY_INJECTED = true;
 
-    // Static data storage for high-performance filtering
+    // Static data storage - The SINGLE SOURCE OF TRUTH for markers and filters
     window.staticCampsites = null;
     window.filterCategories = {}; // id -> category_name
 
@@ -31,63 +31,13 @@ window.SVR_PWA_VERSION = "0.2.28"; // Increment this number with each commit
     // --- DEBUG LOGGING ---
     function logDebug(msg) {
         console.log(`[v${window.SVR_PWA_VERSION}] ${msg}`);
-        // Removed on-screen debug console as requested
     }
     window.logDebug = logDebug;
     logDebug("SVR PWA v2.5 Start");
 
-    // --- INSTANT CACHE / PRESET LOGIC ---
+    // --- DATA LOADING LOGIC ---
     window.loadStaticCampsites = async function() {
-        try {
-            logDebug("Laden van data/campings.json (Static Delivery)...");
-            const res = await fetch('./data/campings.json');
-            if (res.ok) {
-                const data = await res.json();
-                window.staticCampsites = data.campings || [];
-                // Store categories for search decision
-                if (data.categories) {
-                    data.categories.forEach(cat => {
-                        cat.ids.forEach(id => {
-                            window.filterCategories[id] = cat.name;
-                        });
-                    });
-                }
-                logDebug(`Static data geladen: ${window.staticCampsites.length} campings.`);
-                return true;
-            }
-        } catch (e) {
-            logDebug("Static Data Fout: " + e.message);
-        }
-        return false;
-    };
-
-    window.loadCachedCampsites = async function() {
-
-        try {
-            logDebug("Laden van data/campings.json (Static Delivery)...");
-            const res = await fetch('./data/campings.json');
-            if (res.ok) {
-                const data = await res.json();
-                window.staticCampsites = data.campings || [];
-                // Store categories for search decision
-                if (data.categories) {
-                    data.categories.forEach(cat => {
-                        cat.ids.forEach(id => {
-                            window.filterCategories[id] = cat.name;
-                        });
-                    });
-                }
-                logDebug(`Static data geladen: ${window.staticCampsites.length} campings.`);
-                return true;
-            }
-        } catch (e) {
-            logDebug("Static Data Fout: " + e.message);
-        }
-        return false;
-    };
-
-    window.loadCachedCampsites = async function() {
-        performance.mark('instant-map-start');
+        performance.mark('data-load-start');
         try {
             // Plaats de rode punaise direct op de startlocatie (Nederland)
             const startLat = 52.1326, startLng = 5.2913;
@@ -102,59 +52,48 @@ window.SVR_PWA_VERSION = "0.2.28"; // Increment this number with each commit
                 zIndexOffset: 2000 
             }).addTo(map);
 
-            let data = null;
-            const cached = localStorage.getItem('svr_cache_campsites');
-            
-            if (cached) {
-                logDebug("Laden van campings uit LocalStorage cache...");
-                data = { objects: JSON.parse(cached) };
-            } else {
-                logDebug("Laden van campings uit assets/campsites_preset.json...");
-                const res = await fetch('assets/campsites_preset.json');
-                if (res.ok) data = await res.json();
-
-                // NEW: If loaded from preset, save to localStorage for subsequent searches
-                if (data && data.objects && data.objects.length > 0) {
-                    try {
-                        // Strip data before saving to localStorage to keep it light
-                        const strippedObjects = data.objects.map(o => ({
-                            id: o.id,
-                            geometry: o.geometry,
-                            properties: {
-                                name: o.properties.name,
-                                city: o.properties.city,
-                                type_camping: o.properties.type_camping,
-                                facilities: o.properties.facilities,
-                                address: o.properties.address
-                            }
-                        }));
-                        localStorage.setItem('svr_cache_campsites', JSON.stringify(strippedObjects));
-                        logDebug(`Preset geladen en opgeslagen in LocalStorage (${strippedObjects.length} items).`);
-                    } catch(e) { logDebug("Preset Cache Opslag Fout: " + e.message); }
-                }
-            }
-
-            if (data && data.objects && data.objects.length > 0) {
-                const sLat = 52.1326, sLng = 5.2913;
-                data.objects.forEach(o => { 
-                    o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; 
-                });
-                data.objects.sort((a, b) => a.distM - b.distM);
+            logDebug("Laden van data/campings.json (Unified Delivery)...");
+            const res = await fetch('./data/campings.json');
+            if (res.ok) {
+                const data = await res.json();
+                window.staticCampsites = data.campings || [];
                 
-                // Direct renderen (gebruik skipFitBounds om verspringen te voorkomen)
+                // Store categories for search decision
+                if (data.categories) {
+                    data.categories.forEach(cat => {
+                        cat.ids.forEach(id => {
+                            window.filterCategories[id] = cat.name;
+                        });
+                    });
+                }
+
+                // Render de initiële kaart (Nederland) direct vanuit de geladen data
+                const sLat = 52.1326, sLng = 5.2913;
+                const objects = window.staticCampsites.map(c => ({
+                    id: c.id,
+                    geometry: { coordinates: [c.lng, c.lat] },
+                    properties: { name: c.naam, city: c.stad, type_camping: c.type },
+                    distM: calculateDistance(sLat, sLng, c.lat, c.lng)
+                }));
+                
+                objects.sort((a, b) => a.distM - b.distM);
+                
+                // Direct renderen (gebruik skipFitBounds om verspringen te voorkomen bij start)
                 window.skipFitBounds = true;
-                renderResults(data.objects, sLat, sLng);
+                renderResults(objects, sLat, sLng);
                 window.skipFitBounds = false;
                 
                 window.hasDataOnScreen = true;
-                logDebug(`Direct geladen: ${data.objects.length} campings.`);
+                logDebug(`Static data geladen en gerenderd: ${window.staticCampsites.length} campings.`);
+                return true;
             }
         } catch (e) {
-            logDebug("Cache/Preset Fout: " + e.message);
+            logDebug("Static Data Fout: " + e.message);
         } finally {
-            performance.mark('instant-map-end');
-            performance.measure('Instant Map Loading', 'instant-map-start', 'instant-map-end');
+            performance.mark('data-load-end');
+            performance.measure('Unified Data Loading', 'data-load-start', 'data-load-end');
         }
+        return false;
     };
 
     // [SECTION: CSV_SEARCH_LOGIC]
@@ -834,8 +773,18 @@ window.SVR_PWA_VERSION = "0.2.28"; // Increment this number with each commit
         // Leeg de UI overal
         updateActiveFiltersUI([], 'both');
 
+        // CRITICAL: Clear cache to prevent "hanging" filter results
+        localStorage.removeItem('svr_cache_campsites');
+
         const expires = "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         document.cookie = "filters=[]; expires=" + expires + "; path=/; domain=svr.nl";
+
+        // Reset URL hash
+        if (window.location.hash.includes('detail/')) {
+            // Keep detail view if that's what we are looking at
+        } else {
+            history.replaceState({ view: isListView ? 'list' : 'map' }, "", window.location.pathname);
+        }
 
         window.closeFilterOverlay();
         window.performSearch(true); 
@@ -1164,11 +1113,12 @@ window.performSearch = async function(forceAPI = false) {
     let sLat = 52.1326, sLng = 5.2913;
 
     if (q) {
+        // Geocoding om coördinaten van de plaatsnaam te krijgen
         const coords = await window.getCoordinatesWeb(q);
         if (coords) {
             sLat = coords.latitude; sLng = coords.longitude;
         } else {
-            // Feedback for invalid location
+            // Feedback voor niet gevonden locatie
             const originalPlaceholder = $searchInput.attr('placeholder');
             $searchInput.val('').attr('placeholder', 'Plaats niet gevonden...').addClass('search-error');
             setTimeout(() => {
@@ -1193,118 +1143,46 @@ window.performSearch = async function(forceAPI = false) {
         zIndexOffset: 2000
     }).addTo(map);
 
-    // Instant Search: Als we niet forceren (geen filterwijziging) en we hebben data, dan rekenen we het lokaal uit
-    if (!forceAPI && window.hasDataOnScreen) {
-        const cached = localStorage.getItem('svr_cache_campsites');
-        if (cached) {
-            logDebug("Instant Search via Cache (Volledige lijst)...");
-            const objects = JSON.parse(cached);
-
-            // Bereken afstanden voor ALLE campings in de cache
-            objects.forEach(o => {
-                o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999;
-            });
-
-            // Sorteer de volledige lijst
-            objects.sort((a, b) => a.distM - b.distM);
-
-            // Render de volledige set
-            renderResults(objects, sLat, sLng);
-            isSearching = false;
-            return;
-        }
-    }
-
-    // NEW: High-performance filtering via static data (All filters)
-    if (forceAPI && window.staticCampsites) {
-        logDebug("Filtering via Static Delivery (Local)...");
+    // UNIFIED SEARCH & FILTER LOGIC (Static Delivery)
+    if (window.staticCampsites) {
+        logDebug(`Unified Search/Filter: ${q ? "Zoeken naar " + q : "Alleen filters"}`);
         
         let filtered = window.staticCampsites;
+        
+        // 1. Filter op geselecteerde faciliteiten/landen/gebieden
         if (window.currentFilters && window.currentFilters.length > 0) {
             filtered = window.staticCampsites.filter(c => {
-                // All selected filters must be present in the camping's filter list
+                // Alle geselecteerde filters moeten aanwezig zijn in de camping data
                 return window.currentFilters.every(f => c.filters && c.filters.includes(f));
             });
         }
 
-        // Map static objects to expected format for renderResults
+        // 2. Map naar formaat voor renderResults en bereken afstanden
         const objects = filtered.map(c => ({
             id: c.id,
             geometry: { coordinates: [c.lng, c.lat] },
             properties: {
                 name: c.naam,
                 city: c.stad,
-                type_camping: c.type,
-                address: "" // Optional in static data
+                type_camping: c.type
             },
             distM: calculateDistance(sLat, sLng, c.lat, c.lng)
         }));
 
+        // 3. Sorteer op afstand vanaf de zoeklocatie (rode punaise)
         objects.sort((a, b) => a.distM - b.distM);
+        
+        // 4. Toon resultaten
         renderResults(objects, sLat, sLng);
         
-        isSearching = false;
-        return;
-    }
-
-    // Alleen spinner tonen als we echt een API-call gaan doen
-    $('#loading-overlay').css('display', 'flex');
-
-    try {
-        // Gebruik een ruime straal voor de API-call om de cache zo compleet mogelijk te maken
-        let apiUrl = `https://www.svr.nl/api/objects?page=0&lat=${sLat}&lng=${sLng}&distance=500000&limit=2000`;
-        if (window.currentFilters && window.currentFilters.length > 0) {
-            window.currentFilters.forEach(f => apiUrl += `&filter[facilities][]=${f}`);
-        }
-
-        const contents = await fetchWithRetry(apiUrl);
-
-        if (!contents || contents.trim().startsWith("<!doctype") || contents.trim().startsWith("<html") || contents.includes("Internal Server Error")) {
-            throw new Error("SVR stuurde geen geldige JSON");
-        }
-
-        const data = JSON.parse(contents);
-        const allObjects = data.objects || [];
-
-        // Filter out objects where type_camping === 3
-        const objects = allObjects.filter(o => {
-            const props = o.properties;
-            if (props) {
-                const typeCamping = props.type_camping !== undefined ? props.type_camping : -1;
-                return typeCamping !== 3;
-            }
-            return true;
-        });
-
-        logDebug("API resultaten ontvangen. Aantal: " + objects.length);
-
-        // Strip data om binnen de localStorage limiet van 5MB te blijven
-        const strippedObjects = objects.map(o => ({
-            id: o.id,
-            geometry: o.geometry,
-            properties: {
-                name: o.properties.name,
-                city: o.properties.city,
-                type_camping: o.properties.type_camping,
-                facilities: o.properties.facilities,
-                address: o.properties.address
-            }
-        }));
-
-        // Cache de resultaten
-        try {
-            localStorage.setItem('svr_cache_campsites', JSON.stringify(strippedObjects));
-            logDebug(`Cache bijgewerkt (${strippedObjects.length} items).`);
-        } catch(e) { logDebug("Cache Opslag Fout: " + e.message); }
-
-        objects.forEach(o => { o.distM = o.geometry ? calculateDistance(sLat, sLng, o.geometry.coordinates[1], o.geometry.coordinates[0]) : 999999; });
-        objects.sort((a, b) => a.distM - b.distM);
-        renderResults(objects, sLat, sLng);
         window.hasDataOnScreen = true;
+        isSearching = false;
         setTimeout(() => map.invalidateSize(), 500);
-
-    } catch (e) { logDebug("Search fout: " + e.message); }
-    finally { $('#loading-overlay').hide(); isSearching = false; }
+        return;
+    } else {
+        logDebug("Fout: Geen statische campingdata beschikbaar.");
+        isSearching = false;
+    }
 }
 
 async function renderDetail(objectId) {
@@ -1940,18 +1818,15 @@ window.initializeApp = function() {
     window.currentFilters = [];
     // Clear filters cookie to ensure proxy/server starts fresh
     document.cookie = "filters=[]; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=svr.nl";
-    // Clear cache to ensure we load the full preset (unfiltered) on fresh start
+    // Clear cache to ensure we load the full dataset (unfiltered) on fresh start
     localStorage.removeItem('svr_cache_campsites');
 
     // Set version display
     const verDisplay = document.getElementById('pwa-version-display');
     if (verDisplay) verDisplay.textContent = `v${window.SVR_PWA_VERSION}`;
 
-    // Direct de kaart EN de lijst vullen vanuit cache of preset (Instant Map & List)
-    // Dit gebeurt 100% lokaal, zonder API-call voor campings.
-    window.loadCachedCampsites();
-    
-    // NEW: Background load static data for high-perf filtering
+    // Load static data from data/campings.json (Single Source of Truth)
+    // This renders the initial map view with all 1300+ campings
     window.loadStaticCampsites();
     
     // Start background fetch of filter checkboxes (vinkjes) with a small delay
