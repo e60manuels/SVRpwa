@@ -614,45 +614,67 @@
 
 /* Large Desktop (1440px+) - Centered layout with margins */
 @media (min-width: 1440px) {
+    /* Body background for visible margins */
+    body {
+        background-color: #f0f0f0;
+    }
+    
     /* Center and limit header width */
     .svr-header {
         max-width: 1440px;
-        left: 50%;
+        left: 50% !important;
+        right: auto !important;
         transform: translateX(-50%);
         border-radius: 0 0 12px 12px;
     }
-    
+
     /* Center and limit map container */
     #map-container, #list-container {
         max-width: 1440px;
-        left: 50%;
+        left: 50% !important;
+        right: auto !important;
         transform: translateX(-50%);
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
     }
     
+    /* List container padding fix */
+    #list-container {
+        margin: 0 auto;
+    }
+
     /* Reposition action buttons to align with centered content */
     .map-actions-stack {
-        right: calc(50% - 720px + 12px);
+        right: calc(50% - 720px + 12px) !important;
     }
-    
+
     /* Center install banner */
     .install-banner {
         max-width: 1440px;
-        left: 50%;
+        left: 50% !important;
+        right: auto !important;
         transform: translateX(-50%);
         border-radius: 12px 12px 0 0;
     }
-    
+
     /* Center iOS instructions */
     .ios-install-instructions {
         max-width: 1440px;
-        left: 50%;
+        left: 50% !important;
+        right: auto !important;
         transform: translateX(-50%);
     }
-    
+
     /* Larger detail view on desktop */
     #detail-container .detail-sheet-content {
         max-width: 900px;
         margin: 40px auto;
+    }
+    
+    /* Center suggestions list */
+    .suggestions-list {
+        left: 50% !important;
+        transform: translateX(-50%);
+        max-width: 500px;
     }
 }
 
