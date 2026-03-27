@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.26"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.27"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -18,6 +18,10 @@ window.SVR_PWA_VERSION = "0.2.26"; // Increment this number with each commit
     if (window.SVR_FILTER_OVERLAY_INJECTED) return;
     window.SVR_FILTER_OVERLAY_INJECTED = true;
 
+    // Static data storage for high-performance filtering
+    window.staticCampsites = null;
+    window.filterCategories = {}; // id -> category_name
+
     // Flag to track if we already have some data on screen
     window.hasDataOnScreen = false;
 
@@ -33,6 +37,55 @@ window.SVR_PWA_VERSION = "0.2.26"; // Increment this number with each commit
     logDebug("SVR PWA v2.5 Start");
 
     // --- INSTANT CACHE / PRESET LOGIC ---
+    window.loadStaticCampsites = async function() {
+        try {
+            logDebug("Laden van data/campings.json (Static Delivery)...");
+            const res = await fetch('./data/campings.json');
+            if (res.ok) {
+                const data = await res.json();
+                window.staticCampsites = data.campings || [];
+                // Store categories for search decision
+                if (data.categories) {
+                    data.categories.forEach(cat => {
+                        cat.ids.forEach(id => {
+                            window.filterCategories[id] = cat.name;
+                        });
+                    });
+                }
+                logDebug(`Static data geladen: ${window.staticCampsites.length} campings.`);
+                return true;
+            }
+        } catch (e) {
+            logDebug("Static Data Fout: " + e.message);
+        }
+        return false;
+    };
+
+    window.loadCachedCampsites = async function() {
+
+        try {
+            logDebug("Laden van data/campings.json (Static Delivery)...");
+            const res = await fetch('./data/campings.json');
+            if (res.ok) {
+                const data = await res.json();
+                window.staticCampsites = data.campings || [];
+                // Store categories for search decision
+                if (data.categories) {
+                    data.categories.forEach(cat => {
+                        cat.ids.forEach(id => {
+                            window.filterCategories[id] = cat.name;
+                        });
+                    });
+                }
+                logDebug(`Static data geladen: ${window.staticCampsites.length} campings.`);
+                return true;
+            }
+        } catch (e) {
+            logDebug("Static Data Fout: " + e.message);
+        }
+        return false;
+    };
+
     window.loadCachedCampsites = async function() {
         performance.mark('instant-map-start');
         try {
@@ -1162,6 +1215,45 @@ window.performSearch = async function(forceAPI = false) {
         }
     }
 
+    // NEW: High-performance filtering via static data
+    // Condition: forceAPI (filter change) AND window.staticCampsites loaded
+    // AND NO "Landen/Gebieden" filters active
+    const hasSpecialFilters = window.currentFilters && window.currentFilters.some(f => {
+        const cat = window.filterCategories[f] || "";
+        return cat.includes('land') || cat.includes('Gebied');
+    });
+
+    if (forceAPI && window.staticCampsites && !hasSpecialFilters) {
+        logDebug("Filtering via Static Delivery (Local)...");
+        
+        let filtered = window.staticCampsites;
+        if (window.currentFilters && window.currentFilters.length > 0) {
+            filtered = window.staticCampsites.filter(c => {
+                // All selected filters must be present in the camping's filter list
+                return window.currentFilters.every(f => c.filters && c.filters.includes(f));
+            });
+        }
+
+        // Map static objects to expected format for renderResults
+        const objects = filtered.map(c => ({
+            id: c.id,
+            geometry: { coordinates: [c.lng, c.lat] },
+            properties: {
+                name: c.naam,
+                city: c.stad,
+                type_camping: c.type,
+                address: "" // Optional in static data
+            },
+            distM: calculateDistance(sLat, sLng, c.lat, c.lng)
+        }));
+
+        objects.sort((a, b) => a.distM - b.distM);
+        renderResults(objects, sLat, sLng);
+        
+        isSearching = false;
+        return;
+    }
+
     // Alleen spinner tonen als we echt een API-call gaan doen
     $('#loading-overlay').css('display', 'flex');
 
@@ -1865,6 +1957,9 @@ window.initializeApp = function() {
     // Direct de kaart EN de lijst vullen vanuit cache of preset (Instant Map & List)
     // Dit gebeurt 100% lokaal, zonder API-call voor campings.
     window.loadCachedCampsites();
+    
+    // NEW: Background load static data for high-perf filtering
+    window.loadStaticCampsites();
     
     // Start background fetch of filter checkboxes (vinkjes) with a small delay
     // This ensures the initial local render gets full CPU priority first.
