@@ -1,4 +1,4 @@
-const CACHE_NAME = 'svr-pwa-cache-v0.2.26';
+const CACHE_NAME = 'svr-pwa-cache-v0.2.27';
 const MAP_CACHE_NAME = 'svr-pwa-map-tiles';
 const ASSETS_TO_CACHE = [
   './',
@@ -13,6 +13,7 @@ const ASSETS_TO_CACHE = [
   './fonts/befalow.ttf',
   './assets/Woonplaatsen_in_Nederland.csv',
   './assets/campsites_preset.json',
+  './data/campings.json',
   './icons/icon-192.webp',
   './icons/icon-512.png',
   'https://code.jquery.com/jquery-3.6.0.min.js',
