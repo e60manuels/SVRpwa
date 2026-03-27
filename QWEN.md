@@ -1,163 +1,244 @@
-# SVR Campings PWA
+# SVR Campings PWA - Project Context
 
 ## Project Overview
 
-SVR Campings PWA is a Progressive Web Application that provides a mobile-friendly interface for finding SVR campings in the Netherlands. The application integrates with the SVR.nl platform to display camping locations on a map, provide search functionality, and show detailed information about each camping site.
+**SVR Campings** is a Progressive Web Application (PWA) that helps users find SVR (Stichting Vrije Recreatie) campings in the Netherlands and surrounding regions. The app provides map-based and list-based views of campings, with filtering capabilities by country and facilities.
 
 ### Key Features
-- Interactive map view with Leaflet and marker clustering
-- Search functionality with location suggestions using Dutch municipalities data
-- List view of campings with distance calculations
-- Detailed camping information pages with image carousels
-- Filtering capabilities for facilities and countries
-- Offline support through service workers
-- Location services for nearby campings
-- Navigation integration to Google Maps
+- **Map View**: Interactive Leaflet.js map with clustering for camping locations
+- **List View**: Scrollable list of camping cards with details
+- **Search**: Location-based search using Dutch municipality data (`Woonplaatsen_in_Nederland.csv`)
+- **Filters**: Filter campings by country and facilities (e.g., WiFi, pets allowed, etc.)
+- **Offline Support**: Service Worker caches app shell, static assets, and map tiles
+- **PWA Install**: Custom install banner with beforeinstallprompt handling
+- **Responsive Design**: Mobile-first design with portrait orientation lock
 
-### Technologies Used
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Mapping**: Leaflet.js with OpenStreetMap tiles and MarkerCluster plugin
-- **UI Framework**: Custom CSS with Bootstrap-like classes
-- **Icons**: Font Awesome
-- **Carousels**: Swiper.js
-- **Build System**: Gradle (for Android version reference)
-- **APIs**: SVR.nl API, Nominatim for geocoding
-- **PWA Features**: Manifest.json, Service Worker (sw.js)
+### Architecture
+- **Type**: Static PWA (no build step, vanilla JavaScript)
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript (with jQuery dependency)
+- **Map Engine**: Leaflet.js 1.9.4 with MarkerCluster plugin
+- **Data Source**: Pre-fetched camping data from SVR API (stored in `data/campings.json`)
+- **Proxy**: Cloudflare Worker (`svr-proxy-worker.e60-manuels.workers.dev`) for API access
 
-## Project Structure
+---
+
+## Directory Structure
 
 ```
 SVRpwa/
-├── index.html              # Main application entry point
-├── manifest.json           # PWA manifest configuration
-├── sw.js                   # Service worker for offline functionality
+├── index.html              # Main app entry point
+├── manifest.json           # PWA manifest (icons, theme colors, start URL)
+├── sw.js                   # Service Worker (offline caching strategy)
 ├── offline.html            # Offline fallback page
-├── GEMINI.md               # Development session notes
-├── migration_inventory.md  # Migration documentation
-├── assets/
-│   └── Woonplaatsen_in_Nederland.csv  # Dutch municipalities data
-├── bestanden/              # Development files and references
+├── build-campings-json.js  # Node.js script to fetch/update camping data
+├── migration_inventory.md  # Migration notes from Android app to PWA
+├── QWEN.md                 # This file - project context
+│
 ├── css/
-│   ├── local_style.css     # Main application styles
-│   ├── custom_styles.css   # Custom detail page styles
-│   ├── MarkerCluster.css   # Marker cluster styling
+│   ├── local_style.css     # Main app styles (564 lines)
+│   ├── custom_styles.css   # Additional style overrides
+│   ├── MarkerCluster.css   # Leaflet clustering styles
 │   └── MarkerCluster.Default.css
+│
+├── js/
+│   ├── local_app.js        # Main application logic (1884 lines)
+│   ├── pwa_install.js      # PWA install banner logic (284 lines)
+│   └── leaflet.markercluster.js  # Leaflet clustering plugin
+│
+├── data/
+│   └── campings.json       # Static camping data (40k+ lines, ~13k campings)
+│
+├── assets/
+│   └── Woonplaatsen_in_Nederland.csv  # Dutch municipality data for search
+│
+├── icons/
+│   ├── icon-192.webp       # PWA icon (192x192)
+│   └── icon-512.png        # PWA icon (512x512)
+│
 ├── fonts/
-│   └── befalow.ttf         # Custom font
-├── icons/                  # PWA icons
-└── js/
-    └── local_app.js        # Main application logic
+│   └── befalow.ttf         # Custom font for headers
+│
+└── bestanden/              # Documentation folder
+    ├── modernization_plan.md       # Code modernization recommendations
+    ├── lighthouse_findings.md      # Performance audit results
+    ├── filter_chips_pwa_spec.md    # Filter UI specification
+    ├── local_app_map.md            # Code structure documentation
+    ├── static-content-delivery-implementation-plan.md
+    └── gemini-svr-static-delivery.md
 ```
+
+---
 
 ## Building and Running
 
-### Prerequisites
-- A web server capable of serving static files
-- Modern web browser with JavaScript enabled
-- Internet connection for API calls and map tiles
+### Development Setup
 
-### Local Development
-1. Serve the project directory using a local web server:
+1. **Serve the project locally** (any static file server):
    ```bash
-   # Using Python's built-in server
+   # Using Python
    python -m http.server 8000
-   
-   # Or using Node's http-server
-   npx http-server
-   
-   # Or using PHP's built-in server
+
+   # Using Node.js
+   npx serve .
+
+   # Using PHP
    php -S localhost:8000
    ```
-   
-2. Open the application in a browser at the served address
 
-### Production Deployment
-1. Deploy all files to a web server
-2. Ensure proper MIME types are set for service worker and manifest files
-3. Configure HTTPS (required for service worker registration)
+2. **Access the app**: Open `http://localhost:8000` in a browser
+
+3. **PWA Testing**: Use Chrome DevTools > Application tab to test Service Worker and manifest
+
+### Data Updates
+
+To refresh the camping data from the SVR API:
+
+```bash
+# Requires environment variables
+export SVR_EMAIL=your@email.com
+export SVR_PASSWORD=your_password
+
+# Run the build script
+node build-campings-json.js
+```
+
+This script:
+- Logs into the SVR proxy worker
+- Fetches all available filters and categories
+- Retrieves all camping locations
+- Maps facility filters to each camping
+- Outputs to `data/campings.json`
+
+---
+
+## Technical Details
+
+### Service Worker Strategy (`sw.js`)
+
+| Resource Type | Strategy | Cache Name |
+|--------------|----------|------------|
+| App Shell (HTML, CSS, JS) | Network First | `svr-pwa-cache-v0.2.30` |
+| Map Tiles (OSM) | Cache First | `svr-pwa-map-tiles` |
+| API Requests | Network Only | Not cached |
+| External Libraries | Network First | `svr-pwa-cache-v0.2.30` |
+
+### Key Dependencies
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| Leaflet.js | 1.9.4 | Map rendering |
+| Leaflet.markercluster | 1.4.1 | Marker clustering |
+| jQuery | 3.6.0 | DOM manipulation (being phased out) |
+| Font Awesome | 6.4.2 | Icons |
+| Swiper.js | Latest | Carousel/slider (if used) |
+
+### State Management
+
+- **Cookies**: Store filter selections, search config, view mode
+- **localStorage**: PWA install state, banner dismissal
+- **In-memory**: `window.staticCampsites`, `window.filterCategories`
+
+### Version Tracking
+
+- **App Version**: Tracked in `window.SVR_PWA_VERSION` (currently `0.2.30`)
+- **Cache Version**: Embedded in Service Worker cache name (`v0.2.30`)
+- **Data Version**: `data/campings.json` includes `updated` timestamp and `version` field
+
+---
 
 ## Development Conventions
 
-### Code Style
-- Use consistent indentation (spaces, 4-wide)
-- Follow semantic HTML practices
-- Use CSS variables defined in `:root` for theme colors
-- Maintain Dutch language for user-facing text and comments
-- Use camelCase for JavaScript variables and functions
+### Coding Style
+- **JavaScript**: ES6+ with IIFE pattern for encapsulation
+- **CSS**: CSS custom properties (variables) for theming
+- **Naming**: Dutch language for UI text, English for code identifiers
 
-### Architecture Patterns
-- Modular JavaScript with IIFE (Immediately Invoked Function Expression) pattern
-- Event-driven programming with jQuery
-- State management using browser History API
-- Cookie-based persistence for user preferences
-- Service worker caching strategy (cache-first for static assets, network-first for API calls)
+### Known Issues & Technical Debt
 
-### API Integration
-- All API calls are routed through a Cloudflare Worker proxy to bypass CORS restrictions
-- Session management via localStorage with custom headers
-- Error handling for network failures and API errors
-- Retry mechanism for failed requests
+1. **jQuery Dependency**: Heavy reliance on jQuery in `local_app.js` - modernization plan exists in `bestanden/modernization_plan.md`
+2. **Performance**: Lighthouse score of 48 (LCP: 15.1s, TBT: 1060ms) - see `bestanden/lighthouse_findings.md`
+3. **Main Thread Blocking**: Large data file (40k+ lines) parsed synchronously
+4. **Memory**: All camping data loaded into memory at once
 
-## Key Files and Configuration
+### Completed Modernizations (v0.2.30)
 
-### Core Application Files
-- `index.html`: Main application structure and UI components
-- `js/local_app.js`: Main application logic, map functionality, search, and detail views
-- `css/local_style.css`: Primary styling including map, header, and UI components
-- `sw.js`: Service worker with caching strategy for offline functionality
-- `manifest.json`: PWA configuration including icons, theme colors, and display settings
+✅ **Single Source of Truth**: `data/campings.json` is now the only data source
+✅ **Removed Redundancy**: `assets/campsites_preset.json` removed from project
+✅ **Cache Cleanup**: `svr_cache_campsites` localStorage no longer used
+✅ **Simplified Startup**: Direct load from `campings.json` via Service Worker
+✅ **Local Filtering**: All filtering/searching happens locally without API calls
 
-### External Dependencies
-- Leaflet.js (v1.9.4) for mapping functionality
-- jQuery (v3.6.0) for DOM manipulation
-- Font Awesome (v6.4.2) for icons
-- Swiper.js for image carousels
-- MarkerCluster for grouping map markers
+### Modernization Priorities
 
-### Data Sources
-- `assets/Woonplaatsen_in_Nederland.csv`: Used for location suggestions in search
-- SVR.nl API for camping data and details
-- Nominatim API for geocoding location names
+1. 🔧 **High**: Replace jQuery event handlers with native `addEventListener`
+2. 🔧 **High**: Batch DOM updates in `renderResults()` function
+3. 🔧 **Medium**: Implement smooth scrolling with native `scrollTo({behavior: 'smooth'})`
+4. 🔧 **Medium**: Add error handling for corrupted localStorage
 
-## Theme Colors and Branding
-- **SVR Yellow**: `#FDCC01` (primary brand color)
-- **SVR Blue**: `#008AD3` (secondary color for links and highlights)
-- **SVR Red**: `#c0392b` (used for route buttons and errors)
-- **SVR Green**: `#92d050` (used for location indicators)
+---
 
-## Special Features
+## API Reference
 
-### Search Suggestions
-The application provides location-based search suggestions using a local CSV file of Dutch municipalities, offering a better UX than relying solely on external geocoding services.
+### SVR Proxy Worker Endpoints
 
-### Detail Page Implementation
-The detail pages replicate the functionality of the native Android WebView implementation, including:
-- Image carousels with Swiper.js
-- Custom styling for the "Gele Veeg" banner
-- Proper handling of inline styles and JavaScript events
-- Back navigation with history management
+```
+POST /login
+  Body: { email, password }
+  Response: { session_id }
 
-### Offline Support
-The service worker caches essential assets allowing basic functionality when offline, with a fallback offline page for navigation requests.
+GET /api/objects?page=0&lat={lat}&lng={lng}&distance={meters}&limit={count}
+  Headers: X-SVR-Session: {session_id}
+  Response: { objects: [...], total: number }
 
-### Map and List Views
-Users can toggle between map view (with clustered markers) and list view (with distance calculations), with persistent state management.
+GET /objects
+  Headers: X-SVR-Session, X-SVR-Filters, X-SVR-Config
+  Response: HTML (filter options parsed from page)
+```
 
-## Known Issues and Debugging Notes
+### Data Structure (`campings.json`)
 
-### Filter Functionality Issue
-There is an ongoing issue with the filter functionality where filters are not properly applied to the results. The server response returns all 1270 campsites with `type_camping` values of 0, 1, or 2, and no campsites with `type_camping=3` (which indicates non-matching filters).
+```json
+{
+  "updated": "ISO-8601 timestamp",
+  "version": "1.0.0",
+  "categories": [
+    { "name": "Category Name", "ids": ["guid-1", "guid-2"] }
+  ],
+  "campings": [
+    {
+      "id": "camping-id",
+      "naam": "Camping Name",
+      "stad": "City",
+      "lat": 52.1234,
+      "lng": 5.5678,
+      "type": "Camping type",
+      "filters": ["facility-guid-1", "facility-guid-2"]
+    }
+  ]
+}
+```
 
-### Cookie Handling Problem
-The PWA currently does not set the necessary cookies (such as `filters` and `config`) that the original Android WebView app uses for filtering. 
-The PWA attempts to set cookies for the `svr.nl` domain, but these are not accepted by the browser due to cross-domain security policies since the PWA runs from `e60manuels.github.io`.
+---
 
-### Current Debug Status
-- Server response does not contain proper `type_camping=3` values
-- No filter cookies are being set in the browser
-- The Cloudflare Worker may need to be modified to convert URL parameters to the cookies that the SVR server expects
+## Testing Checklist
 
-### Next Steps for Resolution
-1. Modify the Cloudflare Worker to intercept filter parameters from the URL and convert them to the appropriate cookies for the SVR server
-2. Ensure proper cookie handling and forwarding between the PWA, Worker, and SVR server
-3. Test that the server correctly returns `type_camping=3` for non-matching campsites when filters are applied
+- [ ] Map renders with camping markers
+- [ ] Clustering works at zoomed-out levels
+- [ ] Search suggests Dutch municipalities
+- [ ] Filters apply correctly to map/list
+- [ ] Toggle between map/list view works
+- [ ] Offline mode shows cached content
+- [ ] Install banner appears (first visit)
+- [ ] Detail view opens camping information
+- [ ] Current location button works
+- [ ] Help overlay displays tooltips
+
+---
+
+## Related Documentation
+
+- **`migration_inventory.md`**: Original migration notes from Android native app
+- **`bestanden/modernization_plan.md`**: Step-by-step code modernization guide
+- **`bestanden/lighthouse_findings.md`**: Performance audit and recommendations
+- **`bestanden/filter_chips_pwa_spec.md`**: Filter UI/UX specification
+- **`bestanden/local_app_map.md`**: Code structure and function mapping
