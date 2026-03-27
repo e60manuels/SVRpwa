@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.27"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.28"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -1215,15 +1215,8 @@ window.performSearch = async function(forceAPI = false) {
         }
     }
 
-    // NEW: High-performance filtering via static data
-    // Condition: forceAPI (filter change) AND window.staticCampsites loaded
-    // AND NO "Landen/Gebieden" filters active
-    const hasSpecialFilters = window.currentFilters && window.currentFilters.some(f => {
-        const cat = window.filterCategories[f] || "";
-        return cat.includes('land') || cat.includes('Gebied');
-    });
-
-    if (forceAPI && window.staticCampsites && !hasSpecialFilters) {
+    // NEW: High-performance filtering via static data (All filters)
+    if (forceAPI && window.staticCampsites) {
         logDebug("Filtering via Static Delivery (Local)...");
         
         let filtered = window.staticCampsites;

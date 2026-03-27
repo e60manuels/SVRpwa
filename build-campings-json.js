@@ -77,10 +77,9 @@ async function run() {
             console.log(`Section "${title}": ${category.ids.length} filters found.`);
         }
 
-        // Identify "Overige filters" (not Landen/Gebieden)
-        const overigeCategories = categories.filter(c => !c.name.toLowerCase().includes('land') && !c.name.toLowerCase().includes('gebied'));
-        const overigeFilterIds = overigeCategories.flatMap(c => c.ids);
-        console.log(`Total "Overige filters" to process: ${overigeFilterIds.length}`);
+        // Identify ALL filters to process (no longer excluding Countries/Regions)
+        const allFilterIds = categories.flatMap(c => c.ids);
+        console.log(`Total filters to process: ${allFilterIds.length}`);
 
         console.log('Fetching all campings (base list)...');
         // Center of NL, large radius to get all
@@ -107,10 +106,10 @@ async function run() {
         // Step 4: Fetch filtered lists
         console.log('Processing filters...');
 
-        for (let i = 0; i < overigeFilterIds.length; i++) {
-            const filterId = overigeFilterIds[i];
+        for (let i = 0; i < allFilterIds.length; i++) {
+            const filterId = allFilterIds[i];
             const filterName = filterMap[filterId].name;
-            process.stdout.write(`[${i+1}/${overigeFilterIds.length}] Filter: ${filterName} ... `);
+            process.stdout.write(`[${i+1}/${allFilterIds.length}] Filter: ${filterName} ... `);
 
             try {
                 // SVR requires filters to be present in both the URL and often in the session config
