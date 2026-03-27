@@ -562,3 +562,107 @@
     from, to { border-color: transparent }
     50% { border-color: var(--svr-blue); }
 }
+
+/* ========================================
+   DESKTOP RESPONSIVE DESIGN (v0.2.31)
+   Centered layout with max-width: 1440px
+   ======================================== */
+
+/* Tablet (768px+) - Compact UI elements */
+@media (min-width: 768px) {
+    /* Smaller search bar */
+    .search-container { height: 36px; }
+    .search-container input { font-size: 14px; }
+    
+    /* Smaller action buttons */
+    .map-stack-btn { width: 40px; height: 40px; }
+    .map-stack-btn i { font-size: 16px; }
+    
+    /* Smaller camping cards */
+    .card-body h3 { font-size: 22px; }
+    .card-body .card-location, .card-body .card-distance { font-size: 14px; }
+    
+    /* Smaller filter chips */
+    .active-filter-chip { font-size: 10px; height: 24px; }
+    
+    /* Smaller suggestions */
+    .suggestions-list { max-width: 500px; left: 50% !important; transform: translateX(-50%); }
+}
+
+/* Desktop (1024px+) - More compact */
+@media (min-width: 1024px) {
+    /* Even smaller search */
+    .search-container { height: 32px; }
+    .search-container input { font-size: 13px; }
+    #searchIcon { font-size: 14px; }
+    
+    /* Compact action buttons */
+    .map-stack-btn { width: 36px; height: 36px; }
+    .map-stack-btn i { font-size: 14px; }
+    
+    /* Smaller filter chips */
+    .active-filter-chip { font-size: 9px; height: 22px; padding: 0 8px; }
+    .active-filter-chip i { font-size: 12px; }
+    
+    /* Desktop card layout */
+    .camping-card { max-width: 500px; margin: 0 auto 12px; }
+    .card-body h3 { font-size: 20px; }
+    
+    /* Smaller help text */
+    .help-text { font-size: 12px; }
+}
+
+/* Large Desktop (1440px+) - Centered layout with margins */
+@media (min-width: 1440px) {
+    /* Center and limit header width */
+    .svr-header {
+        max-width: 1440px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 0 0 12px 12px;
+    }
+    
+    /* Center and limit map container */
+    #map-container, #list-container {
+        max-width: 1440px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    /* Reposition action buttons to align with centered content */
+    .map-actions-stack {
+        right: calc(50% - 720px + 12px);
+    }
+    
+    /* Center install banner */
+    .install-banner {
+        max-width: 1440px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 12px 12px 0 0;
+    }
+    
+    /* Center iOS instructions */
+    .ios-install-instructions {
+        max-width: 1440px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    /* Larger detail view on desktop */
+    #detail-container .detail-sheet-content {
+        max-width: 900px;
+        margin: 40px auto;
+    }
+}
+
+/* Extra Large Desktop (1920px+) - Slightly wider */
+@media (min-width: 1920px) {
+    .svr-header, #map-container, #list-container, .install-banner, .ios-install-instructions {
+        max-width: 1600px;
+    }
+    
+    .map-actions-stack {
+        right: calc(50% - 800px + 12px);
+    }
+}
