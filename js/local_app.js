@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.36"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.37"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -364,16 +364,26 @@ window.SVR_PWA_VERSION = "0.2.36"; // Increment this number with each commit
         });
     };
 
-    window.hideFilterOverlay = function() {
-        overlay.classList.remove('open'); 
-        backdrop.classList.remove('open');
-        overlay.style.transform = ''; // Clear inline transform from swipe
-        setTimeout(() => { 
-            if (!overlay.classList.contains('open')) {
-                backdrop.style.display = 'none'; 
+window.hideFilterOverlay = function() {
+    const isDesktop = window.innerWidth >= 768;
+    const filterEl = document.getElementById('svr-filter-overlay');
+    const backdropEl = document.getElementById('svr-filter-backdrop');
+
+    if (isDesktop) {
+        closeRightPanel();
+        filterEl.style.display = 'none';
+        filterEl.classList.remove('open');
+    } else {
+        filterEl.classList.remove('open');
+        backdropEl.classList.remove('open');
+        filterEl.style.transform = '';
+        setTimeout(() => {
+            if (!filterEl.classList.contains('open')) {
+                backdropEl.style.display = 'none';
             }
         }, 500);
-    };
+    }
+};
 
     window.closeFilterOverlay = function() { 
         // If we are in the 'filters' or 'detail' history state, going back will trigger onpopstate
@@ -392,23 +402,33 @@ window.SVR_PWA_VERSION = "0.2.36"; // Increment this number with each commit
 
     window.toggle_filters = async function() {
         const isDesktop = window.innerWidth >= 768;
-        
+
         if (isDesktop) {
-            // Desktop: Open as panel on right side (replaces list)
-            overlay.style.display = 'block';
-            overlay.classList.add('open');
-            // Don't show backdrop on desktop
+            const filterEl = document.getElementById('svr-filter-overlay');
+            
+            // Toggle: als filter al open is, sluit het
+            if (document.body.classList.contains('panel-open') && filterEl.style.display === 'block') {
+                closeRightPanel();
+                return;
+            }
+
+            // Open filter rechts
+            openRightPanel('filter');
+            filterEl.style.display = 'block';
+            filterEl.classList.add('open');
+
+            // Push state voor backknop
+            history.pushState({ view: 'filters' }, "");
+
+            if (content.children.length === 0 && !window.isFetchingFilters) await fetchFilterData();
         } else {
-            // Mobile: Fullscreen overlay with backdrop
+            // Mobile: fullscreen overlay met backdrop
             backdrop.style.display = 'block';
-            overlay.style.transform = ''; // Reset any residual swipe transforms
+            overlay.style.transform = '';
             setTimeout(() => { overlay.classList.add('open'); backdrop.classList.add('open'); }, 10);
+            history.pushState({ view: 'filters' }, "");
+            if (content.children.length === 0 && !window.isFetchingFilters) await fetchFilterData();
         }
-
-        // Push state for Android back-button support
-        history.pushState({ view: 'filters' }, "");
-
-        if (content.children.length === 0 && !window.isFetchingFilters) await fetchFilterData();
     };
 
     window.isFetchingFilters = false;
@@ -965,29 +985,27 @@ window.showSVRDetailPage = function(objectId, source = 'auto') {
 
     // Desktop: Open as panel, Mobile: Open as fullscreen overlay
     if (isDesktop) {
-        // Remove previous context classes
+        // Verwijder eventuele oude context-klassen (niet meer nodig maar veilig)
         detailOverlay.classList.remove('detail-from-map', 'detail-from-list');
 
-        // Add context class based on source
-        if (source === 'list') {
-            // Clicked from LIST → Open detail on RIGHT side (replaces map)
-            detailOverlay.classList.add('detail-from-list');
-        } else {
-            // Clicked from MAP → Open detail on LEFT side (replaces list)
-            detailOverlay.classList.add('detail-from-map');
-        }
+        // Splash verbergen op desktop (CSS doet dit al, maar voor zekerheid)
+        if (splashScreen) splashScreen.style.display = 'none';
 
-        // Hide splash on desktop (we're in a panel, not fullscreen)
-        if (splashScreen) {
-            splashScreen.style.display = 'none';
-        }
-    } else {
-        // Mobile: Ensure splash is visible
-        if (splashScreen) {
-            splashScreen.style.display = 'block';
-            splashScreen.classList.remove('hide');
-            typewriterEffect('detail-splash-text', 'Kamperen bij de boer');
-        }
+        // Verwijder bestaande inhoud (behalve splash)
+        const elementsToClear = Array.from(detailSheet.children);
+        elementsToClear.forEach(el => {
+            if (el.id !== 'detail-splash') el.remove();
+        });
+
+        // Open het rechter paneel
+        openRightPanel('detail');
+
+        detailOverlay.style.display = 'block';
+
+        // Push state voor backknop-ondersteuning
+        history.pushState({ view: 'detail', objectId: objectId, source: source }, "", `#detail/${objectId}`);
+        renderDetail(objectId);
+        return; // Vroeg terugkeren, rest van de functie is mobile-only
     }
 
     // CRITICAL FIX: Explicitly remove transform property and force reflow
@@ -1037,13 +1055,16 @@ window.handleDetailBack = function() {
     detailOverlay.classList.remove('detail-from-map', 'detail-from-list');
 
     if (isDesktop) {
-        // Desktop: Just hide the overlay
+        closeRightPanel();
+        detailOverlay.classList.remove('detail-from-map', 'detail-from-list');
         detailOverlay.style.display = 'none';
-        if (splashScreen) {
-            splashScreen.style.display = 'block';
-            splashScreen.classList.add('hide');
+        if (splashScreen) splashScreen.style.display = 'none';
+
+        if (history.state && history.state.view === 'detail') {
+            history.back();
         }
-    } else {
+        return;
+    }
         // Mobile: Animate out
         detailSheet.classList.remove('open');
         detailOverlay.classList.remove('open');
@@ -1077,6 +1098,25 @@ window.onpopstate = (e) => {
     const filterOverlay = document.getElementById('svr-filter-overlay');
 
     if (e.state) {
+        const isDesktopPop = window.innerWidth >= 768;
+        if (isDesktopPop) {
+            // Op desktop: herstel body-class en sluit panelen indien nodig
+            if (!e.state || (e.state.view !== 'detail' && e.state.view !== 'filters')) {
+                closeRightPanel();
+            }
+            if (e.state && e.state.view === 'detail' && e.state.objectId) {
+                // Detail heropenen via history (bijv. forward-navigatie)
+                openRightPanel('detail');
+                document.getElementById('detail-container').style.display = 'block';
+                renderDetail(e.state.objectId);
+            }
+            if (!e.state || e.state.view === 'map' || e.state.view === 'list' || e.state.view === 'split') {
+                // Standaard desktop: niets te doen, kaart en lijst zijn altijd zichtbaar
+                if (map) setTimeout(() => map.invalidateSize(), 100);
+            }
+            return; // Desktop afgehandeld, mobile-logica overslaan
+        }
+
         applyState(e.state);
         
         // Handle Filters View
@@ -1146,24 +1186,26 @@ window.onpopstate = (e) => {
     }
 };
 
-// Toggle view button - Desktop: toggle between split/map-only/list-only, Mobile: toggle between map/list
+// Toggle knop:
+// - Desktop: sluit het actieve rechter paneel (detail of filter) → lijst terug
+// - Mobile: wissel tussen kaart en lijst
 $('#toggleView').on('click', () => {
     const isDesktop = window.innerWidth >= 768;
-    
+
     if (isDesktop) {
-        // Desktop: Cycle through split → map-only → list-only → split
-        if (document.body.classList.contains('list-only-mode')) {
-            // From list-only → back to split
-            setDesktopViewMode('split');
-        } else if (document.body.classList.contains('map-only-mode')) {
-            // From map-only → list-only
-            setDesktopViewMode('list-only');
-        } else {
-            // From split (or default) → map-only
-            setDesktopViewMode('map-only');
+        if (document.body.classList.contains('panel-open')) {
+            // Paneel is open → sluiten, detail ook sluiten via history
+            if (history.state && history.state.view === 'detail') {
+                window.handleDetailBack();
+            } else {
+                // Filter of ander paneel: direct sluiten
+                closeRightPanel();
+                window.hideFilterOverlay && window.hideFilterOverlay();
+            }
         }
+        // Als geen paneel open: toggle doet niets op desktop
     } else {
-        // Mobile: Toggle between map and list
+        // Mobile: toggle tussen kaart en lijst
         isListView = !isListView;
         applyState({ view: isListView ? 'list' : 'map' });
         history.pushState({ view: isListView ? 'list' : 'map' }, "");
@@ -1172,42 +1214,80 @@ $('#toggleView').on('click', () => {
 
 // Helper function to set desktop view mode
 function setDesktopViewMode(mode) {
+    // Op desktop is er maar één layout: kaart links, lijst/paneel rechts.
+    // De body-class split-mode/map-only/list-only is niet meer nodig.
+    // We houden 'split-mode' als standaard body-class voor backward compatibility.
     document.body.classList.remove('split-mode', 'map-only-mode', 'list-only-mode');
-    
-    switch(mode) {
-        case 'split':
-            document.body.classList.add('split-mode');
-            $('#toggleView i').attr('class', 'fas fa-columns');
-            isListView = false;
-            break;
-        case 'map-only':
-            document.body.classList.add('map-only-mode');
-            $('#toggleView i').attr('class', 'fas fa-map');
-            isListView = false;
-            break;
-        case 'list-only':
-            document.body.classList.add('list-only-mode');
-            $('#toggleView i').attr('class', 'fas fa-list');
-            isListView = true;
-            break;
-    }
-    
-    // Trigger map resize after mode change
+    document.body.classList.add('split-mode');
+    isListView = false;
+
+    // Sluit eventuele open panelen
+    closeRightPanel();
+
+    // Zorg dat de kaart de juiste grootte heeft
     setTimeout(() => {
         if (map && typeof map.invalidateSize === 'function') {
             map.invalidateSize();
         }
     }, 100);
-    
-    history.pushState({ view: mode }, "");
 }
 
-// Initialize desktop mode on load
+/**
+ * Opent een paneel rechts op desktop (detail of filter).
+ * Sluit eerst het andere paneel als dat open is.
+ * @param {'detail'|'filter'} type
+ */
+function openRightPanel(type) {
+    const isDesktop = window.innerWidth >= 768;
+    if (!isDesktop) return; // Mobile heeft eigen logica
+
+    const detailEl = document.getElementById('detail-container');
+    const filterEl = document.getElementById('svr-filter-overlay');
+
+    // Sluit het tegenovergestelde paneel eerst
+    if (type === 'detail') {
+        filterEl.style.display = 'none';
+        filterEl.classList.remove('open');
+    } else {
+        detailEl.style.display = 'none';
+        detailEl.classList.remove('open');
+    }
+
+    document.body.classList.add('panel-open');
+    // Toggle-icoon → sluit-icoon
+    $('#toggleView i').attr('class', 'fas fa-xmark');
+}
+
+/**
+ * Sluit het actieve rechter paneel en toont de lijst weer.
+ */
+function closeRightPanel() {
+    const isDesktop = window.innerWidth >= 768;
+    if (!isDesktop) return;
+
+    const detailEl = document.getElementById('detail-container');
+    const filterEl = document.getElementById('svr-filter-overlay');
+
+    detailEl.style.display = 'none';
+    detailEl.classList.remove('open');
+    filterEl.style.display = 'none';
+    filterEl.classList.remove('open');
+
+    document.body.classList.remove('panel-open');
+    // Toggle-icoon → standaard lijst-icoon (op desktop niet meer relevant)
+    $('#toggleView i').attr('class', 'fas fa-list');
+}
+
+// Expose voor gebruik in event handlers
+window.closeRightPanel = closeRightPanel;
+
+// Initialiseer desktop layout
 if (window.innerWidth >= 768) {
-    setDesktopViewMode('split');
+    document.body.classList.add('split-mode');
+    // Zorg dat kaart correct geladen wordt
+    setTimeout(() => { if (map) map.invalidateSize(); }, 200);
 }
 
-// Handle window resize - update Leaflet map size
 let resizeTimeout;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
@@ -1215,18 +1295,14 @@ window.addEventListener('resize', () => {
         if (map && typeof map.invalidateSize === 'function') {
             map.invalidateSize();
         }
-        // Re-initialize desktop mode if crossing breakpoint
-        if (window.innerWidth >= 768) {
-            // Ensure desktop mode classes are applied
-            if (!document.body.classList.contains('split-mode') && 
-                !document.body.classList.contains('map-only-mode') && 
-                !document.body.classList.contains('list-only-mode')) {
-                setDesktopViewMode('split');
-            }
+
+        const isDesktop = window.innerWidth >= 768;
+        if (isDesktop && !document.body.classList.contains('split-mode')) {
+            document.body.classList.add('split-mode');
+            document.body.classList.remove('map-only-mode', 'list-only-mode');
         }
     }, 100);
 });
-
 const $searchInput = $('#searchInput'); const $suggestionsList = $('#suggestionsList');
 
 // Clear search input on click if it has a value
@@ -1672,7 +1748,11 @@ async function renderDetail(objectId) {
 }
 
 window.focusOnMarker = function(lat, lng, objectId) {
-    applyState({ view: 'map' });
+    const isDesktop = window.innerWidth >= 768;
+    if (!isDesktop) {
+        applyState({ view: 'map' });
+    }
+    // Op desktop: kaart is altijd zichtbaar, geen state-switch nodig
     const targetLatLng = L.latLng(lat, lng);
     const standardZoom = 14; 
     window.skipFitBounds = true;

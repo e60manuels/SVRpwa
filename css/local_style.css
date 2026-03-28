@@ -564,181 +564,133 @@
 }
 
 /* ========================================
-   DESKTOP RESPONSIVE - SPLIT SCREEN (v0.2.35)
+   DESKTOP SPLIT-SCREEN LAYOUT (v0.2.37)
+   Kaart links — Lijst/Detail/Filter rechts
    ======================================== */
 
-/* Tablet & Desktop (768px+) - Compact UI elements + Split Screen */
 @media (min-width: 768px) {
-    /* Smaller search bar */
+
+    /* Kleinere UI-elementen */
     .search-container { height: 36px; }
     .search-container input { font-size: 14px; }
-    
-    /* Smaller action buttons */
     .map-stack-btn { width: 40px; height: 40px; }
     .map-stack-btn i { font-size: 16px; }
-    
-    /* Smaller camping cards */
     .card-body h3 { font-size: 22px; }
     .card-body .card-location, .card-body .card-distance { font-size: 14px; }
-    
-    /* Smaller filter chips */
     .active-filter-chip { font-size: 10px; height: 24px; }
-    
-    /* Smaller help text */
     .help-text { font-size: 12px; }
-    
-    /* === SPLIT SCREEN LAYOUT - List Left, Map Right === */
-    /* List container on LEFT side (50%) */
-    #list-container {
-        position: absolute;
-        top: var(--header-height);
-        left: 0;
-        width: 50%;
-        height: calc(100vh - var(--header-height));
-        background: #f5f5f5;
-        box-shadow: 2px 0 8px rgba(0,0,0,0.1);
-        right: auto !important;
-        transform: none !important;
-        max-width: none !important;
-    }
-    
-    /* Map container on RIGHT side (50%) */
-    #map-container {
-        position: absolute;
-        top: var(--header-height);
-        right: 0;
-        width: 50%;
-        height: calc(100vh - var(--header-height));
-        left: auto !important;
-        transform: none !important;
-        max-width: none !important;
-    }
-    
-    /* Split mode - both visible */
-    body.split-mode #list-container,
-    body.split-mode #map-container {
-        display: block;
-    }
-    
-    /* Fullscreen map mode */
-    body.map-only-mode #map-container {
-        width: 100%;
-        left: 0;
-    }
-    
-    body.map-only-mode #list-container {
-        display: none;
-    }
-    
-    /* Fullscreen list mode */
-    body.list-only-mode #list-container {
-        width: 100%;
-        right: 0;
-    }
-    
-    body.list-only-mode #map-container {
-        display: none;
-    }
-    
-    /* Action buttons positioned between list and map in split mode */
-    .map-actions-stack {
-        right: calc(50% + 12px) !important;
-        bottom: calc(20px + var(--safe-area-inset-bottom));
-    }
-    
-    body.map-only-mode .map-actions-stack,
-    body.list-only-mode .map-actions-stack {
-        right: 12px !important;
-    }
-    
-    /* Suggestions list centered in header */
+
+    /* Suggesties gecentreerd */
     .suggestions-list {
         left: 50% !important;
         transform: translateX(-50%);
         max-width: 400px;
     }
-}
 
-/* Medium Desktop (1024px+) - Refined sizing */
-@media (min-width: 1024px) {
-    /* Even smaller search */
-    .search-container { height: 32px; }
-    .search-container input { font-size: 13px; }
-    #searchIcon { font-size: 14px; }
-    
-    /* Compact action buttons */
-    .map-stack-btn { width: 36px; height: 36px; }
-    .map-stack-btn i { font-size: 14px; }
-    
-    /* Smaller filter chips */
-    .active-filter-chip { font-size: 9px; height: 22px; padding: 0 8px; }
-    .active-filter-chip i { font-size: 12px; }
-    
-    /* Desktop card layout */
-    .camping-card { max-width: none; margin: 0 0 12px 0; }
-    .card-body h3 { font-size: 20px; }
-}
+    /* === KAART: altijd links 50% === */
+    #map-container {
+        position: absolute;
+        top: var(--header-height);
+        left: 0;
+        width: 50%;
+        height: calc(100vh - var(--header-height));
+        right: auto !important;
+        transform: none !important;
+    }
 
-/* Detail Panel - Desktop Split Screen */
-@media (min-width: 768px) {
-    /* Detail panel opens on RIGHT side (map side) when clicked from list */
-    #detail-container.detail-from-list {
+    /* === LIJST: altijd rechts 50%, standaard zichtbaar === */
+    #list-container {
         position: absolute;
         top: var(--header-height);
         right: 0;
+        left: auto !important;
         width: 50%;
         height: calc(100vh - var(--header-height));
-        background: white;
-        z-index: 1500;
+        background: #f5f5f5;
+        box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+        transform: none !important;
+        max-width: none !important;
+        display: block !important; /* altijd zichtbaar tenzij paneel open */
     }
-    
-    /* Detail panel opens on LEFT side (list side) when clicked from map */
-    #detail-container.detail-from-map {
-        position: absolute;
-        top: var(--header-height);
-        left: 0;
-        width: 50%;
-        height: calc(100vh - var(--header-height));
-        background: white;
-        z-index: 1500;
-    }
-    
-    #detail-container .detail-sheet-content {
-        max-width: none;
-        margin: 0;
-        max-height: 100%;
-        border-radius: 0;
-        box-shadow: none;
-    }
-    
-    /* Hide splash on desktop when opening in panel */
-    #detail-container .detail-splash {
-        display: none;
-    }
-}
 
-/* Filter Panel - Desktop Split Screen */
-@media (min-width: 768px) {
-    /* Filter overlay becomes a panel on LEFT side (list side) */
+    /* === RECHTER PANEEL (Detail of Filter) ===
+       Beide openen rechts, over de lijst heen.
+       Standaard verborgen; wordt zichtbaar via JS (display:block). */
+    #detail-container,
     #svr-filter-overlay {
+        position: absolute !important;
+        top: var(--header-height) !important;
+        right: 0 !important;
+        left: auto !important;
+        width: 50% !important;
+        height: calc(100vh - var(--header-height)) !important;
+        transform: none !important;
+        border-radius: 0 !important;
+        box-shadow: -2px 0 8px rgba(0,0,0,0.15) !important;
+        z-index: 1500 !important;
+    }
+
+    /* Detail sheet vult het paneel volledig */
+    #detail-container .detail-sheet-content {
         position: absolute;
-        top: var(--header-height);
+        top: 0;
         left: 0;
-        width: 50%;
-        height: calc(100vh - var(--header-height));
-        background: white;
-        z-index: 1400;
-        box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+        right: 0;
+        bottom: 0;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        transform: none !important; /* geen slide-up animatie op desktop */
+        transition: none !important;
     }
-    
-    #svr-filter-overlay .filter-content {
-        padding: 20px;
-        overflow-y: auto;
-        height: 100%;
+
+    /* Splash verbergen op desktop */
+    #detail-container .detail-splash {
+        display: none !important;
     }
+
+    /* Filter content vult het paneel volledig */
+    #svr-filter-overlay .svr-overlay-header,
+    #svr-filter-overlay #svr-filter-overlay-content,
+    #svr-filter-overlay .svr-overlay-footer {
+        /* Bestaande mobile stijlen zijn OK, paneel erft de juiste afmetingen */
+    }
+
+    /* Backdrop nooit tonen op desktop */
+    #svr-filter-backdrop {
+        display: none !important;
+    }
+
+    /* === ACTIEKNOPPEN: rechtsonder in de rechterhelft === */
+    .map-actions-stack {
+        position: fixed;
+        right: 12px !important;
+        bottom: calc(20px + var(--safe-area-inset-bottom));
+        z-index: 2000;
+    }
+
+    /* Knoppen verbergen als detail of filter open is */
+    body.panel-open .map-actions-stack {
+        display: none !important;
+    }
+
+    /* Toggle-knop: toon sluit-icoon als paneel open is */
+    body.panel-open #toggleView i {
+        /* Icoon wordt via JS gewisseld naar fa-xmark */
+    }
+
+    /* Camping-cards: desktop optimalisatie */
+    .camping-card { max-width: none; margin: 0 0 12px 0; }
 }
 
-/* Large Desktop (1440px+) - Keep same layout */
-@media (min-width: 1440px) {
-    /* Keep 50/50 split, no changes needed */
+@media (min-width: 1024px) {
+    .search-container { height: 32px; }
+    .search-container input { font-size: 13px; }
+    #searchIcon { font-size: 14px; }
+    .map-stack-btn { width: 36px; height: 36px; }
+    .map-stack-btn i { font-size: 14px; }
+    .active-filter-chip { font-size: 9px; height: 22px; padding: 0 8px; }
+    .active-filter-chip i { font-size: 12px; }
+    .card-body h3 { font-size: 20px; }
 }
