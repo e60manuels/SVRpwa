@@ -36,8 +36,8 @@
     <link rel="preload" href="https://unpkg.com/swiper/swiper-bundle.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css"></noscript>
 
-    <link rel="stylesheet" href="css/local_style.css?v=0.2.37" />
-    <link rel="stylesheet" href="css/custom_styles.css?v=0.2.37" />
+    <link rel="stylesheet" href="css/local_style.css?v=0.2.38" />
+    <link rel="stylesheet" href="css/custom_styles.css?v=0.2.38" />
 </head>
 <body>
 
@@ -97,6 +97,11 @@
 
     <header class="svr-header">
         <div class="svr-top-row">
+            <!-- SVR Logo (desktop only) -->
+            <div class="header-logo">
+                <img src="https://www.svr.nl/files/small_png/svr_2018.png" alt="SVR Logo" width="100" height="63">
+            </div>
+            
             <div class="search-container" style="position: relative;">
                 <i class="fas fa-search" id="searchIcon"></i>
                 <input type="text" id="searchInput" placeholder="Zoek een SVR camping" autocomplete="off">
@@ -167,8 +172,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
-    <script src="js/local_app.js?v=0.2.37"></script>
-    <script src="js/pwa_install.js?v=0.2.37"></script>
+    <script src="js/local_app.js?v=0.2.38"></script>
+    <script src="js/pwa_install.js?v=0.2.38"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

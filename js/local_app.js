@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.37"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.38"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -262,18 +262,48 @@ window.SVR_PWA_VERSION = "0.2.37"; // Increment this number with each commit
         
         /* MOBILE STYLES (default) */
         @media (max-width: 767px) {
-            #svr-filter-overlay { 
-                position: fixed; bottom: 0; left: 0; width: 100%; height: 90vh; 
-                background-color: #f0f0f0; z-index: 9995; display: flex; flex-direction: column; 
+            #svr-filter-overlay {
+                position: fixed; bottom: 0; left: 0; width: 100%; height: 90vh;
+                background-color: #f0f0f0; z-index: 9995; display: flex; flex-direction: column;
                 box-sizing: border-box; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
                 border-top-left-radius: 12px; border-top-right-radius: 12px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             }
             #svr-filter-overlay.open { transform: translateY(0); }
-            .svr-overlay-header { background-color: #f0f0f0; padding: 8px 15px 12px 15px; display: flex; flex-direction: column; align-items: flex-start; border-top-left-radius: 12px; border-top-right-radius: 12px; cursor: ns-resize; }
+            .svr-overlay-header { 
+                background-color: #f0f0f0; 
+                padding: 8px 15px 12px 15px; 
+                display: flex; 
+                flex-direction: row;
+                align-items: center; 
+                justify-content: space-between;
+                border-top-left-radius: 12px;
+                border-top-right-radius: 12px;
+                cursor: ns-resize; 
+            }
+            .svr-overlay-header > div:first-child {
+                display: none !important;
+            }
+            .svr-overlay-title { 
+                margin: 0;
+                text-align: left;
+                flex: 1;
+            }
+            .svr-overlay-close {
+                width: 32px; 
+                height: 32px; 
+                background: transparent;
+                border-radius: 50%; 
+                display: flex; 
+                align-items: center;
+                justify-content: center; 
+                cursor: pointer; 
+                color: #333;
+                flex-shrink: 0;
+            }
         }
 
         /* SHARED STYLES (Both Mobile & Desktop) */
-        .svr-overlay-title { font-size: 1.2rem; font-weight: bold; margin: 0; color: #008AD3; font-family: 'Befalow', sans-serif; text-align: left; padding-left: 15px; }
+        .svr-overlay-title { font-size: 1.2rem; font-weight: bold; margin: 0; color: #008AD3; font-family: 'Befalow', sans-serif; text-align: left; }
         #svr-filter-overlay-content { flex-grow: 1; overflow-y: auto; width: 100%; background-color: #f0f0f0; padding: 15px; box-sizing: border-box; scroll-behavior: smooth; }
         #active-filters-holder { background: #FDCC01; border-radius: 12px; padding: 12px 15px; margin-bottom: 15px; display: none; box-sizing: border-box; width: 100%; position: sticky; top: 0; z-index: 100; }
         .active-filter-tag { display: inline-flex; align-items: center; background: white; padding: 4px 10px; border-radius: 15px; margin: 4px; font-size: 12px; font-weight: bold; color: #008AD3; border: 1px solid #ddd; }
@@ -894,6 +924,14 @@ let centerMarker = null;
 let currentUserLatLng = null;
 let userLocationMarker = null;
 
+// Add zoom control positioned at bottom right (desktop only)
+const isDesktop = window.innerWidth >= 768;
+if (isDesktop) {
+    L.control.zoom({
+        position: 'bottomright'
+    }).addTo(map);
+}
+
 const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' }).addTo(map);
 tiles.on('tileload', () => { if(!window.tilesLogged) { logDebug("Tegels OK"); window.tilesLogged=true; } });
 map.addLayer(markerCluster); map.addLayer(top10Layer);
@@ -962,12 +1000,15 @@ function applyState(state) {
                 $('#toggleView i').attr('class', 'fas fa-map');
                 $('#scroll_top_btn').addClass('visible').show();
             }
+            // Desktop: hide toggle button (will show on scroll)
+            if (isDesktop) {
+                $('#toggleView').hide().removeClass('visible');
+            }
             break;
         case 'map':
             isListView = false;
             if (!isDesktop) {
                 $('#map-container').show();
-                $('#locateBtn').show(); // Show locate only on map
                 $('#toggleView i').attr('class', 'fas fa-list');
                 setTimeout(() => {
                     map.invalidateSize();
@@ -976,6 +1017,12 @@ function applyState(state) {
                     }
                 }, 100);
             }
+            // Desktop: hide toggle button (will show on scroll)
+            if (isDesktop) {
+                $('#toggleView').hide().removeClass('visible');
+            }
+            // Locate button: show on map view (both mobile and desktop)
+            $('#locateBtn').show();
             break;
         case 'detail':
             isListView = false;
@@ -987,21 +1034,35 @@ function applyState(state) {
             isListView = false;
             if (!isDesktop) {
                 $('#map-container').show();
-                $('#locateBtn').show();
                 $('#toggleView i').attr('class', 'fas fa-list');
                 setTimeout(() => map.invalidateSize(), 100);
             }
+            // Desktop: hide toggle button (will show on scroll)
+            if (isDesktop) {
+                $('#toggleView').hide().removeClass('visible');
+            }
+            // Locate button: show on map view (both mobile and desktop)
+            $('#locateBtn').show();
             break;
     }
 }
 
 // --- SCROLL TO TOP LOGIC ---
 $('#list-container').on('scroll', function() {
-    if (isListView) {
+    const isDesktop = window.innerWidth >= 768;
+    if (isListView || isDesktop) {
         if ($(this).scrollTop() > 300) {
             $('#scroll_top_btn').css('opacity', '1');
+            // Desktop: toon toggle knop als scroll-to-top
+            if (isDesktop) {
+                $('#toggleView').addClass('visible').show();
+                $('#toggleView i').attr('class', 'fas fa-chevron-up');
+            }
         } else {
             $('#scroll_top_btn').css('opacity', '0.5');
+            if (isDesktop) {
+                $('#toggleView').removeClass('visible').hide();
+            }
         }
     }
 });
@@ -1018,6 +1079,19 @@ window.showSVRDetailPage = function(objectId, source = 'auto') {
     const splashScreen = document.getElementById('detail-splash');
     const backdrop = document.getElementById('svr-filter-backdrop');
     const isDesktop = window.innerWidth >= 768;
+
+    // If a detail page is already open, replace it (prevent stacking)
+    const wasDetailOpen = history.state && history.state.view === 'detail';
+    
+    if (wasDetailOpen) {
+        // Clear existing content without animation
+        const elementsToClear = Array.from(detailSheet.children);
+        elementsToClear.forEach(el => {
+            if (el.id !== 'detail-splash') el.remove();
+        });
+        // Replace the current history state instead of pushing a new one
+        history.replaceState({ view: 'detail', objectId: objectId, source: source }, "", `#detail/${objectId}`);
+    }
 
     // Determine source context
     if (source === 'auto') {
@@ -1062,8 +1136,10 @@ window.showSVRDetailPage = function(objectId, source = 'auto') {
             }
         }
 
-        // Push state voor backknop-ondersteuning
-        history.pushState({ view: 'detail', objectId: objectId, source: source }, "", `#detail/${objectId}`);
+        // Push state voor backknop-ondersteuning (only if not replacing)
+        if (!wasDetailOpen) {
+            history.pushState({ view: 'detail', objectId: objectId, source: source }, "", `#detail/${objectId}`);
+        }
         renderDetail(objectId);
         return; // Vroeg terugkeren, rest van de functie is mobile-only
     }
@@ -1245,23 +1321,14 @@ window.onpopstate = (e) => {
 };
 
 // Toggle knop:
-// - Desktop: sluit het actieve rechter paneel (detail of filter) → lijst terug
+// - Desktop: scroll-to-top voor lijst (wordt zichtbaar bij scrollen)
 // - Mobile: wissel tussen kaart en lijst
 $('#toggleView').on('click', () => {
     const isDesktop = window.innerWidth >= 768;
 
     if (isDesktop) {
-        if (document.body.classList.contains('panel-open')) {
-            // Paneel is open → sluiten, detail ook sluiten via history
-            if (history.state && history.state.view === 'detail') {
-                window.handleDetailBack();
-            } else {
-                // Filter of ander paneel: direct sluiten
-                closeRightPanel();
-                window.hideFilterOverlay && window.hideFilterOverlay();
-            }
-        }
-        // Als geen paneel open: toggle doet niets op desktop
+        // Desktop: scroll naar boven
+        $('#list-container').animate({ scrollTop: 0 }, 400);
     } else {
         // Mobile: toggle tussen kaart en lijst
         isListView = !isListView;
@@ -1318,8 +1385,13 @@ function openRightPanel(type) {
     }
 
     document.body.classList.add('panel-open');
-    // Toggle-icoon → sluit-icoon
-    $('#toggleView i').attr('class', 'fas fa-xmark');
+    // Desktop: verberg toggle knop als paneel open is
+    if (isDesktop) {
+        $('#toggleView').hide();
+    } else {
+        // Mobile: toon sluit-icoon
+        $('#toggleView i').attr('class', 'fas fa-xmark');
+    }
 }
 
 /**
@@ -1338,8 +1410,8 @@ function closeRightPanel() {
     filterEl.classList.remove('open');
 
     document.body.classList.remove('panel-open');
-    // Toggle-icoon → standaard lijst-icoon (op desktop niet meer relevant)
-    $('#toggleView i').attr('class', 'fas fa-list');
+    // Desktop: verberg toggle knop (wordt getoond bij scrollen)
+    $('#toggleView').hide().removeClass('visible');
 }
 
 // Expose voor gebruik in event handlers
@@ -1352,6 +1424,8 @@ if (window.innerWidth >= 768) {
     closeRightPanel();
     // Zorg dat kaart correct geladen wordt
     setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+    // Toon locate button op desktop
+    $('#locateBtn').show();
 }
 
 let resizeTimeout;
@@ -1813,7 +1887,7 @@ async function renderDetail(objectId) {
     }
 }
 
-window.focusOnMarker = function(lat, lng, objectId, targetZoom = 14) {
+window.focusOnMarker = function(lat, lng, objectId, targetZoom = 16) {
     const isDesktop = window.innerWidth >= 768;
     if (!isDesktop) {
         applyState({ view: 'map' });
@@ -1822,35 +1896,53 @@ window.focusOnMarker = function(lat, lng, objectId, targetZoom = 14) {
     const targetLatLng = L.latLng(lat, lng);
     window.skipFitBounds = true;
 
-    // Find the marker by ID
+    // Find the marker by ID - check both layers
     let foundMarker = null;
-    markerCluster.eachLayer(m => { if (m.objId === objectId) foundMarker = m; });
+    let markerLayer = null; // Track which layer the marker belongs to
+
+    markerCluster.eachLayer(m => {
+        if (m.objId === objectId) {
+            foundMarker = m;
+            markerLayer = 'cluster';
+        }
+    });
     if (!foundMarker) {
-        top10Layer.eachLayer(m => { if (m.objId === objectId) foundMarker = m; });
+        top10Layer.eachLayer(m => {
+            if (m.objId === objectId) {
+                foundMarker = m;
+                markerLayer = 'top10';
+            }
+        });
     }
 
-    const finalizeFocus = () => {
-        // Use provided targetZoom or default to 14
-        map.setView(targetLatLng, targetZoom, { animate: true });
-
-        // Wait for the final movement to finish before opening popup
+    const openPopupAfterAnimation = () => {
+        // Wait for map animation to complete before opening popup
         setTimeout(() => {
             if (foundMarker) {
                 foundMarker.openPopup();
             }
         }, 300);
     };
+
     if (foundMarker) {
-        if (markerCluster.hasLayer(foundMarker)) {
-            // zoomToShowLayer handles the cluster expansion
-            markerCluster.zoomToShowLayer(foundMarker, finalizeFocus);
+        if (markerLayer === 'cluster') {
+            // Marker is in cluster - zoomToShowLayer handles everything
+            // It will zoom/pan to show the marker and expand clusters if needed
+            markerCluster.zoomToShowLayer(foundMarker, () => {
+                // Callback after cluster animation completes - just open popup
+                openPopupAfterAnimation();
+            });
         } else {
-            finalizeFocus();
+            // Marker is in top10Layer (already visible, not clustered)
+            // Pan to location with specified zoom, then open popup
+            map.setView(targetLatLng, targetZoom, { animate: true });
+            openPopupAfterAnimation();
         }
     } else {
-        map.setView(targetLatLng, standardZoom);
+        // Marker not found - just pan to coordinates
+        map.setView(targetLatLng, targetZoom);
     }
-    
+
     // Lock fitBounds for a bit longer to ensure stability
     setTimeout(() => { window.skipFitBounds = false; }, 4000);
 };

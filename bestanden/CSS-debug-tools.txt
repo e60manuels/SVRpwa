@@ -1,0 +1,94 @@
+ 1. Firefox DevTools (Better than Chrome for CSS)
+    Firefox has superior CSS visualization:
+     - Flexbox/Grid Inspector: Visual overlays showing all flex/grid containers at once
+     - CSS Rules Panel: Shows all rules in cascade order with specificity scores
+     - Font Editor: Visual font debugging
+     - Inherited Styles: Clearer view of what's inherited vs. direct
+
+    Download: https://www.mozilla.org/firefox/
+
+    ---
+
+    2. CSS Overview Panel (Chrome DevTools)
+    Built into Chrome but hidden:
+     1. Open DevTools (F12)
+     2. Press Ctrl+Shift+P (Cmd+Shift+P on Mac)
+     3. Type "CSS Overview" → Enable
+     4. New tab appears showing:
+        - All colors used
+        - Font usage
+        - Specificity distribution
+        - Unused CSS
+
+    ---
+
+    3. Visual Debugging Extensions
+
+
+    ┌──────────────────────────────────────┬──────────────────────────────────────┐
+    │ Tool                                 │ What It Shows                        │
+    ├──────────────────────────────────────┼──────────────────────────────────────┤
+    │ Pesticide (Chrome/Firefox extension) │ Outlines ALL elements at once        │
+    │ CSS Peeper                           │ Extracts complete design system      │
+    │ VisBug                               │ Google's open-source design debugger │
+    └──────────────────────────────────────┴──────────────────────────────────────┘
+
+
+    Pesticide is great for layout issues:
+
+     1 Install: Chrome Web Store → "Pesticide"
+     2 Click once: Shows all element boundaries
+
+    ---
+
+    4. CSS Analysis Tools
+
+
+    ┌────────────────────────┬───────────────────────┬───────────────────────────────────────────────┐
+    │ Tool                   │ URL                   │ Purpose                                       │
+    ├────────────────────────┼───────────────────────┼───────────────────────────────────────────────┤
+    │ CSS Stats              │ cssstats.com          │ Analyzes specificity, selectors, declarations │
+    │ Specificity Calculator │ specificity.keegan.st │ Shows why rules override each other           │
+    │ CSS Triggers           │ csstriggers.com       │ Shows what CSS properties cause reflow        │
+    └────────────────────────┴───────────────────────┴───────────────────────────────────────────────┘
+
+
+    ---
+
+    5. For Your Specific Project
+
+    Since your CSS is split across files (local_style.css, custom_styles.css), I recommend:
+
+    Option A: Add CSS Debug Map
+    Create a simple debug overlay:
+
+     1 /* Add temporarily to local_style.css */
+     2 .svr-top-row { outline: 2px solid red; }
+     3 .search-container { outline: 2px solid blue; }
+     4 .header-logo { outline: 2px solid green; }
+
+    Option B: Generate CSS Report
+    I can create a script that analyzes your CSS and outputs:
+     - All selectors with their specificity
+     - Which rules override which
+     - Unused CSS
+
+    Option C: Use Firefox for Layout Work
+    Open your app in Firefox:
+
+     1 1. F12 → Inspector tab
+     2 2. Click the flexbox icon next to display: flex
+     3 3. See ALL flex containers visualized at once
+
+    ---
+
+    My Recommendation
+
+    For quick layout debugging: Install Pesticide extension (1-click visualization)
+
+    For deep CSS architecture: Use Firefox DevTools + CSS Stats
+
+    Would you like me to:
+     1. Create a CSS specificity report for your project?
+     2. Add temporary debug outlines to the header elements?
+     3. Document the current CSS layer structure in a markdown file?
