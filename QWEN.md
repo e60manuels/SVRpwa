@@ -11,7 +11,7 @@
 - **Filters**: Filter campings by country and facilities (e.g., WiFi, pets allowed, etc.)
 - **Offline Support**: Service Worker caches app shell, static assets, and map tiles
 - **PWA Install**: Custom install banner with beforeinstallprompt handling
-- **Responsive Design**: Mobile-first design with portrait orientation lock
+- **Responsive Design**: Mobile-first with desktop split-screen layout (v0.2.35+)
 
 ### Architecture
 - **Type**: Static PWA (no build step, vanilla JavaScript)
@@ -35,13 +35,13 @@ SVRpwa/
 ├── QWEN.md                 # This file - project context
 │
 ├── css/
-│   ├── local_style.css     # Main app styles (564 lines)
-│   ├── custom_styles.css   # Additional style overrides
+│   ├── local_style.css     # Main app styles (744 lines)
+│   ├── custom_styles.css   # Additional style overrides (336 lines)
 │   ├── MarkerCluster.css   # Leaflet clustering styles
 │   └── MarkerCluster.Default.css
 │
 ├── js/
-│   ├── local_app.js        # Main application logic (1884 lines)
+│   ├── local_app.js        # Main application logic (2043 lines)
 │   ├── pwa_install.js      # PWA install banner logic (284 lines)
 │   └── leaflet.markercluster.js  # Leaflet clustering plugin
 │
@@ -63,6 +63,7 @@ SVRpwa/
     ├── lighthouse_findings.md      # Performance audit results
     ├── filter_chips_pwa_spec.md    # Filter UI specification
     ├── local_app_map.md            # Code structure documentation
+    ├── ontwerp-v0.2.29.txt         # Design doc for v0.2.29 cleanup
     ├── static-content-delivery-implementation-plan.md
     └── gemini-svr-static-delivery.md
 ```
@@ -117,10 +118,10 @@ This script:
 
 | Resource Type | Strategy | Cache Name |
 |--------------|----------|------------|
-| App Shell (HTML, CSS, JS) | Network First | `svr-pwa-cache-v0.2.30` |
+| App Shell (HTML, CSS, JS) | Network First | `svr-pwa-cache-v0.2.36` |
 | Map Tiles (OSM) | Cache First | `svr-pwa-map-tiles` |
 | API Requests | Network Only | Not cached |
-| External Libraries | Network First | `svr-pwa-cache-v0.2.30` |
+| External Libraries | Network First | `svr-pwa-cache-v0.2.36` |
 
 ### Key Dependencies
 
@@ -140,8 +141,8 @@ This script:
 
 ### Version Tracking
 
-- **App Version**: Tracked in `window.SVR_PWA_VERSION` (currently `0.2.30`)
-- **Cache Version**: Embedded in Service Worker cache name (`v0.2.30`)
+- **App Version**: Tracked in `window.SVR_PWA_VERSION` (currently `0.2.36`)
+- **Cache Version**: Embedded in Service Worker cache name (`v0.2.36`)
 - **Data Version**: `data/campings.json` includes `updated` timestamp and `version` field
 
 ---
@@ -160,20 +161,73 @@ This script:
 3. **Main Thread Blocking**: Large data file (40k+ lines) parsed synchronously
 4. **Memory**: All camping data loaded into memory at once
 
-### Completed Modernizations (v0.2.30)
+### Completed Modernizations
 
-✅ **Single Source of Truth**: `data/campings.json` is now the only data source
-✅ **Removed Redundancy**: `assets/campsites_preset.json` removed from project
-✅ **Cache Cleanup**: `svr_cache_campsites` localStorage no longer used
-✅ **Simplified Startup**: Direct load from `campings.json` via Service Worker
-✅ **Local Filtering**: All filtering/searching happens locally without API calls
+✅ **v0.2.30**: Single Source of Truth - `data/campings.json` as only data source
+✅ **v0.2.30**: Removed `campsites_preset.json` and `svr_cache_campsites` localStorage
+✅ **v0.2.31**: Desktop responsive breakpoints (768px, 1024px, 1440px, 1920px)
+✅ **v0.2.35**: Split-screen desktop layout (50/50 list left, map right)
+✅ **v0.2.36**: Contextual detail panel (opens on opposite side of click source)
 
-### Modernization Priorities
+### Current Work In Progress (v0.2.36+)
 
-1. 🔧 **High**: Replace jQuery event handlers with native `addEventListener`
-2. 🔧 **High**: Batch DOM updates in `renderResults()` function
-3. 🔧 **Medium**: Implement smooth scrolling with native `scrollTo({behavior: 'smooth'})`
-4. 🔧 **Medium**: Add error handling for corrupted localStorage
+🔧 **Desktop Split-Screen Layout** - Needs testing/fixing:
+- [ ] INFO knop in lijst-tegel opent detail panel aan rechterkant
+- [ ] INFO knop in map popup opent detail panel aan linkerkant
+- [ ] Filter panel opent aan linkerkant (lijst zijde)
+- [ ] Toggle knop cyclus: split → map-only → list-only → split
+- [ ] Mobile functionality moet ongewijzigd blijven
+
+---
+
+## Desktop Split-Screen Layout (v0.2.35+)
+
+### Layout Breakpoint: 768px
+
+**Desktop (≥768px):**
+```
+┌─────────────────────────────────────────────────────────────┐
+│  [====Zoekveld====]  [Filter] [Toggle]                     │
+├──────────────────────────┬──────────────────────────────────┤
+│      LIJST (50%)         │      KAART (50%)                 │
+│      Links               │      Rechts                      │
+│                          │                                  │
+│  [Card 1] [INFO] ───────▶│  DETAIL PANEL (opent hier)       │
+│                          │                                  │
+└──────────────────────────┴──────────────────────────────────┘
+```
+
+**Mobile (<768px):**
+- Toggle wisselt tussen kaart en lijst (fullscreen)
+- Detail opent als fullscreen overlay
+- Filter opent als fullscreen overlay
+
+### CSS Classes for Desktop Modes
+
+**Body Classes:**
+- `split-mode` - Beide panelen zichtbaar (50/50)
+- `map-only-mode` - Alleen kaart (100%)
+- `list-only-mode` - Alleen lijst (100%)
+
+**Detail Panel Classes:**
+- `detail-from-list` - Panel opent rechts (replaces map)
+- `detail-from-map` - Panel opent links (replaces list)
+
+### Key Functions
+
+```javascript
+// Toggle button handler (desktop: 3 modes, mobile: 2 modes)
+$('#toggleView').on('click', () => { ... });
+
+// Set desktop view mode
+function setDesktopViewMode(mode) { ... }
+
+// Show detail page with context-aware positioning
+window.showSVRDetailPage = function(objectId, source = 'auto') { ... }
+
+// Apply state (mobile-only, desktop uses CSS)
+function applyState(state) { ... }
+```
 
 ---
 
@@ -222,16 +276,25 @@ GET /objects
 
 ## Testing Checklist
 
+### Mobile (<768px)
 - [ ] Map renders with camping markers
 - [ ] Clustering works at zoomed-out levels
 - [ ] Search suggests Dutch municipalities
-- [ ] Filters apply correctly to map/list
+- [ ] Filters apply correctly (fullscreen overlay)
 - [ ] Toggle between map/list view works
+- [ ] Detail view opens as fullscreen overlay
 - [ ] Offline mode shows cached content
 - [ ] Install banner appears (first visit)
-- [ ] Detail view opens camping information
-- [ ] Current location button works
 - [ ] Help overlay displays tooltips
+
+### Desktop (≥768px)
+- [ ] Split-screen layout: 50% list left, 50% map right
+- [ ] Toggle cycles: split → map-only → list-only → split
+- [ ] INFO knop in lijst opent detail panel rechts
+- [ ] INFO knop in map popup opent detail panel links
+- [ ] Filter panel opent links (lijst zijde)
+- [ ] Leaflet map resizes on window resize
+- [ ] Detail panel sluit met terug knop
 
 ---
 
@@ -242,3 +305,18 @@ GET /objects
 - **`bestanden/lighthouse_findings.md`**: Performance audit and recommendations
 - **`bestanden/filter_chips_pwa_spec.md`**: Filter UI/UX specification
 - **`bestanden/local_app_map.md`**: Code structure and function mapping
+- **`bestanden/ontwerp-v0.2.29.txt`**: Design doc for v0.2.29 cleanup (Single Source of Truth)
+- **`bestanden/gemini-svr-static-delivery.md`**: Static content delivery planning
+
+---
+
+## Git Remotes
+
+- **origin**: `https://github.com/e60manuels/SVRpwa.git` (production - GitHub Pages)
+- **staging**: `https://github.com/e60manuels/SVRpwa-test.git` (testing)
+
+### Deploy Commands
+```bash
+git push origin main    # Deploy to production
+git push staging main   # Deploy to staging
+```
