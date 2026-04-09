@@ -580,16 +580,16 @@
     .map-stack-btn i { font-size: 16px; }
     .card-body h3 { font-size: 22px; }
     .card-body .card-location, .card-body .card-distance { font-size: 14px; }
-    .active-filter-chip { font-size: 10px; height: 24px; }
+    .active-filter-chip { font-size: 10px; height: 24px; margin-right: 0; margin-left: 8px; }
     .help-text { font-size: 12px; }
-    
+
     /* Header layout: logo left, search centered over 40% panel */
     .svr-top-row {
         justify-content: flex-start;
         padding-right: 4px;
         position: relative;
     }
-    
+
     /* Show logo on desktop */
     .header-logo {
         display: block;
@@ -602,14 +602,31 @@
         transform: scale(1.2);
         transform-origin: left center;
     }
-    
+
     /* Search bar centered over the 40% right panel */
     .svr-top-row .search-container {
         position: absolute !important;
         left: 80% !important;
         transform: translateX(-175px) !important;
     }
-    
+
+    /* Navigatiepijltjes aanpassen voor desktop */
+    .filter-nav-arrow.left { left: auto; right: 4px; }
+    .filter-nav-arrow.right { left: 4px; right: auto; }
+
+    /* Actieve filters bar aanpassen voor desktop */
+    .active-filters-bar {
+        justify-content: flex-end;
+        padding-right: 0 !important;
+        padding-left: 40px;
+    }
+
+    /* Spacing between chips */
+    .active-filters-bar .active-filter-chip {
+        margin-right: 8px;
+        margin-left: 0;
+    }
+
     /* Smaller zoom control buttons (20x20px) */
     .leaflet-control-zoom { 
         border: none !important; 
@@ -772,7 +789,6 @@
     /* Camping-cards: desktop optimalisatie */
     .camping-card { max-width: none; margin: 0 0 12px 0; }
 }
-
 @media (min-width: 1024px) {
     .search-container { height: 32px; }
     .search-container input { font-size: 13px; }

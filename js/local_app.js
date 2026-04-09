@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.38"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.39"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -328,6 +328,58 @@ window.SVR_PWA_VERSION = "0.2.38"; // Increment this number with each commit
         .filter-sub-toggle.active i { transform: rotate(90deg); }
         .filter-sub-content { display: none; padding-left: 20px; background: #fafafa; }
         .filter-sub-content.show { display: block; }
+        
+        .filters-nav-container {
+            position: relative; /* Ensure positioning context for absolute children */
+            display: flex; /* Make it a flex container */
+            align-items: center; /* Vertically center content */
+            overflow: hidden; /* Hide overflowing content, especially for scrolling chips */
+            width: 100%; /* Take full width of parent */
+            height: 36px; /* Explicitly set height */
+        }
+        
+        .active-filters-bar {
+            position: relative; /* Positioning context for arrows */
+            flex: 1; /* Ensure it takes all available horizontal space */
+            height: 100%; /* Take full height of parent */
+            overflow-x: auto; /* Re-enable */
+            white-space: nowrap; /* Re-enable */
+            padding: 0 40px; /* Space for arrows */
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            scrollbar-width: none;
+            scroll-behavior: smooth;
+        }
+
+        .filter-nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            padding: 0 5px;
+            cursor: pointer;
+            height: 100%; /* Take full height of active-filters-bar */
+            display: flex;
+            align-items: center;
+            z-index: 1;
+            font-size: 1.2rem;
+            color: var(--svr-blue);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .filter-nav-arrow.visible {
+            opacity: 1;
+        }
+        .filter-nav-arrow.left {
+            left: 0;
+            border-right: 1px solid rgba(0,0,0,0.1);
+        }
+        .filter-nav-arrow.right {
+            right: 0;
+            border-left: 1px solid rgba(0,0,0,0.1);
+        }
 
         /* DESKTOP SPECIFIC (min-width: 768px) */
         @media (min-width: 768px) {
@@ -374,6 +426,27 @@ window.SVR_PWA_VERSION = "0.2.38"; // Increment this number with each commit
                 flex-shrink: 0;
                 background-color: #f0f0f0;
             }
+
+            /* Specific styles for active filter bar within injected CSS */
+            .filters-nav-container {
+                width: calc(100% - 24px); /* Account for svr-header's 12px horizontal padding on each side */
+                margin: 0 auto; /* Center it */
+                /* height and other properties remain from general styles */
+            }
+
+            .active-filters-bar {
+                justify-content: flex-end;
+                /* padding-right handled by local_style.css for desktop alignment */
+                padding-left: 40px; /* Space for arrow */
+            }
+
+            /* Spacing between chips */
+            .active-filters-bar .active-filter-chip {
+                margin-right: 8px;
+                margin-left: 0;
+            }
+
+            /* No specific positioning for arrows here, general styles apply */
         }
     `;
     const style = document.createElement('style'); style.appendChild(document.createTextNode(css)); document.head.appendChild(style);
