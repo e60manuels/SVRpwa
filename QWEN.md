@@ -32,7 +32,6 @@ SVRpwa/
 ├── offline.html            # Offline fallback page
 ├── build-campings-json.js  # Node.js script to fetch/update camping data
 ├── migration_inventory.md  # Migration notes from Android app to PWA
-├── QWEN.md                 # This file - project context
 │
 ├── css/
 │   ├── local_style.css     # Main app styles (744 lines)
@@ -118,10 +117,10 @@ This script:
 
 | Resource Type | Strategy | Cache Name |
 |--------------|----------|------------|
-| App Shell (HTML, CSS, JS) | Network First | `svr-pwa-cache-v0.2.37` |
+| App Shell (HTML, CSS, JS) | Network First | `svr-pwa-cache-v0.2.39` |
 | Map Tiles (OSM) | Cache First | `svr-pwa-map-tiles` |
 | API Requests | Network Only | Not cached |
-| External Libraries | Network First | `svr-pwa-cache-v0.2.37` |
+| External Libraries | Network First | `svr-pwa-cache-v0.2.39` |
 
 ### Key Dependencies
 
@@ -141,8 +140,8 @@ This script:
 
 ### Version Tracking
 
-- **App Version**: Tracked in `window.SVR_PWA_VERSION` (currently `0.2.37`)
-- **Cache Version**: Embedded in Service Worker cache name (`v0.2.37`)
+- **App Version**: Tracked in `window.SVR_PWA_VERSION` (currently `0.2.39`)
+- **Cache Version**: Embedded in Service Worker cache name (`v0.2.39`)
 - **Data Version**: `data/campings.json` includes `updated` timestamp and `version` field
 
 ---
@@ -188,6 +187,52 @@ This script:
    * Versioning:
        * Updated app and cache versions to v0.2.37 across relevant files (local_app.js, sw.js, index.html).
 
+### Key Achievements **v0.2.38**:
+
+   * Desktop Header Redesign:
+       * Added SVR logo to the left side of the header (desktop only).
+       * Search bar centered over the 40% right panel (list/detail side) on desktop.
+       * Search bar fixed at 350x36px for a more professional appearance.
+       * Logo positioned with 16px top margin for visual alignment.
+
+   * Map Zoom Controls:
+       * Added zoom in/out buttons to the map (desktop only, ≥768px).
+       * Positioned at bottom-right corner.
+       * Button size: 28x28px (compact design).
+       * Mobile users continue using two-finger pinch-to-zoom.
+
+   * Marker Popup Fix:
+       * Fixed popup not opening for campings beyond the first 10 in the list.
+       * Root cause: markers split between `markerCluster` and `top10Layer` were not handled consistently.
+       * Solution: `focusOnMarker()` now tracks which layer each marker belongs to and handles both correctly.
+       * Popup timing improved with proper animation wait.
+
+   * Detail Page Stacking Fix:
+       * Prevented multiple detail pages from stacking when clicking INFO on multiple campings.
+       * Uses `history.replaceState()` instead of `pushState()` when a detail page is already open.
+       * Mobile unaffected (scenario cannot occur due to fullscreen overlay).
+
+   * UX Improvements:
+       * Default zoom level increased from 14 to 16 for better focus on camping location.
+       * Desktop toggle button repurposed as scroll-to-top (appears when scrolling list).
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.38 across all files.
+       * Service Worker cache invalidated for fresh deployment.
+
+### Key Achievements **v0.2.39**:
+
+   * Desktop Filter Chips Alignment:
+       * Moved active-filter-chips from far left to far right side of header (desktop only, ≥768px).
+       * Replaced conflicting `flex-direction: row-reverse` with clean `justify-content: flex-end`.
+       * Removed JS-injected `padding-right` override to let CSS stylesheet control layout.
+       * Aligned chips to right edge of search container for consistent visual alignment.
+       * Mobile UI/UX remains completely unchanged.
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.39 across all files (local_app.js, sw.js, index.html, local_style.css).
+       * Service Worker cache invalidated for fresh deployment.
+
 ### Current Work In Progress (v0.2.36+)
 
 🔧 **Desktop Split-Screen Layout** - Needs testing/fixing:
@@ -196,6 +241,13 @@ This script:
 - [ ] Filter panel opent aan linkerkant (lijst zijde)
 - [ ] Toggle knop cyclus: split → map-only → list-only → split
 - [ ] Mobile functionality moet ongewijzigd blijven
+
+🔧 **SVR.nl Website Integration (Planned for v0.2.39)**:
+- [ ] Embed SVR.nl in detail panel using iframe (no X-Frame-Options blocking)
+- [ ] Eliminate second tab when opening SVR website in browser mode
+- [ ] Add detail panel header with SVR logo, "Open in Browser" button, and Close button
+- [ ] Consistent behavior: both browser and PWA mode use detail panel
+- [ ] Tested: securityheaders.com confirms no X-Frame-Options header on svr.nl
 
 ---
 
@@ -206,9 +258,9 @@ This script:
 **Desktop (≥768px):**
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  [====Zoekveld====]  [Filter] [Toggle]                     │
+│  [SVR Logo]    [====Zoekveld====]  [Filter Chips →]        │
 ├──────────────────────────┬──────────────────────────────────┤
-│      LIJST (50%)         │      KAART (50%)                 │
+│      LIJST (60%)         │      KAART (40%)                 │
 │      Links               │      Rechts                      │
 │                          │                                  │
 │  [Card 1] [INFO] ───────▶│  DETAIL PANEL (opent hier)       │
@@ -307,13 +359,14 @@ GET /objects
 - [ ] Help overlay displays tooltips
 
 ### Desktop (≥768px)
-- [ ] Split-screen layout: 50% list left, 50% map right
+- [ ] Split-screen layout: 60% list left, 40% map right
 - [ ] Toggle cycles: split → map-only → list-only → split
 - [ ] INFO knop in lijst opent detail panel rechts
 - [ ] INFO knop in map popup opent detail panel links
 - [ ] Filter panel opent links (lijst zijde)
 - [ ] Leaflet map resizes on window resize
 - [ ] Detail panel sluit met terug knop
+- [ ] Active filter chips aligned to right side of header
 
 ---
 
