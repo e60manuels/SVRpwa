@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.40"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.41"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -2087,9 +2087,14 @@ function renderResults(objects, cLat, cLng) {
 
 window.showHelp = function() {
     const dynamicText = document.getElementById('dynamic-help-text');
-    if (isListView) { dynamicText.innerText = 'Terug naar boven scrollen'; } 
+    if (isListView) { dynamicText.innerText = 'Terug naar boven scrollen'; }
     else { dynamicText.innerText = 'Toon jouw huidige locatie'; }
     document.getElementById('help-overlay').style.display = 'block';
+
+    // Trigger install prompt if PWA is not installed
+    if (!window.isAppInstalled() && window.showInstallPromotion) {
+        window.showInstallPromotion();
+    }
 };
 
 // === LOGIN FUNCTIONALITEIT VOOR SVR PWA ===
