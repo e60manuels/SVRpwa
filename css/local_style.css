@@ -25,6 +25,7 @@
             display: flex; flex-direction: column; padding-top: var(--status-bar-height); box-sizing: border-box;
             transition: height 0.3s ease;
             justify-content: center;
+            border-bottom: 3px solid rgb(1, 139, 211);
         }
 
         .svr-header.has-filters {
@@ -638,11 +639,71 @@
         line-height: 28px !important;
     }
 
-    /* Suggesties gecentreerd */
+    /* Suggesties onder het zoekveld, binnen de search-container */
     .suggestions-list {
-        left: 50% !important;
-        transform: translateX(-50%);
-        max-width: 400px;
+        left: 0 !important;
+        right: 0 !important;
+        top: 100% !important;
+        margin-top: 4px;
+        max-width: none;
+        width: auto;
+        z-index: 1001 !important;
+    }
+
+    /* Header moet hoger zijn dan list-container voor suggesties */
+    .svr-header {
+        z-index: 1001 !important;
+    }
+
+    /* === HELP OVERLAY: desktop herpositionering === */
+    /* Verberg toggle-help (desktop: toggle is scroll-to-top) */
+    #help-overlay .help-item:nth-child(7) {
+        display: none !important;
+    }
+
+    /* Zoekbalk help: naar boven verplaatst */
+    #help-overlay .help-item:nth-child(2) {
+        top: calc(var(--header-height) + 6px) !important;
+        left: 80% !important;
+        transform: translateX(-175px) !important;
+        right: auto !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    #help-overlay .help-item:nth-child(2) .help-arrow {
+        margin-left: 10px !important;
+        margin-right: 0 !important;
+    }
+
+    /* Info help: uitgelijnd met infoBtn in search-container */
+    #help-overlay .help-item:nth-child(3) {
+        top: calc(var(--header-height) + 10px) !important;
+        right: calc(20% - 160px) !important;
+    }
+    #help-overlay .help-item:nth-child(3) .help-arrow {
+        height: 35px !important;
+        border-bottom-width: 35px !important;
+        border-top: 0 !important;
+        margin-top: -26px !important;
+    }
+
+    /* Actieknoppen help: stack rechtsonder (right: 12px) */
+    /* Filter (onderste positie) */
+    #help-overlay .help-item:nth-child(6) {
+        bottom: 20px !important;
+        right: 65px !important;
+    }
+
+    /* Locate (boven filter) */
+    #help-overlay .help-item:nth-child(5) {
+        bottom: 76px !important;
+        right: 65px !important;
+    }
+
+    /* SVR Website (boven locate) */
+    #help-overlay .help-item:nth-child(4) {
+        bottom: 132px !important;
+        right: 65px !important;
     }
 
     /* === KAART: altijd links 60% === */
