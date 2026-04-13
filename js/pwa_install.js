@@ -1,284 +1,298 @@
-// Variables
+// ============================================================
+// pwa_install.js
+// ============================================================
+// Betrouwbare PWA install flow:
+// - Race condition fix: deferredPrompt wordt altijd opgeslagen,
+//   knop wordt enabled zodra DOM beschikbaar is.
+// - Geen localStorage 'installed' vlag: alleen display-mode
+//   en navigator.standalone worden gebruikt.
+// - Banner wordt getoond via window.closeHelpOverlayAndShowPWA()
+// - iOS krijgt aparte instructies.
+// ============================================================
+
 let deferredPrompt = null;
 let installBanner, installButton, closeBanner;
 
-// Local Debugging function
+// ------------------------------------------------------------
+// Debug logging
+// ------------------------------------------------------------
 function logDebug(msg) {
     console.log(`[PWA_INSTALL] ${msg}`);
 }
 
-// Check if the app is already installed
+// ------------------------------------------------------------
+// Betrouwbare installed check — GEEN localStorage
+// ------------------------------------------------------------
 function isAppInstalled() {
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-  const isIosStandalone = (window.navigator.standalone === true);
-  const isPersistentFlagSet = (localStorage.getItem('pwa-app-installed') === 'true');
-
-  logDebug(`isAppInstalled() checks: isStandalone=${isStandalone}, isIosStandalone=${isIosStandalone}, isPersistentFlagSet=${isPersistentFlagSet}`);
-
-  // Check if the app is running in standalone mode (installed PWA)
-  if (isStandalone) {
-    logDebug("App is reeds geïnstalleerd (standalone mode).");
-    localStorage.setItem('pwa-app-installed', 'true'); // Persist this state
-    return true;
-  }
-  // Check for older iOS standalone mode
-  if (isIosStandalone) { 
-    logDebug("App is reeds geïnstalleerd (iOS standalone).");
-    localStorage.setItem('pwa-app-installed', 'true'); // Persist this state
-    return true;
-  }
-  // Check our own persistent flag (set after successful install)
-  if (isPersistentFlagSet) {
-      logDebug("App is reeds geïnstalleerd (via persistent flag).");
-      return true;
-  }
-  logDebug("App is nog niet geïnstalleerd.");
-  return false;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isIosStandalone = (window.navigator.standalone === true);
+    logDebug(`isAppInstalled(): standalone=${isStandalone}, ios=${isIosStandalone}`);
+    return isStandalone || isIosStandalone;
 }
-window.isAppInstalled = isAppInstalled; // Expose globally
+window.isAppInstalled = isAppInstalled;
 
-// Check localStorage for user preference - used for re-showing after dismissal
+// ------------------------------------------------------------
+// Dismissal voorkeur (banner wegklikken, niet installeren)
+// ------------------------------------------------------------
 function shouldShowBannerAgain() {
-  const dismissed = localStorage.getItem('install-banner-dismissed');
-  const dismissedDate = localStorage.getItem('install-banner-dismissed-date');
-  
-  if (dismissed && dismissedDate) {
-    const daysSinceDismissed = (Date.now() - parseInt(dismissedDate)) / (1000 * 60 * 60 * 24);
-    if (daysSinceDismissed > 90) {
-        logDebug("Installatiebanner was afgewezen, maar 90 dagen zijn verstreken. Toon opnieuw.");
-        return true; // Re-show after 90 days
-    } else {
-        logDebug(`Installatiebanner afgewezen ${Math.floor(daysSinceDismissed)} dagen geleden. Wacht nog.`);
-        return false;
+    const dismissedDate = localStorage.getItem('install-banner-dismissed-date');
+    if (dismissedDate) {
+        const daysSince = (Date.now() - parseInt(dismissedDate)) / (1000 * 60 * 60 * 24);
+        if (daysSince < 90) {
+            logDebug(`Banner afgewezen ${Math.floor(daysSince)} dagen geleden. Wacht nog.`);
+            return false;
+        }
+        logDebug('90 dagen verstreken sinds dismissal. Toon opnieuw.');
     }
-  }
-  
-  logDebug("Installatiebanner nog niet eerder afgewezen.");
-  return true; // Show if not dismissed
+    return true;
 }
 
-// Show installation promotion
+function markBannerDismissed() {
+    localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
+    logDebug('Banner dismissal opgeslagen.');
+}
+
+// ------------------------------------------------------------
+// Enable install button (gedeeld door beforeinstallprompt
+// en DOMContentLoaded zodat race condition wordt opgevangen)
+// ------------------------------------------------------------
+function enableInstallButton() {
+    if (installButton) {
+        installButton.disabled = false;
+        installButton.textContent = 'Installeren';
+        logDebug('Installatieknop geactiveerd.');
+    }
+}
+
+// ------------------------------------------------------------
+// Banner tonen / verbergen
+// ------------------------------------------------------------
 function showInstallPromotion() {
-  logDebug("showInstallPromotion() aangeroepen.");
-  if (isAppInstalled()) { // Redundant check, but kept for consistency with existing logic.
-    logDebug("showInstallPromotion: App is al geïnstalleerd (standalone/iOS standalone), toon banner niet.");
-    return;
-  }
-  
-  // Toon de banner alleen als deze niet is afgewezen, of als de 90 dagen voorbij zijn
-  if (!shouldShowBannerAgain()) {
-      logDebug("showInstallPromotion: Banner mag niet opnieuw worden getoond.");
-      return;
-  }
+    logDebug('showInstallPromotion() aangeroepen.');
 
-  if (installBanner) {
-    installBanner.style.display = 'flex'; // Use flex to center content
-    logDebug("Installatiebanner wordt getoond.");
-  } else {
-    logDebug("showInstallPromotion: installBanner element niet gevonden.");
-  }
-}
-
-// Hide installation promotion
-function hideInstallPromotion() {
-  if (installBanner) {
-      installBanner.style.display = 'none';
-      logDebug("Installatiebanner verborgen.");
-  } else {
-      logDebug("hideInstallPromotion: installBanner element niet gevonden.");
-  }
-}
-
-// Listen for beforeinstallprompt event
-window.addEventListener('beforeinstallprompt', (e) => {
-  logDebug("beforeinstallprompt event afgevuurd.");
-  e.preventDefault();
-  deferredPrompt = e;
-  
-  // The installButton is now a globally declared `let` variable, assigned in DOMContentLoaded.
-  // It's safe to access it here after the DOM is loaded.
-  // However, `beforeinstallprompt` can fire *before* DOMContentLoaded,
-  // so we should check if `installButton` is initialized.
-  if (installButton) {
-      logDebug("deferredPrompt ingesteld. Activeer de installatieknop.");
-      installButton.disabled = false; // Activate the button
-      installButton.textContent = 'Installeren'; // Ensure text is correct
-      logDebug("Installatieknop geactiveerd.");
-  } else {
-      logDebug("beforeinstallprompt: installButton element nog niet beschikbaar. Wachten op DOMContentLoaded.");
-  }
-  // The banner is now shown via window.closeHelpOverlayAndShowPWA() or user interaction
-});
-
-// Detect when the app is actually installed
-window.addEventListener('appinstalled', (evt) => {
-  logDebug('PWA is succesvol geïnstalleerd.');
-  localStorage.setItem('pwa-app-installed', 'true'); // Set persistent flag
-  // installBanner is a global `let` variable, assigned in DOMContentLoaded.
-  // It should be available here if the app is installed *after* DOMContentLoaded.
-  if (installBanner) {
-    installBanner.style.display = 'none';
-  }
-});
-
-// iOS detection
-function isIOS() {
-  const userAgent = window.navigator.userAgent;
-  const isIosDevice = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-  logDebug(`isIOS(): ${isIosDevice}`);
-  return isIosDevice;
-}
-window.isIOS = isIOS; // Expose globally
-
-// Show iOS installation instructions (if applicable)
-function showIOSInstructions() {
-  logDebug("showIOSInstructions() aangeroepen.");
-  if (isAppInstalled()) { // Redundant check, but kept for consistency with existing logic.
-    logDebug("showIOSInstructions: App is al geïnstalleerd (standalone/iOS standalone), toon instructies niet.");
-    return;
-  }
-
-  if (!shouldShowBannerAgain()) {
-      logDebug("showIOSInstructions: Instructies mogen niet opnieuw worden getoond.");
-      return;
-  }
-
-  // Hide the regular install banner if it's visible. installBanner is global `let`.
-  if (installBanner) {
-    installBanner.style.display = 'none';
-  }
-
-
-  const iosInstructionsHtml = `
-    <div id="ios-install-instructions" class="ios-install-instructions">
-      <div class="ios-install-header-row"> <!-- New div for the header row -->
-        <div class="ios-install-left"> <!-- Container for SVR icon -->
-          <div class="ios-install-icon">
-            <img src="icons/icon-192.webp" alt="App Icon">
-          </div>
-        </div>
-        <div class="ios-install-right"> <!-- Container for the close button -->
-          <button id="close-ios-instructions" class="ios-close-button">
-            ✕
-          </button>
-        </div>
-      </div>
-      <p class="ios-install-main-text">Installeer de SVR app als volgt:</p> <!-- Yellow text moved here -->
-      <div class="ios-install-detailed-instructions">
-        <ol>
-          <li>Tik op de drie-puntjes ... onderin de browser en tik op het deel-icoon <span style="display: inline-flex; align-items: center; vertical-align: middle; font-size: 1.5em; width: 24px; height: 24px;">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" style="display: block; width: 100%; height: 100%;">
-        <line x1="40" y1="96" x2="100" y2="96"/>
-        <line x1="156" y1="96" x2="216" y2="96"/>
-        <line x1="40" y1="96" x2="40" y2="224"/>
-        <line x1="216" y1="96" x2="216" y2="224"/>
-        <line x1="40" y1="224" x2="216" y2="224"/>
-        <line x1="128" y1="160" x2="128" y2="32"/>
-        <line x1="128" y1="32" x2="96" y2="64"/>
-        <line x1="128" y1="32" x2="160" y2="64"/>
-    </svg>
-</span>. (soms is drie-puntjes klikken niet nodig)</li>
-          <li>Swipe omhoog, scroll naar beneden en tik op 'Zet op beginscherm'. (soms is swipe niet nodig)</li>
-          <li>Tik rechtsboven op 'Voeg toe'.</li>
-        </ol>
-      </div>
-      <button id="ios-understood-button" class="ios-close-button">
-        Begrepen
-      </button>
-    </div>
-  `;
-
-  if (!document.getElementById('ios-install-instructions')) {
-      document.body.insertAdjacentHTML('beforeend', iosInstructionsHtml);
-      // Attach event listener to the new "Begrepen" button
-      document.getElementById('ios-understood-button').addEventListener('click', () => {
-          logDebug("iOS instructies gesloten. Voorkeur opslaan.");
-          document.getElementById('ios-install-instructions').remove();
-          localStorage.setItem('install-banner-dismissed', 'true');
-          localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
-      });
-       // Attach event listener to the new "Close" button (X) - DO NOT store dismissed status
-      document.getElementById('close-ios-instructions').addEventListener('click', () => {
-          logDebug("iOS instructies gesloten via kruisje. Voorkeur NIET opslaan.");
-          document.getElementById('ios-install-instructions').remove();
-          // localStorage.setItem('install-banner-dismissed', 'true'); // Removed
-          // localStorage.setItem('install-banner-dismissed-date', Date.now().toString()); // Removed
-      });
-      logDebug("iOS installatie-instructies getoond.");
-  } else {
-      logDebug("iOS installatie-instructies zijn reeds zichtbaar.");
-  }}
-
-// Initial check when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', () => {
-  logDebug("DOMContentLoaded event afgevuurd.");
-
-  // Now that DOM is loaded, get elements and assign to global let variables
-  installBanner = document.getElementById('install-banner');
-  installButton = document.getElementById('install-button');
-  closeBanner = document.getElementById('close-banner');
-
-  // Install button click handler
-  if (installButton) {
-    installButton.addEventListener('click', async () => {
-      logDebug("Installatieknop geklikt.");
-      if (!deferredPrompt) {
-        logDebug("Installatieknop geklikt, maar deferredPrompt is null.");
+    if (isAppInstalled()) {
+        logDebug('App is al geïnstalleerd. Banner niet tonen.');
         return;
-      }
-      
-      installButton.disabled = true; // Disable button immediately
-      installButton.textContent = 'Bezig met installeren...'; // Provide feedback
-      logDebug("Installatieproces gestart.");
+    }
 
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      
-      logDebug(`Gebruiker reactie op installatieprompt: ${outcome}`);
-      
-      hideInstallPromotion();
-      deferredPrompt = null;
-      
-      if (outcome === 'accepted') {
-        logDebug('Gebruiker heeft de PWA installatieprompt geaccepteerd.');
-        localStorage.setItem('pwa-app-installed', 'true'); // Set persistent flag on acceptance
-      } else if (outcome === 'dismissed') { // User explicitly dismissed the native prompt
-        logDebug('Gebruiker heeft de PWA installatieprompt afgewezen.');
-        localStorage.setItem('install-banner-dismissed', 'true');
-        localStorage.setItem('install-banner-dismissed-date', Date.now().toString());
-      } else {
-        logDebug(`Gebruiker reactie op installatieprompt: ${outcome} (onverwacht).`);
-      }
+    if (!shouldShowBannerAgain()) {
+        logDebug('Banner mag nog niet opnieuw worden getoond.');
+        return;
+    }
+
+    if (!deferredPrompt) {
+        logDebug('deferredPrompt is null — Chrome biedt installatie nu niet aan.');
+        // Optioneel: toon een uitleg aan de gebruiker
+        // bijv. "Voeg toe via browsermenu" — hier niet geïmplementeerd
+        return;
+    }
+
+    if (installBanner) {
+        installBanner.style.display = 'flex';
+        logDebug('Installatiebanner getoond.');
+    }
+}
+window.showInstallPromotion = showInstallPromotion;
+
+function hideInstallPromotion() {
+    if (installBanner) {
+        installBanner.style.display = 'none';
+        logDebug('Installatiebanner verborgen.');
+    }
+}
+
+// ------------------------------------------------------------
+// beforeinstallprompt — fired door Chrome/Android
+// Kan vóór DOMContentLoaded firen (race condition)
+// ------------------------------------------------------------
+window.addEventListener('beforeinstallprompt', (e) => {
+    logDebug('beforeinstallprompt event afgevuurd.');
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // Als DOM al geladen is, enable direct
+    // Anders doet DOMContentLoaded het via de check onderaan
+    enableInstallButton();
+});
+
+// ------------------------------------------------------------
+// appinstalled — fired door Chrome na succesvolle installatie
+// ------------------------------------------------------------
+window.addEventListener('appinstalled', () => {
+    logDebug('PWA succesvol geïnstalleerd (appinstalled event).');
+    deferredPrompt = null;
+    hideInstallPromotion();
+});
+
+// ------------------------------------------------------------
+// iOS detectie
+// ------------------------------------------------------------
+function isIOS() {
+    const result = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    logDebug(`isIOS(): ${result}`);
+    return result;
+}
+window.isIOS = isIOS;
+
+// ------------------------------------------------------------
+// iOS installatie-instructies
+// ------------------------------------------------------------
+function showIOSInstructions() {
+    logDebug('showIOSInstructions() aangeroepen.');
+
+    if (isAppInstalled()) {
+        logDebug('App al geïnstalleerd. iOS instructies niet tonen.');
+        return;
+    }
+
+    if (!shouldShowBannerAgain()) {
+        logDebug('iOS instructies mogen nog niet opnieuw worden getoond.');
+        return;
+    }
+
+    if (document.getElementById('ios-install-instructions')) {
+        logDebug('iOS instructies al zichtbaar.');
+        return;
+    }
+
+    const html = `
+        <div id="ios-install-instructions" class="ios-install-instructions">
+            <div class="ios-install-header-row">
+                <div class="ios-install-left">
+                    <div class="ios-install-icon">
+                        <img src="icons/icon-192.webp" alt="App Icon">
+                    </div>
+                </div>
+                <div class="ios-install-right">
+                    <button id="close-ios-instructions" class="ios-close-button">✕</button>
+                </div>
+            </div>
+            <p class="ios-install-main-text">Installeer de SVR app als volgt:</p>
+            <div class="ios-install-detailed-instructions">
+                <ol>
+                    <li>Tik op de drie-puntjes ... onderin de browser en tik op het deel-icoon
+                        <span style="display:inline-flex;align-items:center;vertical-align:middle;font-size:1.5em;width:24px;height:24px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" style="display:block;width:100%;height:100%;">
+                                <line x1="40" y1="96" x2="100" y2="96"/>
+                                <line x1="156" y1="96" x2="216" y2="96"/>
+                                <line x1="40" y1="96" x2="40" y2="224"/>
+                                <line x1="216" y1="96" x2="216" y2="224"/>
+                                <line x1="40" y1="224" x2="216" y2="224"/>
+                                <line x1="128" y1="160" x2="128" y2="32"/>
+                                <line x1="128" y1="32" x2="96" y2="64"/>
+                                <line x1="128" y1="32" x2="160" y2="64"/>
+                            </svg>
+                        </span>
+                        (soms is drie-puntjes klikken niet nodig)
+                    </li>
+                    <li>Swipe omhoog, scroll naar beneden en tik op 'Zet op beginscherm'. (soms is swipe niet nodig)</li>
+                    <li>Tik rechtsboven op 'Voeg toe'.</li>
+                </ol>
+            </div>
+            <button id="ios-understood-button" class="ios-close-button">Begrepen</button>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    // "Begrepen" — sla dismissal op
+    document.getElementById('ios-understood-button').addEventListener('click', () => {
+        logDebug('iOS instructies gesloten via Begrepen.');
+        document.getElementById('ios-install-instructions').remove();
+        markBannerDismissed();
     });
-  }
 
-  // Close button click handler
-  if (closeBanner) {
-    closeBanner.addEventListener('click', () => {
-      logDebug("Sluitknop geklikt. Banner verbergen en voorkeur NIET opslaan.");
-      hideInstallPromotion();
-      // localStorage.setItem('install-banner-dismissed', 'true'); // Removed
-      // localStorage.setItem('install-banner-dismissed-date', Date.now().toString()); // Removed
+    // Kruisje — sluit zonder dismissal op te slaan
+    document.getElementById('close-ios-instructions').addEventListener('click', () => {
+        logDebug('iOS instructies gesloten via kruisje (geen dismissal opgeslagen).');
+        document.getElementById('ios-install-instructions').remove();
     });
-  }
 
-  // Expose showInstallPromotion globally
-  window.showInstallPromotion = showInstallPromotion;
+    logDebug('iOS installatie-instructies getoond.');
+}
 
-  if (!isAppInstalled()) {
-      logDebug("App is nog niet geïnstalleerd.");
-      if (shouldShowBannerAgain()) {
-          if (isIOS()) {
-              logDebug("Platform is iOS. Toon iOS instructies.");
-              showIOSInstructions();
-          } else {
-              logDebug("Platform is niet iOS. De installatiebanner wordt getoond na sluiten van help-overlay of user-interactie.");
-              // showInstallPromotion(); // Removed direct call to showInstallPromotion() here
-          }
-      } else {
-          logDebug("Banner is eerder afgewezen en mag nog niet opnieuw worden getoond.");
-      }
-  } else {
-      logDebug("App is al geïnstalleerd, installatie-prompt niet tonen.");
-  }
+// ------------------------------------------------------------
+// closeHelpOverlayAndShowPWA — aangeroepen vanuit de app
+// ------------------------------------------------------------
+window.closeHelpOverlayAndShowPWA = function () {
+    logDebug('closeHelpOverlayAndShowPWA() aangeroepen.');
+
+    const helpOverlay = document.getElementById('help-overlay');
+    if (helpOverlay) {
+        helpOverlay.style.display = 'none';
+    }
+
+    if (isAppInstalled()) {
+        logDebug('App al geïnstalleerd. Geen prompt tonen.');
+        return;
+    }
+
+    if (!shouldShowBannerAgain()) {
+        logDebug('Banner mag nog niet opnieuw worden getoond.');
+        return;
+    }
+
+    if (isIOS()) {
+        showIOSInstructions();
+    } else {
+        showInstallPromotion();
+    }
+};
+
+// ------------------------------------------------------------
+// DOMContentLoaded
+// ------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    logDebug('DOMContentLoaded.');
+
+    installBanner = document.getElementById('install-banner');
+    installButton = document.getElementById('install-button');
+    closeBanner   = document.getElementById('close-banner');
+
+    // Race condition fix: als beforeinstallprompt al eerder fired,
+    // enable de knop alsnog nu de DOM beschikbaar is.
+    if (deferredPrompt) {
+        logDebug('deferredPrompt was al gezet vóór DOMContentLoaded. Knop alsnog activeren.');
+        enableInstallButton();
+    }
+
+    // Install knop
+    if (installButton) {
+        installButton.addEventListener('click', async () => {
+            logDebug('Installatieknop geklikt.');
+            if (!deferredPrompt) {
+                logDebug('deferredPrompt is null. Installatie niet mogelijk.');
+                return;
+            }
+
+            installButton.disabled = true;
+            installButton.textContent = 'Bezig...';
+
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            logDebug(`Gebruikerskeuze: ${outcome}`);
+
+            deferredPrompt = null;
+            hideInstallPromotion();
+
+            if (outcome === 'dismissed') {
+                markBannerDismissed();
+            }
+            // Bij 'accepted' doet het appinstalled-event de rest
+        });
+    }
+
+    // Sluitknop banner (kruisje) — geen dismissal opslaan
+    if (closeBanner) {
+        closeBanner.addEventListener('click', () => {
+            logDebug('Banner gesloten via kruisje (geen dismissal opgeslagen).');
+            hideInstallPromotion();
+        });
+    }
+
+    // iOS: toon direct bij laden als nog niet geïnstalleerd
+    if (!isAppInstalled() && shouldShowBannerAgain() && isIOS()) {
+        logDebug('iOS: instructies direct tonen bij laden.');
+        showIOSInstructions();
+    }
 });

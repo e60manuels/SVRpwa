@@ -233,21 +233,47 @@ This script:
        * Updated app and cache versions to v0.2.39 across all files (local_app.js, sw.js, index.html, local_style.css).
        * Service Worker cache invalidated for fresh deployment.
 
+### Key Achievements **v0.2.40**:
+
+   * Header Border:
+       * Added `border-bottom: 3px solid rgb(1, 139, 211)` to `.svr-header` in `local_style.css`.
+
+   * Locate Button Desktop Fix:
+       * Added `z-index: 2001` and `position: relative` to `.map-stack-btn` in desktop CSS.
+       * Ensures locate button is clickable above list-container stacking context.
+
+   * Search Suggestions Desktop:
+       * Repositioned `.suggestions-list` to appear directly below search container on desktop.
+       * Set `z-index: 1001` on `.svr-header` so suggestions dropdown appears above list view.
+
+   * Help Overlay Desktop Repositioning:
+       * Re-aligned all help tooltips to match desktop split-screen layout.
+       * Search help: positioned below header, centered over 40% right panel.
+       * Info help: aligned to far right, dynamically adjusts with viewport.
+       * Action button stack (SVR website, Locate, Filter): repositioned to match desktop button locations.
+       * Toggle help: hidden (toggle is scroll-to-top on desktop).
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.40 across all files.
+       * Service Worker cache invalidated for fresh deployment.
+
+### Key Achievements **v0.2.41**:
+
+   * Install Prompt Trigger:
+       * Added `showInstallPromotion()` call inside `window.showHelp()` in `local_app.js`.
+       * When user clicks ⓘ (info/help) button, install banner appears if PWA is not installed.
+       * SW registration now uses `{ updateViaCache: 'all' }` and calls `reg.update()` on every launch.
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.41 across all files.
+       * Service Worker cache invalidated for fresh deployment.
+
 ### Current Work In Progress (v0.2.36+)
 
-🔧 **Desktop Split-Screen Layout** - Needs testing/fixing:
-- [ ] INFO knop in lijst-tegel opent detail panel aan rechterkant
-- [ ] INFO knop in map popup opent detail panel aan linkerkant
-- [ ] Filter panel opent aan linkerkant (lijst zijde)
-- [ ] Toggle knop cyclus: split → map-only → list-only → split
-- [ ] Mobile functionality moet ongewijzigd blijven
-
-🔧 **SVR.nl Website Integration (Planned for v0.2.39)**:
-- [ ] Embed SVR.nl in detail panel using iframe (no X-Frame-Options blocking)
-- [ ] Eliminate second tab when opening SVR website in browser mode
-- [ ] Add detail panel header with SVR logo, "Open in Browser" button, and Close button
-- [ ] Consistent behavior: both browser and PWA mode use detail panel
-- [ ] Tested: securityheaders.com confirms no X-Frame-Options header on svr.nl
+🔧 **Install Prompt (v0.2.41)**:
+- [ ] Install banner not triggering on installed PWA — Chrome's `beforeinstallprompt` only fires once per origin.
+- [ ] User must clear Chrome site data or uninstall/reinstall to re-trigger native prompt.
+- [ ] Manual fallback: `showInstallPromotion()` called when ⓘ help button is clicked.
 
 ---
 
@@ -342,43 +368,6 @@ GET /objects
   ]
 }
 ```
-
----
-
-## Testing Checklist
-
-### Mobile (<768px)
-- [ ] Map renders with camping markers
-- [ ] Clustering works at zoomed-out levels
-- [ ] Search suggests Dutch municipalities
-- [ ] Filters apply correctly (fullscreen overlay)
-- [ ] Toggle between map/list view works
-- [ ] Detail view opens as fullscreen overlay
-- [ ] Offline mode shows cached content
-- [ ] Install banner appears (first visit)
-- [ ] Help overlay displays tooltips
-
-### Desktop (≥768px)
-- [ ] Split-screen layout: 60% list left, 40% map right
-- [ ] Toggle cycles: split → map-only → list-only → split
-- [ ] INFO knop in lijst opent detail panel rechts
-- [ ] INFO knop in map popup opent detail panel links
-- [ ] Filter panel opent links (lijst zijde)
-- [ ] Leaflet map resizes on window resize
-- [ ] Detail panel sluit met terug knop
-- [ ] Active filter chips aligned to right side of header
-
----
-
-## Related Documentation
-
-- **`migration_inventory.md`**: Original migration notes from Android native app
-- **`bestanden/modernization_plan.md`**: Step-by-step code modernization guide
-- **`bestanden/lighthouse_findings.md`**: Performance audit and recommendations
-- **`bestanden/filter_chips_pwa_spec.md`**: Filter UI/UX specification
-- **`bestanden/local_app_map.md`**: Code structure and function mapping
-- **`bestanden/ontwerp-v0.2.29.txt`**: Design doc for v0.2.29 cleanup (Single Source of Truth)
-- **`bestanden/gemini-svr-static-delivery.md`**: Static content delivery planning
 
 ---
 
