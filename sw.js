@@ -1,4 +1,4 @@
-const CACHE_NAME = 'svr-pwa-cache-v0.2.41';
+const CACHE_NAME = 'svr-pwa-cache-v0.2.42';
 const MAP_CACHE_NAME = 'svr-pwa-map-tiles';
 const ASSETS_TO_CACHE = [
   './',
@@ -10,6 +10,7 @@ const ASSETS_TO_CACHE = [
   './css/MarkerCluster.Default.css',
   './js/local_app.js',
   './js/leaflet.markercluster.js',
+  './js/pwa_install.js',
   './fonts/befalow.ttf',
   './assets/Woonplaatsen_in_Nederland.csv',
   './data/campings.json',
