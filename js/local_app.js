@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.42"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.43"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -522,6 +522,9 @@ window.SVR_PWA_VERSION = "0.2.42"; // Increment this number with each commit
     };
 
 window.hideFilterOverlay = function() {
+    if (window.parent !== window) {
+        window.parent.postMessage({ type: 'svr-nav', panel: 'filter', open: false }, '*');
+    }
     const isDesktop = window.innerWidth >= 768;
     const filterEl = document.getElementById('svr-filter-overlay');
     const backdropEl = document.getElementById('svr-filter-backdrop');
@@ -560,11 +563,18 @@ window.hideFilterOverlay = function() {
     window.toggle_filters = async function() {
         const isDesktop = window.innerWidth >= 768;
 
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'svr-nav', panel: 'filter', open: true }, '*');
+        }
+
         if (isDesktop) {
             const filterEl = document.getElementById('svr-filter-overlay');
             
             // Toggle: als filter al open is, sluit het
             if (document.body.classList.contains('panel-open') && filterEl.style.display === 'block') {
+                if (window.parent !== window) {
+                    window.parent.postMessage({ type: 'svr-nav', panel: 'filter', open: false }, '*');
+                }
                 closeRightPanel();
                 return;
             }
@@ -1051,6 +1061,9 @@ function applyState(state) {
     // Only hide detail container if the new state is NOT a detail view
     // This prevents the hide/show flash when updating detail content
     if (state.view !== 'detail') {
+        if ($('#detail-container').hasClass('open') && window.parent !== window) {
+            window.parent.postMessage({ type: 'svr-nav', panel: 'detail', open: false }, '*');
+        }
         $('#detail-container').hide().removeClass('open');
     }
 
@@ -1147,6 +1160,9 @@ $('#scroll_top_btn').on('click', function() {
 // Function to handle showing the detail page with context-aware positioning
 // source: 'map' (clicked from map marker) or 'list' (clicked from list card) or 'auto' (detect)
 window.showSVRDetailPage = function(objectId, source = 'auto') {
+    if (window.parent !== window) {
+        window.parent.postMessage({ type: 'svr-nav', panel: 'detail', open: true }, '*');
+    }
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
     const splashScreen = document.getElementById('detail-splash');
@@ -1254,6 +1270,9 @@ window.showSVRDetailPage = function(objectId, source = 'auto') {
 
 // Function to handle the back action for the detail sheet
 window.handleDetailBack = function() {
+    if (window.parent !== window) {
+        window.parent.postMessage({ type: 'svr-nav', panel: 'detail', open: false }, '*');
+    }
     const detailOverlay = document.getElementById('detail-container');
     const detailSheet = detailOverlay.querySelector('.detail-sheet-content');
     const backdrop = document.getElementById('svr-filter-backdrop');
@@ -1328,6 +1347,9 @@ window.onpopstate = (e) => {
         
         // Handle Filters View
         if (e.state.view === 'filters') {
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'svr-nav', panel: 'filter', open: true }, '*');
+            }
             // This is reached if we navigate FORWARD to filters (rare but possible via history)
             backdrop.style.display = 'block';
             setTimeout(() => { 
@@ -1343,6 +1365,9 @@ window.onpopstate = (e) => {
 
         // Handle Detail View
         if (e.state.view === 'detail' && e.state.objectId) {
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'svr-nav', panel: 'detail', open: true }, '*');
+            }
             // Show splash and start typewriter effect
             if (splashScreen) {
                 splashScreen.classList.remove('hide');
@@ -1363,6 +1388,9 @@ window.onpopstate = (e) => {
                 renderDetail(e.state.objectId); // This will fetch content and hide splash
             }, 10);
         } else if (e.state.view === 'list' || e.state.view === 'map') {
+            if (detailOverlay.classList.contains('open') && window.parent !== window) {
+                window.parent.postMessage({ type: 'svr-nav', panel: 'detail', open: false }, '*');
+            }
             detailSheet.classList.remove('open');
             detailOverlay.classList.remove('open');
             if (backdrop && !filterOverlay.classList.contains('open')) backdrop.classList.remove('open');
@@ -1379,6 +1407,10 @@ window.onpopstate = (e) => {
         
         if (filterOverlay && filterOverlay.classList.contains('open')) {
             window.hideFilterOverlay();
+        }
+
+        if (detailOverlay.classList.contains('open') && window.parent !== window) {
+            window.parent.postMessage({ type: 'svr-nav', panel: 'detail', open: false }, '*');
         }
 
         detailSheet.classList.remove('open');
@@ -1443,6 +1475,15 @@ function openRightPanel(type) {
     const filterEl = document.getElementById('svr-filter-overlay');
 
     // Sluit beide eerst (schone lei)
+    if (window.parent !== window) {
+        if (detailEl.classList.contains('open') && type !== 'detail') {
+            window.parent.postMessage({ type: 'svr-nav', panel: 'detail', open: false }, '*');
+        }
+        if (filterEl.classList.contains('open') && type !== 'filter') {
+            window.parent.postMessage({ type: 'svr-nav', panel: 'filter', open: false }, '*');
+        }
+    }
+
     detailEl.style.display = 'none';
     detailEl.classList.remove('open');
     filterEl.style.display = 'none';
@@ -1476,6 +1517,15 @@ function closeRightPanel() {
 
     const detailEl = document.getElementById('detail-container');
     const filterEl = document.getElementById('svr-filter-overlay');
+
+    if (window.parent !== window) {
+        if (detailEl.classList.contains('open')) {
+            window.parent.postMessage({ type: 'svr-nav', panel: 'detail', open: false }, '*');
+        }
+        if (filterEl.classList.contains('open')) {
+            window.parent.postMessage({ type: 'svr-nav', panel: 'filter', open: false }, '*');
+        }
+    }
 
     detailEl.style.display = 'none';
     detailEl.classList.remove('open');

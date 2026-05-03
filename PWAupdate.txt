@@ -1,0 +1,28 @@
+De SVR PWA (index.html + style.css) wordt geladen in een iframe binnen een demo-app. 
+De demo-app heeft een tabbar die verborgen moet worden wanneer het detail-panel of filter-panel opent in de PWA, en weer zichtbaar moet worden wanneer ze sluiten.
+
+Wat je moet doen
+
+Voeg postMessage calls toe in de PWA op de plekken waar het detail-panel en filter-panel openen en sluiten. 
+De parent (demo-app) luistert naar deze messages.
+
+Het berichtformaat
+
+Altijd eerst controleren of we in een iframe zitten:
+
+if (window.parent !== window) {
+  window.parent.postMessage({ type: 'svr-nav', panel: 'detail', open: true }, '*');
+}
+
+De vier momenten:
+
+1. Detail panel opent  → panel: 'detail', open: true
+2. Detail panel sluit  → panel: 'detail', open: false
+3. Filter panel opent  → panel: 'filter', open: true
+4. Filter panel sluit  → panel: 'filter', open: false
+
+Belangrijk
+
+- Zoek in de bestaande code naar waar het detail-panel en filter-panel worden geopend en gesloten (waarschijnlijk een functie zoals openDetail(), closeDetail(), showFilter(), hideFilter() of een click-handler)
+- Voeg de postMessage call toe direct nadat de open/sluit actie plaatsvindt
+- Verander verder niets — geen styling, geen andere logica

@@ -257,20 +257,21 @@ This script:
        * Updated app and cache versions to v0.2.40 across all files.
        * Service Worker cache invalidated for fresh deployment.
 
-### Key Achievements **v0.2.41**:
+### Key Achievements **v0.2.43**:
 
-   * Install Prompt Trigger:
-       * Added `showInstallPromotion()` call inside `window.showHelp()` in `local_app.js`.
-       * When user clicks ⓘ (info/help) button, install banner appears if PWA is not installed.
-       * SW registration now uses `{ updateViaCache: 'all' }` and calls `reg.update()` on every launch.
+   * Navigation Communication (postMessage):
+       * Implemented `window.parent.postMessage` calls for Detail and Filter panel states.
+       * Added state synchronization for "open" and "close" events to support integration with parent apps (e.g., hiding tab bars).
+       * Robust handling for desktop (panel switches, closeRightPanel) and mobile (popstate, applyState).
+       * Verified `window.parent !== window` check for security and stability.
 
    * Versioning:
-       * Updated app and cache versions to v0.2.41 across all files.
-       * Service Worker cache invalidated for fresh deployment.
+       * Updated app and cache versions to v0.2.43 across all files.
+       * Manual cache busting for assets in `index.html`.
 
 ### Current Work In Progress (v0.2.36+)
 
-🔧 **Install Prompt (v0.2.41)**:
+🔧 **Install Prompt**:
 - [ ] Install banner not triggering on installed PWA — Chrome's `beforeinstallprompt` only fires once per origin.
 - [ ] User must clear Chrome site data or uninstall/reinstall to re-trigger native prompt.
 - [ ] Manual fallback: `showInstallPromotion()` called when ⓘ help button is clicked.
