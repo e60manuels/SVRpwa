@@ -269,6 +269,19 @@ This script:
        * Updated app and cache versions to v0.2.43 across all files.
        * Manual cache busting for assets in `index.html`.
 
+### Key Achievements **v0.2.46**:
+
+   * Adaptive Carousel Loading:
+       * Improved perceived performance on mobile by showing the carousel immediately after the first image loads.
+       * Implemented conditional lazy-loading: mobile/slow connections use lazy-loading (data-src), while WiFi users get background preloading for a seamless experience.
+
+   * Sticky Filter Headers (Fix):
+       * Resolved overlapping issues between the active filters bar and category headers using dynamic CSS variables (`--filters-height`).
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.46 across all files.
+       * Service Worker cache invalidated for fresh deployment.
+
 ### Key Achievements **v0.2.45**:
 
    * Sticky Filter Headers:

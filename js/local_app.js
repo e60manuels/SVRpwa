@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.45"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.46"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -1899,6 +1899,14 @@ async function renderDetail(objectId) {
                                 if (images.length > 0) {
                                     mainImageContainer.dataset.swiperInitialized = 'true';
 
+                                    // Detect connection type for adaptive loading
+                                    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                                    const isSlowConnection = conn && (conn.saveData || ['slow-2g', '2g', '3g'].includes(conn.effectiveType));
+                                    const isMobile = conn && conn.type === 'cellular';
+                                    const useLazyLoading = isSlowConnection || isMobile;
+
+                                    logDebug(`Carousel loading mode: ${useLazyLoading ? 'Lazy (Mobile/Slow)' : 'Eager (WiFi)'}`);
+
                                     const swiperContainer = document.createElement('div');
                                     swiperContainer.className = 'swiper svr-detail-swiper';
                                     swiperContainer.style.width = '100%';
@@ -1912,7 +1920,7 @@ async function renderDetail(objectId) {
                                     const swiperWrapper = document.createElement('div');
                                     swiperWrapper.className = 'swiper-wrapper';
 
-                                    images.forEach(src => {
+                                    images.forEach((src, index) => {
                                         const swiperSlide = document.createElement('div');
                                         swiperSlide.className = 'swiper-slide';
                                         swiperSlide.style.display = 'flex';
@@ -1922,7 +1930,20 @@ async function renderDetail(objectId) {
                                         swiperSlide.style.height = '100%';
 
                                         const imgElement = document.createElement('img');
-                                        imgElement.src = src;
+                                        
+                                        // First image is ALWAYS eager. Others are lazy on mobile/slow.
+                                        if (index === 0 || !useLazyLoading) {
+                                            imgElement.src = src;
+                                        } else {
+                                            imgElement.dataset.src = src;
+                                            imgElement.className = 'swiper-lazy';
+                                            
+                                            // Preloader for lazy images
+                                            const preloader = document.createElement('div');
+                                            preloader.className = 'swiper-lazy-preloader';
+                                            swiperSlide.appendChild(preloader);
+                                        }
+
                                         imgElement.style.maxWidth = '100%';
                                         imgElement.style.maxHeight = '100%';
                                         imgElement.style.objectFit = 'contain';
@@ -1947,6 +1968,13 @@ async function renderDetail(objectId) {
                                             roundLengths: true,
                                             observer: true,
                                             observeParents: true,
+                                            // Adaptive Lazy Loading Settings
+                                            lazy: useLazyLoading ? {
+                                                loadPrevNext: true,
+                                                loadPrevNextAmount: 2,
+                                                loadOnTransitionStart: true
+                                            } : false,
+                                            preloadImages: !useLazyLoading,
                                             pagination: {
                                                 el: '.swiper-pagination',
                                                 clickable: true,
@@ -1962,7 +1990,7 @@ async function renderDetail(objectId) {
                                                 },
                                             },
                                         });
-                                        logDebug("Robust Swiper initialized successfully.");
+                                        logDebug("Adaptive Swiper initialized successfully.");
                                     }
                                 }
                             } else {
