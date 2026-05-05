@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.44"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.45"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -308,7 +308,17 @@ window.SVR_PWA_VERSION = "0.2.44"; // Increment this number with each commit
         #active-filters-holder { background: #FDCC01; border-radius: 12px; padding: 12px 15px; margin-bottom: 15px; display: none; box-sizing: border-box; width: 100%; position: sticky; top: 0; z-index: 100; }
         .active-filter-tag { display: inline-flex; align-items: center; background: white; padding: 4px 10px; border-radius: 15px; margin: 4px; font-size: 12px; font-weight: bold; color: #008AD3; border: 1px solid #ddd; }
         .filter-section-card { background: white; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow: visible !important; }
-        .filter-section-header { padding: 12px 15px; background: #FDCC01; display: flex; justify-content: space-between; align-items: center; cursor: pointer; position: relative; z-index: 5; }
+        .filter-section-header { 
+            padding: 12px 15px; 
+            background: #FDCC01; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            cursor: pointer; 
+            position: sticky; 
+            top: calc(var(--filters-height, 0px) - 15px); 
+            z-index: 10; 
+        }
         .filter-section-header h4 { margin: 0; font-size: 22px; color: #333; font-family: 'Befalow', sans-serif; }
         .filter-section-body { padding: 0 15px; display: none; }
         .filter-section-body.show { display: block; padding-bottom: 10px; }
@@ -411,8 +421,8 @@ window.SVR_PWA_VERSION = "0.2.44"; // Increment this number with each commit
             .filter-section-card { overflow: visible !important; }
             .filter-section-header { 
                 position: sticky !important; 
-                top: -15px !important; /* Plakt tegen de bovenkant van de content-container */
-                z-index: 100 !important; 
+                top: calc(var(--filters-height, 0px) - 15px) !important; 
+                z-index: 10 !important; 
                 box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             }
 
@@ -853,6 +863,10 @@ window.hideFilterOverlay = function() {
             setTimeout(() => {
                 const newHeight = activeHolder.style.display !== 'none' ? activeHolder.offsetHeight : 0;
                 const diff = newHeight - oldHeight;
+                
+                // Update dynamic CSS variable for sticky headers
+                overlayContent.style.setProperty('--filters-height', newHeight + 'px');
+
                 if (newHeight > 0) {
                     overlayContent.style.scrollPaddingTop = (newHeight + 15) + 'px';
                 } else {
