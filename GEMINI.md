@@ -269,6 +269,31 @@ This script:
        * Updated app and cache versions to v0.2.43 across all files.
        * Manual cache busting for assets in `index.html`.
 
+### Key Achievements **v0.2.45**:
+
+   * Sticky Filter Headers:
+       * Implemented `position: sticky` with dynamic CSS variable tracking for filter section headers.
+       * Headers now respond dynamically to the variable height of the active filters bar, preventing overlaps.
+       * Applied consistent styling across mobile and desktop for better UX.
+
+   * Help Overlay Refinement:
+       * Fine-tuned help overlay positions based on user feedback (Filter: 120px, Locate: 170px, SVR Website: 220px).
+       * Updated Toggle positioning to 70px for consistent alignment.
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.45 across all files.
+       * Service Worker cache invalidated for fresh deployment.
+
+### Key Achievements **v0.2.44**:
+
+   * Map Action Stack Optimization:
+       * Decreased the `gap` between map-action-btn buttons from 12px to 6px for a more compact design.
+       * Adjusted `bottom` position of `.map-actions-stack` to 60px to ensure the buttons are fully visible and properly spaced from the bottom edge.
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.44 across all files.
+       * Service Worker cache invalidated for fresh deployment.
+
 ### Current Work In Progress (v0.2.36+)
 
 🔧 **Install Prompt**:
