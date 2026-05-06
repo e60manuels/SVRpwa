@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.46"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.47"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -53,7 +53,7 @@ window.SVR_PWA_VERSION = "0.2.46"; // Increment this number with each commit
             }).addTo(map);
 
             logDebug("Laden van data/campings.json (Unified Delivery)...");
-            const res = await fetch('./data/campings.json');
+            const res = await fetch('./data/campings.json?v=' + window.SVR_PWA_VERSION);
             if (res.ok) {
                 const data = await res.json();
                 window.staticCampsites = data.campings || [];
@@ -159,13 +159,15 @@ window.SVR_PWA_VERSION = "0.2.46"; // Increment this number with each commit
         const options = { headers: {}, credentials: 'include' }; // Initialize options with credentials: 'include'
 
         // Determine if we need to add X-SVR-Session.
-        // This is needed if the request is for www.svr.nl (to be proxied through worker)
+        // This is needed if the request is for svr.nl or www.svr.nl (to be proxied through worker)
         // OR if the request is already directly to the PROXY_BASE_URL (meaning it's
         // already going to the worker, and the worker needs the session).
-        const needsSVRSession = originalUrl.hostname === 'www.svr.nl' || originalUrl.hostname === new URL(PROXY_BASE_URL).hostname;
+        const isSVRDomain = originalUrl.hostname === 'svr.nl' || originalUrl.hostname === 'www.svr.nl';
+        const isProxyDomain = originalUrl.hostname === new URL(PROXY_BASE_URL).hostname;
+        const needsSVRSession = isSVRDomain || isProxyDomain;
 
         // If the URL is originally for svr.nl or nominatim, construct the worker-proxied URL
-        if (originalUrl.hostname === 'www.svr.nl' || originalUrl.hostname === 'nominatim.openstreetmap.org') {
+        if (isSVRDomain || originalUrl.hostname === 'nominatim.openstreetmap.org') {
             // Construct the URL to hit our proxy's forwarding endpoint
             let pathForProxy = originalUrl.pathname;
 
@@ -178,7 +180,7 @@ window.SVR_PWA_VERSION = "0.2.46"; // Increment this number with each commit
             logDebug(`Proxying original request: ${url} -> ${fetchUrl}`);
         } else {
             // If the URL is ALREADY the proxy base URL, then we treat it as a direct proxy request
-            if (originalUrl.hostname === new URL(PROXY_BASE_URL).hostname) {
+            if (isProxyDomain) {
                 logDebug(`Direct request to Worker: ${url}`);
                 // No need to re-construct fetchUrl, it's already the target.
             } else {
@@ -186,15 +188,24 @@ window.SVR_PWA_VERSION = "0.2.46"; // Increment this number with each commit
             }
         }
 
-        // Manually add session ID and Filters from state/localStorage only for SVR requests
+        // Manually add session ID, PHPSESSID, and Filters from state/localStorage only for SVR requests
         if (needsSVRSession) {
             // 1. Session
             const sessionId = localStorage.getItem('svr_session_id');
+            const phpSessionId = localStorage.getItem('svr_phpsessid');
+            
             if (sessionId) {
                 options.headers['X-SVR-Session'] = sessionId;
                 logDebug(`Adding X-SVR-Session header: ${sessionId.substring(0, 20)}...`);
             } else {
                 logDebug('No session ID found in localStorage for SVR request.');
+            }
+
+            if (phpSessionId) {
+                options.headers['X-SVR-PHPSESSID'] = phpSessionId;
+                logDebug(`Adding X-SVR-PHPSESSID header: ${phpSessionId.substring(0, 10)}...`);
+            } else {
+                logDebug('No PHPSESSID found in localStorage for SVR request.');
             }
 
             // 2. Filters & Config (Headers instead of Cookies)
@@ -219,7 +230,7 @@ window.SVR_PWA_VERSION = "0.2.46"; // Increment this number with each commit
             const res = await fetch(fetchUrl, options);
 
             // Check for 401 = sessie expired (only for SVR requests)
-            if (originalUrl.hostname === 'www.svr.nl' && res.status === 401) { // Fixed: used originalUrl.hostname
+            if (isSVRDomain && res.status === 401) {
                 console.warn('⚠️ Sessie verlopen, opnieuw inloggen vereist');
                 logDebug('⚠️ Sessie verlopen (401)');
                 if (window.showLoginScreen) window.showLoginScreen();
@@ -234,7 +245,7 @@ window.SVR_PWA_VERSION = "0.2.46"; // Increment this number with each commit
             // Handle Set-Cookie headers from the response
             // This is important for filters and other server-side state
             const setCookieHeaders = res.headers.get('Set-Cookie');
-            if (setCookieHeaders && originalUrl.hostname === 'www.svr.nl') {
+            if (setCookieHeaders && isSVRDomain) {
                 // In a real browser, these would be automatically stored and sent with future requests
                 // For our PWA, we need to handle them manually
                 logDebug(`Received Set-Cookie headers: ${setCookieHeaders.substring(0, 100)}...`);
@@ -2248,7 +2259,8 @@ async function loginToSVR(email, password) {
       const data = await response.json();
       if (data.session_id) {
         localStorage.setItem('svr_session_id', data.session_id);
-        console.log('✅ Session ID stored in localStorage:', data.session_id.substring(0, 20) + '...');
+        if (data.phpsessid) localStorage.setItem('svr_phpsessid', data.phpsessid);
+        console.log('✅ Session ID stored in localStorage.');
       } else {
         console.warn('Login successful but no session_id received in response.');
       }
