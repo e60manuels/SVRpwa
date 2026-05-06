@@ -269,18 +269,32 @@ This script:
        * Updated app and cache versions to v0.2.43 across all files.
        * Manual cache busting for assets in `index.html`.
 
-### Key Achievements **v0.2.46**:
+### Key Achievements **v0.2.47**:
 
-   * Adaptive Carousel Loading:
-       * Improved perceived performance on mobile by showing the carousel immediately after the first image loads.
-       * Implemented conditional lazy-loading: mobile/slow connections use lazy-loading (data-src), while WiFi users get background preloading for a seamless experience.
+   * Data Healing & Enrichment:
+       * Identified and resolved a critical discrepancy where SVR API IDs differed from SVR Website CMS IDs for 67 campsites, causing 500 errors.
+       * Implemented `heal-campings-json.js` to map and correct these IDs, ensuring detail pages load correctly.
+       * `data/campings_enriched.json` now serves as the single "UI-ready" source of truth, combining raw API data with scraped enrichment details (images, svr_id) for optimal performance.
 
-   * Sticky Filter Headers (Fix):
-       * Resolved overlapping issues between the active filters bar and category headers using dynamic CSS variables (`--filters-height`).
+   * Cloudflare Worker Modernization:
+       * Implemented a robust 3-step login flow to simulate authentic browser sessions, including initial cookie capture and PHPSESSID synchronization.
+       * Added mandatory browser navigation headers (`sec-fetch-*`, etc.) to `/object/` requests to bypass WAF/security filtering.
+       * Standardized all internal domains to non-www `https://svr.nl` to prevent 301 redirect overhead and session loss.
+
+   * PWA Performance & Stability:
+       * Implemented version-based cache busting for `data/campings.json` (`?v=0.2.47`) to force data refreshes without disabling browser caching.
+       * Resolved CORS header mismatches for custom headers (`X-SVR-PHPSESSID`) to fix detail page loading.
 
    * Versioning:
-       * Updated app and cache versions to v0.2.46 across all files.
-       * Service Worker cache invalidated for fresh deployment.
+       * Updated all version indicators to v0.2.47.
+       * Service Worker cache invalidated to ensure clean rollout.
+
+---
+
+## Data Enrichment Strategy
+
+### `data/campings_enriched.json`
+This file is the final, UI-ready dataset used by the PWA. It acts as a cache of scraped enrichment data (such as image URLs, descriptions, and the verified `svr_id` needed for stable detail page access). By keeping this file maintained, the PWA avoids real-time scraping, ensuring the UI remains fast and responsive while providing full camping details.
 
 ### Key Achievements **v0.2.45**:
 
