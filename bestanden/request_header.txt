@@ -1,0 +1,42 @@
+:authority
+svr.nl
+:method
+GET
+:path
+/object/3ab13658-2ed6-49e5-b502-91fa99680066
+:scheme
+https
+accept
+text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7
+cache-control
+no-cache
+cookie
+_fbp=fb.1.1774709793697.48050658764778354; _gcl_au=1.1.347668022.1775808563; cookies=1; PHPSESSID=oep2246kvel5eo0suvne1t175d; session=eyJiZXRhYWxqYWFyIjoyMDI2LCJjaGFuZ2VkIjoxLCJkb19pZCI6NTY0NzQ5LCJlbWFpbCI6ImpkbWFudWVsc0BnbWFpbC5jb20iLCJsYXN0X25hbWUiOiJNQU5VRUxTIiwidHlwZSI6bnVsbH0.aekw9g.QPa3WrUd4pb6oWMHdOEW1-6Q3o8; favorite=0; current_page=0; filters=[]; search_free={}; _gid=GA1.2.701634110.1777977620; _ga=GA1.1.742247757.1774709794; _ga_1CFH3KXGDL=GS2.1.s1778013969$o8$g0$t1778013974$j55$l0$h757439111; _ga_4XRB1PEWXQ=GS2.1.s1778013969$o8$g0$t1778013974$j55$l0$h0; geo=["place.17090728","place.2451624","place.8161448"]; geo_info={"boundingbox":[4.743659,52.890408,4.743659,52.890408],"lat":52.890408,"lon":4.743659,"display_name":"Julianadorp"}; config={"filters":[],"geo":{"boundingbox":[4.743659,52.890408,4.743659,52.890408],"lat":52.890408,"lon":4.743659,"display_name":"Julianadorp"},"search_free":{},"favorite":"0"}; view_mode=map
+pragma
+no-cache
+priority
+u=0, i
+referer
+https://svr.nl/objects
+sec-ch-ua
+"Google Chrome";v="147", "Not.A/Brand";v="8", "Chromium";v="147"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Windows"
+sec-fetch-dest
+document
+sec-fetch-mode
+navigate
+sec-fetch-site
+same-origin
+sec-fetch-user
+?1
+upgrade-insecure-requests
+1
+user-agent
+Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36

@@ -1,0 +1,35 @@
+Hallo Christel en Bas,
+
+Hierbij de informatie die is toegezegd, het betreft 2 apps en een aantal ideeën/tips voor de website.
+
+SVR app
+Dit is een zogenaamde PWA app. Dit type app kan op Apple iOS en op Android geïnstalleerd worden en hoeft niet in de Android App Store of Android Play Store gezet te worden. De app draait in de browser, dus Safari op de iPhone en Chrome op een Android smartphone, maar ook op andere apparaten als een tablet of PC. Jullie hebben de app op mijn laptop gezien op smartphone grootte maar ook op volledig schermvullend met links de kaart en rechts de lijst met campings, de app past zich dus aan afhankelijk van de grootte van het scherm. 
+Je kunt het nu zelf proberen door deze link xxxxxxx te openen vanuit het apparaat dat je wilt, dus bijvoorbeeld eerst op je smartphone en daarna op je tablet, PC, andere smartphone, etc. De link wordt geopend in je browser vanaf een vertrouwde website, je moet een paar handelingen verrichten en toestemming geven, dit wijst zich vanzelf. Na de installatie vind je de app op je beginscherm met alle andere apps. Mocht het onverhoopt niet lukken bel mij dan gerust.  
+
+SVR-donateurspas app
+Deze app is gebaseerd op het geweldige idee van Bas om de camping zoekfunctie in de bestaande SVR-donateurs app te integreren, we hebben immers al een SVR app voor iOS en Android. Dit zou een goed alternatief kunnen zijn voor het nieuw bouwen van 2 extra apps. Om jullie een idee te geven hoe dit kan, heb ik de bestaande app “nagebouwd” en de zoekfunctie toegevoegd. Kijk maar eens, in de bijlage vind je het installatie bestand. Het is een Android app, Christel heeft een iPhone “helaas”, dus ik hoop dat Bas een Android smartphone heeft, ik heb (nog) geen Apple Developer account om een iOS versie te maken…..
+Android zal je vragen om toestemming te geven voor het installeren van een app uit een andere bron, dit kun je doen, de app is volledig betrouwbaar gemaakt.
+
+Ideeën voor een snellere en modernere SVR website
+Tijdens het bouwen van de apps ben ik een aantal dingen tegengekomen die relatief eenvoudig verbeterd kunnen worden voor de SVR website (en apps). Hieronder drie concrete ideeën:
+1.  Foto's sneller laden via standaardisatie
+De campingfoto’s worden opgehaald op het moment dat iemand een camping detailpagina opent en worden vanaf de SVR server gedownload, wat tijd kost, zeker bij een wat trager mobiel netwerk. De foto’s zijn door de camping-eigenaren op de server gezet en hebben allerlei verschillende formaten (JPG, JPEG, PNG), resolutie en data grootte. Een foto van een smartphone kan zomaar 10 Mb zijn. 
+Een goede verbetering is om alle campingfoto's eenmalig te verzamelen, te verkleinen naar een modern compact formaat als WebP met een standaard resolutie van bijvoorbeeld 1200 x 900 pixels. Dit zal een enorme data besparing en derhalve een verbetering van de laadsnelheid opleveren zonder dat je inboet op kwaliteit. 
+2.  De server stuurt te veel data rond
+Op dit moment stuurt de SVR server bij elk verzoek, of je nu een campingpagina opent of een filter toepast, de basisgegevens van alle 1200 campings mee. Elke keer weer, één zo'n verzoek is 1,5 Mb aan data. Als een gebruiker vijf campingpagina's bekijkt, heeft hij ongemerkt 7,5 MB aan informatie opgehaald. Op een snel wifi-netwerk merk je dit nauwelijks, maar op een mobiele verbinding is dit goed merkbaar.
+De oplossing is om de server zo in te richten dat hij per verzoek alleen de relevante informatie terugstuurt. Zo’n verzoek heet een API-call, dit is een communicatie protocol dat de data uitwisseling tussen de client (SVR website of app) en de SVR server regelt. Dit is een grotere aanpassing aan de SVR server, maar het effect op de snelheid en het dataverbruik van de website en app is aanzienlijk.
+3.  Caching van relevante camping gegevens
+Om razendsnel te kunnen zoeken naar campings op plaatsnaam en via filters kunnen er relevante campinggegevens opgeslagen worden in een cache (tijdelijk geheugen voor de website of app). Dit is al toegepast in de PWA app, maar kan ook voor de SVR website toegepast worden.
+
+Tot slot
+Het was voor mij al een beloning dat ik een presentatie heb mogen geven en ik zet dit graag voort in een verdere samenwerking in welke vorm dan ook. 
+Een mogelijkheid zou kunnen zijn dat ik een app aanlever die geheel volgens jullie wensen is gebouwd, die vervolgens door de ICT-dienstverlener wordt gecontroleerd, gedistribueerd en beheerd. 
+
+Met een vriendelijk groet, 
+
+Evert Manuels
+
+Warnsveld
+tel. 0683347356
+
+

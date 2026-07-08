@@ -1,0 +1,49 @@
+[225/1176] Discovering images for: minicamping de esrand ... 2 found.
+[226/1176] Discovering images for: camping & welness de oudlandse hoeve ... 5 found.
+[227/1176] Discovering images for: minicamping gravenkasteel ... 7 found.
+[228/1176] Discovering images for: camping de peelkant ... 5 found.
+[229/1176] Discovering images for: camping boszicht ... 10 found.
+[230/1176] Discovering images for: boerderijcamping de linde ... 11 found.
+[231/1176] Discovering images for: camping costa kabrita ... 14 found.
+[232/1176] Discovering images for: camping de lindehoef ... FAILED: Status 500: <!doctype html>
+<html lang=en>
+<title>500 Internal Server Error</title>
+<h1>Internal Server Error</h1>
+<p>The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.</p>
+
+[233/1176] Discovering images for: minicamping de heemshoeve ... 2 found.
+[234/1176] Discovering images for: camping schaartven ... 6 found.
+[235/1176] Discovering images for: camping ikkinkshof ... 5 found.
+[236/1176] Discovering images for: minicamping 't brenneke ... 9 found.
+[237/1176] Discovering images for: de pothaar ... 2 found.
+
+<--- Last few GCs --->
+
+[7644:000001CA44D11E40]   493938 ms: Mark-Compact (reduce) 2044.8 (2049.6) -> 2044.6 (2047.6) MB, 2.25 / 0.00 ms  (+ 4.4 ms in 45 steps since start of marking, biggest step 0.6 ms, walltime since start of marking 9 ms) (average mu = 0.948, current mu = 0.[7644:000001CA44D11E40]   493989 ms: Mark-Compact (reduce) 2055.8 (2058.2) -> 2055.7 (2058.7) MB, 8.63 / 0.00 ms  (+ 2.3 ms in 2 steps since start of marking, biggest step 2.3 ms, walltime since start of marking 22 ms) (average mu = 0.900, current mu = 0.
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF67718C23B node::SetCppgcReference+19883
+ 2: 00007FF6770FB1B8 v8::base::CPU::num_virtual_address_bits+93912
+ 3: 00007FF677B751D1 v8::Isolate::ReportExternalAllocationLimitReached+65
+ 4: 00007FF677B5E858 v8::Function::Experimental_IsNopFunction+1336
+ 5: 00007FF6779C0490 v8::Platform::SystemClockTimeMillis+659696
+ 6: 00007FF6779BD518 v8::Platform::SystemClockTimeMillis+647544
+ 7: 00007FF6779C0512 v8::Platform::SystemClockTimeMillis+659826
+ 8: 00007FF6779B53EF v8::Platform::SystemClockTimeMillis+614479
+ 9: 00007FF677081383 v8::CpuProfileNode::GetParent+4803
+10: 00007FF67707FD36 node::TriggerNodeReport+83462
+11: 00007FF6771F1D6B uv_update_time+491
+12: 00007FF6771F18E4 uv_run+900
+13: 00007FF6771C27C5 node::SpinEventLoop+405
+14: 00007FF6770A596A v8::CpuProfileNode::GetParent+153770
+15: 00007FF67713F41D node::Start+4957
+16: 00007FF67713E0F0 node::Start+48
+17: 00007FF676EED93C AES_cbc_encrypt+151404
+18: 00007FF678399FFC inflateValidate+19196
+19: 00007FFE18897374 BaseThreadInitThunk+20
+20: 00007FFE197DCC91 RtlUserThreadStart+33
+PS C:\Users\emanu\AndroidStudioProjects\SVRpwa>

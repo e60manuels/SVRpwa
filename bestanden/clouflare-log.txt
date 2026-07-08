@@ -1,0 +1,293 @@
+Message
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] Proxied response sent to PWA with status 500.
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] SVR response preview: <!doctype html> <html lang=en> <title>500 Internal Server Error</title> <h1>Internal Server Error</h1> <p>The server encountered an internal error and was unable to complete your request. Either the s
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] x-xss-protection: 1; mode=block
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] x-content-type-options: nosniff
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] vary: Cookie
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] strict-transport-security: max-age=31536000; includeSubDomains
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] server: cloudflare
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] referrer-policy: no-referrer-when-downgrade
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] permissions-policy: interest-cohort=()
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] date: Wed, 06 May 2026 12:00:56 GMT
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] content-type: text/html; charset=utf-8
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] content-security-policy: default-src 'self' http: https: ws: wss: data: blob: 'unsafe-inline'; frame-ancestors 'self';
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] content-length: 265
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] cf-ray: 9f77d3d26fde9deb-AMS
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] cf-cache-status: DYNAMIC
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] SVR proxied response headers:
+2026-05-06 14:00:56.876
+CEST
+[lc2ibo] Received SVR response status for https://svr.nl/object/3955a868-a13c-4960-ab7c-cf674931c691: 500
+2026-05-06 14:00:56.699
+CEST
+[lc2ibo] Final Constructed Cookie header: session=eyJiZXRhYWxqYWFyIjoyMDI2LCJjaGFuZ2VkIjoxLCJkb19pZCI6NTY0NzQ5LCJlbWFpbCI6ImpkbWFudWVsc0BnbWFp...
+2026-05-06 14:00:56.699
+CEST
+[lc2ibo] Including PHPSESSID from X-SVR-PHPSESSID header.
+2026-05-06 14:00:56.699
+CEST
+[lc2ibo] Including session from X-SVR-Session header.
+2026-05-06 14:00:56.699
+CEST
+[lc2ibo] PWA Cookie header for proxied request: null
+2026-05-06 14:00:56.699
+CEST
+[lc2ibo] Proxying SVR content: https://svr.nl/object/3955a868-a13c-4960-ab7c-cf674931c691
+2026-05-06 14:00:56.699
+CEST
+[lc2ibo] Incoming request: GET https://svr-proxy-worker.e60-manuels.workers.dev/object/3955a868-a13c-4960-ab7c-cf674931c691
+2026-05-06 14:00:56.699
+CEST
+error
+GET https://svr-proxy-worker.e60-manuels.workers.dev/object/REDACTED
+2026-05-06 14:00:47.639
+CEST
+[q7doie] Proxied Nominatim response status: 200
+2026-05-06 14:00:47.617
+CEST
+[q7doie] Proxying Nominatim request for https://nominatim.openstreetmap.org/search?format=json&q=Julianadorp%2C%20Nederland&limit=1
+2026-05-06 14:00:47.617
+CEST
+[q7doie] Incoming request: GET https://svr-proxy-worker.e60-manuels.workers.dev/nominatim.openstreetmap.org/search?format=json&q=Julianadorp%2C%20Nederland&limit=1
+2026-05-06 14:00:47.617
+CEST
+info
+GET https://svr-proxy-worker.e60-manuels.workers.dev/nominatim.openstreetmap.org/search?format=json&q=Julianadorp%2C%20Nederland&limit=1
+2026-05-06 14:00:37.750
+CEST
+[20x3me] Proxied response sent to PWA with status 200.
+2026-05-06 14:00:37.750
+CEST
+[20x3me] SVR response preview: <!doctype html> <html lang="nl"> <head> <script src="https://js-de.sentry-cdn.com/90c314124a3bc2b208fb2b6c424d8e89.min.js" crossorigin="anonymous" ></script> <scrip
+2026-05-06 14:00:37.352
+CEST
+[20x3me] x-xss-protection: 1; mode=block
+2026-05-06 14:00:37.352
+CEST
+[20x3me] x-content-type-options: nosniff
+2026-05-06 14:00:37.352
+CEST
+[20x3me] vary: Accept-Encoding, Cookie
+2026-05-06 14:00:37.352
+CEST
+[20x3me] transfer-encoding: chunked
+2026-05-06 14:00:37.352
+CEST
+[20x3me] strict-transport-security: max-age=31536000; includeSubDomains
+2026-05-06 14:00:37.352
+CEST
+[20x3me] server: cloudflare
+2026-05-06 14:00:37.352
+CEST
+[20x3me] referrer-policy: no-referrer-when-downgrade
+2026-05-06 14:00:37.352
+CEST
+[20x3me] permissions-policy: interest-cohort=()
+2026-05-06 14:00:37.352
+CEST
+[20x3me] date: Wed, 06 May 2026 12:00:37 GMT
+2026-05-06 14:00:37.352
+CEST
+[20x3me] content-type: text/html; charset=utf-8
+2026-05-06 14:00:37.352
+CEST
+[20x3me] content-security-policy: default-src 'self' http: https: ws: wss: data: blob: 'unsafe-inline'; frame-ancestors 'self';, frame-ancestors *
+2026-05-06 14:00:37.352
+CEST
+[20x3me] cf-ray: 9f77d350985c9deb-AMS
+2026-05-06 14:00:37.352
+CEST
+[20x3me] cf-cache-status: DYNAMIC
+2026-05-06 14:00:37.352
+CEST
+[20x3me] SVR proxied response headers:
+2026-05-06 14:00:37.352
+CEST
+[20x3me] Received SVR response status for https://svr.nl/object/e3a649b0-6993-462f-874c-fe3462bd9893: 200
+2026-05-06 14:00:35.938
+CEST
+[20x3me] Final Constructed Cookie header: session=eyJiZXRhYWxqYWFyIjoyMDI2LCJjaGFuZ2VkIjoxLCJkb19pZCI6NTY0NzQ5LCJlbWFpbCI6ImpkbWFudWVsc0BnbWFp...
+2026-05-06 14:00:35.938
+CEST
+[20x3me] Including PHPSESSID from X-SVR-PHPSESSID header.
+2026-05-06 14:00:35.938
+CEST
+[20x3me] Including session from X-SVR-Session header.
+2026-05-06 14:00:35.938
+CEST
+[20x3me] PWA Cookie header for proxied request: null
+2026-05-06 14:00:35.938
+CEST
+[20x3me] Proxying SVR content: https://svr.nl/object/e3a649b0-6993-462f-874c-fe3462bd9893
+2026-05-06 14:00:35.938
+CEST
+[20x3me] Incoming request: GET https://svr-proxy-worker.e60-manuels.workers.dev/object/e3a649b0-6993-462f-874c-fe3462bd9893
+2026-05-06 14:00:35.938
+CEST
+info
+GET https://svr-proxy-worker.e60-manuels.workers.dev/object/REDACTED
+2026-05-06 14:00:35.913
+CEST
+[gknqji] Handling OPTIONS preflight for https://svr-proxy-worker.e60-manuels.workers.dev/object/e3a649b0-6993-462f-874c-fe3462bd9893
+2026-05-06 14:00:35.913
+CEST
+[gknqji] Incoming request: OPTIONS https://svr-proxy-worker.e60-manuels.workers.dev/object/e3a649b0-6993-462f-874c-fe3462bd9893
+2026-05-06 14:00:35.913
+CEST
+info
+OPTIONS https://svr-proxy-worker.e60-manuels.workers.dev/object/REDACTED
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] Proxied response sent to PWA with status 200.
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] SVR response preview: <!doctype html> <html lang="nl"> <head> <script src="https://js-de.sentry-cdn.com/90c314124a3bc2b208fb2b6c424d8e89.min.js" crossorigin="anonymous" ></script> <scrip
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] x-xss-protection: 1; mode=block
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] x-content-type-options: nosniff
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] vary: Accept-Encoding, Cookie
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] transfer-encoding: chunked
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] strict-transport-security: max-age=31536000; includeSubDomains
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] server: cloudflare
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] referrer-policy: no-referrer-when-downgrade
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] permissions-policy: interest-cohort=()
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] date: Wed, 06 May 2026 12:00:26 GMT
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] content-type: text/html; charset=utf-8
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] content-security-policy: default-src 'self' http: https: ws: wss: data: blob: 'unsafe-inline'; frame-ancestors 'self';, frame-ancestors *
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] cf-ray: 9f77d313befd9deb-AMS
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] cf-cache-status: DYNAMIC
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] SVR proxied response headers:
+2026-05-06 14:00:26.998
+CEST
+[zrw88m] Received SVR response status for https://svr.nl//objects: 200
+2026-05-06 14:00:26.192
+CEST
+[zrw88m] Final Constructed Cookie header: session=eyJiZXRhYWxqYWFyIjoyMDI2LCJjaGFuZ2VkIjoxLCJkb19pZCI6NTY0NzQ5LCJlbWFpbCI6ImpkbWFudWVsc0BnbWFp...
+2026-05-06 14:00:26.192
+CEST
+[zrw88m] Including PHPSESSID from X-SVR-PHPSESSID header.
+2026-05-06 14:00:26.192
+CEST
+[zrw88m] Including session from X-SVR-Session header.
+2026-05-06 14:00:26.192
+CEST
+[zrw88m] PWA Cookie header for proxied request: null
+2026-05-06 14:00:26.192
+CEST
+[zrw88m] Proxying SVR content: https://svr.nl//objects
+2026-05-06 14:00:26.192
+CEST
+[zrw88m] Incoming request: GET https://svr-proxy-worker.e60-manuels.workers.dev//objects
+2026-05-06 14:00:26.192
+CEST
+info
+GET https://svr-proxy-worker.e60-manuels.workers.dev//objects
+2026-05-06 14:00:26.126
+CEST
+[72sbr1] Handling OPTIONS preflight for https://svr-proxy-worker.e60-manuels.workers.dev//objects
+2026-05-06 14:00:26.126
+CEST
+[72sbr1] Incoming request: OPTIONS https://svr-proxy-worker.e60-manuels.workers.dev//objects
+2026-05-06 14:00:26.126
+CEST
+info
+OPTIONS https://svr-proxy-worker.e60-manuels.workers.dev//objects
+2026-05-06 14:00:24.565
+CEST
+[o18lze] Login complete. Returned 2 unique cookies to PWA.
+2026-05-06 14:00:24.565
+CEST
+[o18lze] Received login response status from SVR: 200
+2026-05-06 14:00:24.134
+CEST
+[o18lze] Step 2: Sending login POST to svr.nl/check_password.
+2026-05-06 14:00:24.134
+CEST
+[o18lze] Collected 1 initialization cookies from root. PHPSESSID: Found
+2026-05-06 14:00:24.134
+CEST
+[o18lze] Step 1 initial response status: 200
+2026-05-06 14:00:23.880
+CEST
+[o18lze] Step 1: Fetching SVR root to get initialization cookies...
+2026-05-06 14:00:23.880
+CEST
+[o18lze] Login data received: email=jdmanuels@gmail.com, password_length=10
+2026-05-06 14:00:23.880
+CEST
+[o18lze] Handling /login POST request from PWA.
+2026-05-06 14:00:23.880
+CEST
+[o18lze] Incoming request: POST https://svr-proxy-worker.e60-manuels.workers.dev/login
+2026-05-06 14:00:23.880
+CEST
+info
+POST https://svr-proxy-worker.e60-manuels.workers.dev/login
+2026-05-06 14:00:23.773
+CEST
+[2y2hsy] Handling OPTIONS preflight for https://svr-proxy-worker.e60-manuels.workers.dev/login
+2026-05-06 14:00:23.773
+CEST
+[2y2hsy] Incoming request: OPTIONS https://svr-proxy-worker.e60-manuels.workers.dev/login
+2026-05-06 14:00:23.771
+CEST
+info
