@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.47"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.48"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -1622,7 +1622,7 @@ $searchInput.on('input', function() {
     if (suggestions.length === 0) { $suggestionsList.hide(); return; }
     suggestions.forEach(p => {
         const $li = $('<li class="suggestion-item"></li>').text(p);
-        $li.on('click', () => { $searchInput.val(p); $suggestionsList.hide(); window.performSearch(); });
+        $li.on('click', (e) => { e.stopPropagation(); $searchInput.val(p); $suggestionsList.hide(); window.performSearch(); });
         $suggestionsList.append($li);
     });
     $suggestionsList.show();
@@ -1683,7 +1683,7 @@ window.performSearch = async function(forceAPI = false) {
             });
         }
 
-        // 2. Map naar formaat voor renderResults en bereken afstanden
+        // 2. Map naar formaat voor renderResults and bereken afstanden
         const objects = filtered.map(c => ({
             id: c.id,
             geometry: { coordinates: [c.lng, c.lat] },

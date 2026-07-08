@@ -1,0 +1,9 @@
+SVR ID DISCREPANTIE RAPPORT
+Gegenereerd op: 6-5-2026, 21:13:47
+-------------------------------------------
+Dit rapport bevat campings waarbij het ID in de API (backend) afwijkt van het ID op de Website (CMS).
+Deze afwijking veroorzaakt HTTP 500 errors bij het direct opvragen van de detailpagina.
+
+Naam | Stad | API ID (Fout) | Website ID (Werkend)
+-------------------------------------------
+camping smalbroek | BEILEN | c53eab92-1c25-4cc3-96b0-456f25d58eb8 | f4c27c13-f66b-4822-8549-243d0acb5777
