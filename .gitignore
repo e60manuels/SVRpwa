@@ -1,0 +1,18 @@
+# Dependency folders
+node_modules/
+
+# Backup JSON files (generated)
+data/*-backup*.json
+
+# Log / temporary files
+*.log
+*.tmp
+
+# OS / editor artefacts
+.DS_Store
+Thumbs.db
+
+# IDE / editor specific
+.idea/
+*.iml
+.vscode/

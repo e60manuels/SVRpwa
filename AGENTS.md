@@ -1,0 +1,436 @@
+# SVR Campings PWA - Project Context
+
+## Project Overview
+
+**SVR Campings** is a Progressive Web Application (PWA) that helps users find SVR (Stichting Vrije Recreatie) campings in the Netherlands and surrounding regions. The app provides map-based and list-based views of campings, with filtering capabilities by country and facilities.
+
+### Key Features
+- **Map View**: Interactive Leaflet.js map with clustering for camping locations
+- **List View**: Scrollable list of camping cards with details
+- **Search**: Location-based search using Dutch municipality data (`Woonplaatsen_in_Nederland.csv`)
+- **Filters**: Filter campings by country and facilities (e.g., WiFi, pets allowed, etc.)
+- **Offline Support**: Service Worker caches app shell, static assets, and map tiles
+- **PWA Install**: Custom install banner with beforeinstallprompt handling
+- **Responsive Design**: Mobile-first with desktop split-screen layout (v0.2.35+)
+
+### Architecture
+- **Type**: Static PWA (no build step, vanilla JavaScript)
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript (with jQuery dependency)
+- **Map Engine**: Leaflet.js 1.9.4 with MarkerCluster plugin
+- **Data Source**: Pre-fetched camping data from SVR API (stored in `data/campings.json`)
+- **Proxy**: Cloudflare Worker (`svr-proxy-worker.e60-manuels.workers.dev`) for API access
+
+---
+
+## Directory Structure
+
+```
+SVRpwa/
+├── index.html              # Main app entry point
+├── manifest.json           # PWA manifest (icons, theme colors, start URL)
+├── sw.js                   # Service Worker (offline caching strategy)
+├── offline.html            # Offline fallback page
+├── build-campings-json.js  # Node.js script to fetch/update camping data
+├── migration_inventory.md  # Migration notes from Android app to PWA
+│
+├── css/
+│   ├── local_style.css     # Main app styles (744 lines)
+│   ├── custom_styles.css   # Additional style overrides (336 lines)
+│   ├── MarkerCluster.css   # Leaflet clustering styles
+│   └── MarkerCluster.Default.css
+│
+├── js/
+│   ├── local_app.js        # Main application logic (2043 lines)
+│   ├── pwa_install.js      # PWA install banner logic (284 lines)
+│   └── leaflet.markercluster.js  # Leaflet clustering plugin
+│
+├── data/
+│   └── campings.json       # Static camping data (40k+ lines, ~13k campings)
+│
+├── assets/
+│   └── Woonplaatsen_in_Nederland.csv  # Dutch municipality data for search
+│
+├── icons/
+│   ├── icon-192.webp       # PWA icon (192x192)
+│   └── icon-512.png        # PWA icon (512x512)
+│
+├── fonts/
+│   └── befalow.ttf         # Custom font for headers
+│
+└── bestanden/              # Documentation folder
+    ├── modernization_plan.md       # Code modernization recommendations
+    ├── lighthouse_findings.md      # Performance audit results
+    ├── filter_chips_pwa_spec.md    # Filter UI specification
+    ├── local_app_map.md            # Code structure documentation
+    ├── ontwerp-v0.2.29.txt         # Design doc for v0.2.29 cleanup
+    ├── static-content-delivery-implementation-plan.md
+    └── gemini-svr-static-delivery.md
+```
+
+---
+
+## Building and Running
+
+### Development Setup
+
+1. **Serve the project locally** (any static file server):
+   ```bash
+   # Using Python
+   python -m http.server 8000
+
+   # Using Node.js
+   npx serve .
+
+   # Using PHP
+   php -S localhost:8000
+   ```
+
+2. **Access the app**: Open `http://localhost:8000` in a browser
+
+3. **PWA Testing**: Use Chrome DevTools > Application tab to test Service Worker and manifest
+
+### Data Updates
+
+To refresh the camping data from the SVR API:
+
+```bash
+# Requires environment variables
+export SVR_EMAIL=your@email.com
+export SVR_PASSWORD=your_password
+
+# Run the build script
+node build-campings-json.js
+```
+
+This script:
+- Logs into the SVR proxy worker
+- Fetches all available filters and categories
+- Retrieves all camping locations
+- Maps facility filters to each camping
+- Outputs to `data/campings.json`
+
+---
+
+## Technical Details
+
+### Service Worker Strategy (`sw.js`)
+
+| Resource Type | Strategy | Cache Name |
+|--------------|----------|------------|
+| App Shell (HTML, CSS, JS) | Network First | `svr-pwa-cache-v0.2.39` |
+| Map Tiles (OSM) | Cache First | `svr-pwa-map-tiles` |
+| API Requests | Network Only | Not cached |
+| External Libraries | Network First | `svr-pwa-cache-v0.2.39` |
+
+### Key Dependencies
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| Leaflet.js | 1.9.4 | Map rendering |
+| Leaflet.markercluster | 1.4.1 | Marker clustering |
+| jQuery | 3.6.0 | DOM manipulation (being phased out) |
+| Font Awesome | 6.4.2 | Icons |
+| Swiper.js | Latest | Carousel/slider (if used) |
+
+### State Management
+
+- **Cookies**: Store filter selections, search config, view mode
+- **localStorage**: PWA install state, banner dismissal
+- **In-memory**: `window.staticCampsites`, `window.filterCategories`
+
+### Version Tracking
+
+- **App Version**: Tracked in `window.SVR_PWA_VERSION` (currently `0.2.39`)
+- **Cache Version**: Embedded in Service Worker cache name (`v0.2.39`)
+- **Data Version**: `data/campings.json` includes `updated` timestamp and `version` field
+
+---
+
+## Development Conventions
+
+### Coding Style
+- **JavaScript**: ES6+ with IIFE pattern for encapsulation
+- **CSS**: CSS custom properties (variables) for theming
+- **Naming**: Dutch language for UI text, English for code identifiers
+
+### Known Issues & Technical Debt
+
+1. **jQuery Dependency**: Heavy reliance on jQuery in `local_app.js` - modernization plan exists in `bestanden/modernization_plan.md`
+2. **Performance**: Lighthouse score of 48 (LCP: 15.1s, TBT: 1060ms) - see `bestanden/lighthouse_findings.md`
+3. **Main Thread Blocking**: Large data file (40k+ lines) parsed synchronously
+4. **Memory**: All camping data loaded into memory at once
+
+### Completed Modernizations
+
+✅ **v0.2.30**: Single Source of Truth - `data/campings.json` as only data source
+✅ **v0.2.30**: Removed `campsites_preset.json` and `svr_cache_campsites` localStorage
+✅ **v0.2.31**: Desktop responsive breakpoints (768px, 1024px, 1440px, 1920px)
+✅ **v0.2.35**: Split-screen desktop layout (50/50 list left, map right)
+✅ **v0.2.36**: Contextual detail panel (opens on opposite side of click source)
+
+### Key Achievements **v0.2.37**:
+
+   * Desktop Layout v0.2.37 Completed:
+       * Implemented a 60/40 split-screen desktop layout (60% map on the left, 40% for list/detail/filter on the right).
+       * Achieved perfect alignment with no gaps or overlaps between the header and content containers.
+
+   * Filter Panel Stability & UX:
+       * Resolved issues with filter overlay positioning, scrolling behavior, and header sticking.
+       * Implemented a desktop-specific close button for the filter panel.
+       * Improved scrollability within the filter content area with sticky category headers.
+
+   * Map-List Synchronization:
+       * Implemented linking the "INFO" button click in the list view to synchronizing the map on desktop. Clicking
+         "INFO" now centers the map on the corresponding camping marker, opens its popup, and crucially, maintains the
+         current zoom level.
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.37 across relevant files (local_app.js, sw.js, index.html).
+
+### Key Achievements **v0.2.38**:
+
+   * Desktop Header Redesign:
+       * Added SVR logo to the left side of the header (desktop only).
+       * Search bar centered over the 40% right panel (list/detail side) on desktop.
+       * Search bar fixed at 350x36px for a more professional appearance.
+       * Logo positioned with 16px top margin for visual alignment.
+
+   * Map Zoom Controls:
+       * Added zoom in/out buttons to the map (desktop only, ≥768px).
+       * Positioned at bottom-right corner.
+       * Button size: 28x28px (compact design).
+       * Mobile users continue using two-finger pinch-to-zoom.
+
+   * Marker Popup Fix:
+       * Fixed popup not opening for campings beyond the first 10 in the list.
+       * Root cause: markers split between `markerCluster` and `top10Layer` were not handled consistently.
+       * Solution: `focusOnMarker()` now tracks which layer each marker belongs to and handles both correctly.
+       * Popup timing improved with proper animation wait.
+
+   * Detail Page Stacking Fix:
+       * Prevented multiple detail pages from stacking when clicking INFO on multiple campings.
+       * Uses `history.replaceState()` instead of `pushState()` when a detail page is already open.
+       * Mobile unaffected (scenario cannot occur due to fullscreen overlay).
+
+   * UX Improvements:
+       * Default zoom level increased from 14 to 16 for better focus on camping location.
+       * Desktop toggle button repurposed as scroll-to-top (appears when scrolling list).
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.38 across all files.
+       * Service Worker cache invalidated for fresh deployment.
+
+### Key Achievements **v0.2.39**:
+
+   * Desktop Filter Chips Alignment:
+       * Moved active-filter-chips from far left to far right side of header (desktop only, ≥768px).
+       * Replaced conflicting `flex-direction: row-reverse` with clean `justify-content: flex-end`.
+       * Removed JS-injected `padding-right` override to let CSS stylesheet control layout.
+       * Aligned chips to right edge of search container for consistent visual alignment.
+       * Mobile UI/UX remains completely unchanged.
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.39 across all files (local_app.js, sw.js, index.html, local_style.css).
+       * Service Worker cache invalidated for fresh deployment.
+
+### Key Achievements **v0.2.40**:
+
+   * Header Border:
+       * Added `border-bottom: 3px solid rgb(1, 139, 211)` to `.svr-header` in `local_style.css`.
+
+   * Locate Button Desktop Fix:
+       * Added `z-index: 2001` and `position: relative` to `.map-stack-btn` in desktop CSS.
+       * Ensures locate button is clickable above list-container stacking context.
+
+   * Search Suggestions Desktop:
+       * Repositioned `.suggestions-list` to appear directly below search container on desktop.
+       * Set `z-index: 1001` on `.svr-header` so suggestions dropdown appears above list view.
+
+   * Help Overlay Desktop Repositioning:
+       * Re-aligned all help tooltips to match desktop split-screen layout.
+       * Search help: positioned below header, centered over 40% right panel.
+       * Info help: aligned to far right, dynamically adjusts with viewport.
+       * Action button stack (SVR website, Locate, Filter): repositioned to match desktop button locations.
+       * Toggle help: hidden (toggle is scroll-to-top on desktop).
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.40 across all files.
+       * Service Worker cache invalidated for fresh deployment.
+
+### Key Achievements **v0.2.43**:
+
+   * Navigation Communication (postMessage):
+       * Implemented `window.parent.postMessage` calls for Detail and Filter panel states.
+       * Added state synchronization for "open" and "close" events to support integration with parent apps (e.g., hiding tab bars).
+       * Robust handling for desktop (panel switches, closeRightPanel) and mobile (popstate, applyState).
+       * Verified `window.parent !== window` check for security and stability.
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.43 across all files.
+       * Manual cache busting for assets in `index.html`.
+
+### Key Achievements **v0.2.47**:
+
+   * Data Healing & Enrichment:
+       * Identified and resolved a critical discrepancy where SVR API IDs differed from SVR Website CMS IDs for 67 campsites, causing 500 errors.
+       * Implemented `heal-campings-json.js` to map and correct these IDs, ensuring detail pages load correctly.
+       * `data/campings_enriched.json` now serves as the single "UI-ready" source of truth, combining raw API data with scraped enrichment details (images, svr_id) for optimal performance.
+
+   * Cloudflare Worker Modernization:
+       * Implemented a robust 3-step login flow to simulate authentic browser sessions, including initial cookie capture and PHPSESSID synchronization.
+       * Added mandatory browser navigation headers (`sec-fetch-*`, etc.) to `/object/` requests to bypass WAF/security filtering.
+       * Standardized all internal domains to non-www `https://svr.nl` to prevent 301 redirect overhead and session loss.
+
+   * PWA Performance & Stability:
+       * Implemented version-based cache busting for `data/campings.json` (`?v=0.2.47`) to force data refreshes without disabling browser caching.
+       * Resolved CORS header mismatches for custom headers (`X-SVR-PHPSESSID`) to fix detail page loading.
+
+   * Versioning:
+       * Updated all version indicators to v0.2.47.
+       * Service Worker cache invalidated to ensure clean rollout.
+
+---
+
+## Data Enrichment Strategy
+
+### `data/campings_enriched.json`
+This file is the final, UI-ready dataset used by the PWA. It acts as a cache of scraped enrichment data (such as image URLs, descriptions, and the verified `svr_id` needed for stable detail page access). By keeping this file maintained, the PWA avoids real-time scraping, ensuring the UI remains fast and responsive while providing full camping details.
+
+### Key Achievements **v0.2.45**:
+
+   * Sticky Filter Headers:
+       * Implemented `position: sticky` with dynamic CSS variable tracking for filter section headers.
+       * Headers now respond dynamically to the variable height of the active filters bar, preventing overlaps.
+       * Applied consistent styling across mobile and desktop for better UX.
+
+   * Help Overlay Refinement:
+       * Fine-tuned help overlay positions based on user feedback (Filter: 120px, Locate: 170px, SVR Website: 220px).
+       * Updated Toggle positioning to 70px for consistent alignment.
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.45 across all files.
+       * Service Worker cache invalidated for fresh deployment.
+
+### Key Achievements **v0.2.44**:
+
+   * Map Action Stack Optimization:
+       * Decreased the `gap` between map-action-btn buttons from 12px to 6px for a more compact design.
+       * Adjusted `bottom` position of `.map-actions-stack` to 60px to ensure the buttons are fully visible and properly spaced from the bottom edge.
+
+   * Versioning:
+       * Updated app and cache versions to v0.2.44 across all files.
+       * Service Worker cache invalidated for fresh deployment.
+
+### Current Work In Progress (v0.2.36+)
+
+🔧 **Install Prompt**:
+- [ ] Install banner not triggering on installed PWA — Chrome's `beforeinstallprompt` only fires once per origin.
+- [ ] User must clear Chrome site data or uninstall/reinstall to re-trigger native prompt.
+- [ ] Manual fallback: `showInstallPromotion()` called when ⓘ help button is clicked.
+
+---
+
+## Desktop Split-Screen Layout (v0.2.35+)
+
+### Layout Breakpoint: 768px
+
+**Desktop (≥768px):**
+```
+┌─────────────────────────────────────────────────────────────┐
+│  [SVR Logo]    [====Zoekveld====]  [Filter Chips →]        │
+├──────────────────────────┬──────────────────────────────────┤
+│      LIJST (60%)         │      KAART (40%)                 │
+│      Links               │      Rechts                      │
+│                          │                                  │
+│  [Card 1] [INFO] ───────▶│  DETAIL PANEL (opent hier)       │
+│                          │                                  │
+└──────────────────────────┴──────────────────────────────────┘
+```
+
+**Mobile (<768px):**
+- Toggle wisselt tussen kaart en lijst (fullscreen)
+- Detail opent als fullscreen overlay
+- Filter opent als fullscreen overlay
+
+### CSS Classes for Desktop Modes
+
+**Body Classes:**
+- `split-mode` - Beide panelen zichtbaar (50/50)
+- `map-only-mode` - Alleen kaart (100%)
+- `list-only-mode` - Alleen lijst (100%)
+
+**Detail Panel Classes:**
+- `detail-from-list` - Panel opent rechts (replaces map)
+- `detail-from-map` - Panel opent links (replaces list)
+
+### Key Functions
+
+```javascript
+// Toggle button handler (desktop: 3 modes, mobile: 2 modes)
+$('#toggleView').on('click', () => { ... });
+
+// Set desktop view mode
+function setDesktopViewMode(mode) { ... }
+
+// Show detail page with context-aware positioning
+window.showSVRDetailPage = function(objectId, source = 'auto') { ... }
+
+// Apply state (mobile-only, desktop uses CSS)
+function applyState(state) { ... }
+```
+
+---
+
+## API Reference
+
+### SVR Proxy Worker Endpoints
+
+```
+POST /login
+  Body: { email, password }
+  Response: { session_id }
+
+GET /api/objects?page=0&lat={lat}&lng={lng}&distance={meters}&limit={count}
+  Headers: X-SVR-Session: {session_id}
+  Response: { objects: [...], total: number }
+
+GET /objects
+  Headers: X-SVR-Session, X-SVR-Filters, X-SVR-Config
+  Response: HTML (filter options parsed from page)
+```
+
+### Data Structure (`campings.json`)
+
+```json
+{
+  "updated": "ISO-8601 timestamp",
+  "version": "1.0.0",
+  "categories": [
+    { "name": "Category Name", "ids": ["guid-1", "guid-2"] }
+  ],
+  "campings": [
+    {
+      "id": "camping-id",
+      "naam": "Camping Name",
+      "stad": "City",
+      "lat": 52.1234,
+      "lng": 5.5678,
+      "type": "Camping type",
+      "filters": ["facility-guid-1", "facility-guid-2"]
+    }
+  ]
+}
+```
+
+---
+
+## Git Remotes
+
+- **origin**: `https://github.com/e60manuels/SVRpwa.git` (production - GitHub Pages)
+- **staging**: `https://github.com/e60manuels/SVRpwa-test.git` (testing)
+
+### Deploy Commands
+```bash
+git push origin main    # Deploy to production
+git push staging main   # Deploy to staging
+```
