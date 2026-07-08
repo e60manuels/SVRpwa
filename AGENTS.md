@@ -269,6 +269,22 @@ This script:
        * Updated app and cache versions to v0.2.43 across all files.
        * Manual cache busting for assets in `index.html`.
 
+### Key Achievements **v0.2.49**:
+
+   * Search Dropdown Overlap Fix:
+       * Resolved a critical UI issue where the search suggestions dropdown-list was being rendered behind/under the active filters bar (`.filters-nav-container`).
+       * Added `position: relative` and `z-index: 10` to `.search-container` globally, and `z-index: 2010 !important` on desktop layout, to ensure suggestions list is always stacked on top.
+       * Prevents overlapping filter chips from blocking click/tap selection on longer suggestion lists.
+
+   * Versioning:
+       * Updated all version indicators to v0.2.49 across code, HTML, Service Worker, and data structures.
+       * Service Worker cache invalidated to ensure clean rollout of CSS layout updates.
+
+### Key Achievements **v0.2.48**:
+
+   * Versioning:
+       * Updated app version to v0.2.48.
+
 ### Key Achievements **v0.2.47**:
 
    * Data Healing & Enrichment:
