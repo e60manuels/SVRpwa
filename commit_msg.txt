@@ -1,0 +1,6 @@
+v0.2.49: Fix search dropdown overlap with active filter chips
+
+- Added position:relative + z-index:10 to .search-container (mobile)
+- Added z-index:2010 !important to .svr-top-row .search-container (desktop)
+- Ensures suggestions dropdown always renders above the active filters bar
+- Bumped all version indicators to v0.2.49 (JS, HTML, SW cache, JSON)

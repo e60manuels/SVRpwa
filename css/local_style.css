@@ -122,7 +122,8 @@
             cursor: pointer; 
             color: var(--svr-red); 
             font-size: 14px; 
-        }        .search-container { flex: 1; display: flex; background: white; border-radius: 20px; padding: 0 8px; align-items: center; height: 40px; box-sizing: border-box; }
+        }
+        .search-container { flex: 1; display: flex; background: white; border-radius: 20px; padding: 0 8px; align-items: center; height: 40px; box-sizing: border-box; position: relative; z-index: 10; }
         .search-container input { border: none; outline: none; width: 100%; padding: 0 8px; font-size: 15px; background: transparent; }
         
         #searchIcon { color: var(--svr-blue); padding: 5px; font-size: 16px; }
@@ -204,7 +205,7 @@
         .suggestions-list {
             position: absolute; top: 45px; left: 12px; right: 12px;
             background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            max-height: 200px; overflow-y: auto; z-index: 2000; display: none; 
+            max-height: 200px; overflow-y: auto; z-index: 5000; display: none; 
             margin: 0; padding: 0; list-style: none;
         }
         .suggestion-item { padding: 10px 15px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; color: #333; }
@@ -609,6 +610,7 @@
         position: absolute !important;
         left: 80% !important;
         transform: translateX(-175px) !important;
+        z-index: 2010 !important;
     }
 
     /* Navigatiepijltjes aanpassen voor desktop */
