@@ -1,6 +1,8 @@
+// Version tracking for cache busting
+const APP_VERSION = "0.2.50";
+
 // ============================================================
 // pwa_install.js
-// ============================================================
 // Betrouwbare PWA install flow:
 // - Race condition fix: deferredPrompt wordt altijd opgeslagen,
 //   knop wordt enabled zodra DOM beschikbaar is.
