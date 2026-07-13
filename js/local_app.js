@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.50"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.51"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -1736,7 +1736,10 @@ async function renderDetail(objectId) {
         if (htmlContent.includes("Mail met link is verstuurd") || htmlContent.includes("We hebben je zojuist een mailtje gestuurd")) {
             console.error("⚠️ DEBUG [iOS Issue]: Received login/verification page instead of detail content.");
             console.error("URL:", detailUrl);
-            console.log("HTML Preview:", htmlContent.substring(0, 500));
+            
+            // In-app debug alert for iOS (since no remote debugging is available)
+            const debugMsg = `DEBUG [iOS Issue]: Ontving inlogpagina.\nURL: ${detailUrl}\n\nHTML Preview (eerste 100 tekens): ${htmlContent.substring(0, 100)}`;
+            alert(debugMsg);
         }
         // --- END: DIAGNOSTIC LOGGING ---
 
