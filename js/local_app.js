@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.49"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.50"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -1731,6 +1731,14 @@ async function renderDetail(objectId) {
         if (!htmlContent || htmlContent.includes("Internal Server Error")) {
             throw new Error("SVR response invalid or empty");
         }
+
+        // --- START: DIAGNOSTIC LOGGING ---
+        if (htmlContent.includes("Mail met link is verstuurd") || htmlContent.includes("We hebben je zojuist een mailtje gestuurd")) {
+            console.error("⚠️ DEBUG [iOS Issue]: Received login/verification page instead of detail content.");
+            console.error("URL:", detailUrl);
+            console.log("HTML Preview:", htmlContent.substring(0, 500));
+        }
+        // --- END: DIAGNOSTIC LOGGING ---
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
