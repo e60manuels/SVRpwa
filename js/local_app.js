@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.51"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.52"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -236,7 +236,7 @@ window.SVR_PWA_VERSION = "0.2.51"; // Increment this number with each commit
             if (needsSVRSession && res.status === 401) {
                 console.warn('⚠️ Sessie verlopen, opnieuw inloggen vereist');
                 logDebug('⚠️ Sessie verlopen (401)');
-                if (window.showLoginScreen) window.showLoginScreen();
+                window.logoutSVR("Sessie verlopen");
                 throw new Error('Session expired');
             }
 
@@ -1743,9 +1743,7 @@ async function renderDetail(objectId) {
         // fallback HTML still slips through with a 200.
         if (htmlContent.includes("Mail met link is verstuurd") || htmlContent.includes("We hebben je zojuist een mailtje gestuurd")) {
             logDebug(`Sessie ongeldig/verlopen gedetecteerd bij detailpagina: ${detailUrl}`);
-            localStorage.removeItem('svr_session_id');
-            localStorage.removeItem('svr_phpsessid');
-            if (window.showLoginScreen) window.showLoginScreen("Sessie verlopen");
+            window.logoutSVR("Sessie verlopen");
             throw new Error("Sessie verlopen, log opnieuw in.");
         }
         // --- END: SESSION VALIDITY FALLBACK ---
@@ -2206,6 +2204,71 @@ function renderResults(objects, cLat, cLng) {
     }
 }
 
+// === MAP MENU (svr.nl link + Uitloggen) ===
+window.toggleMapMenu = function() {
+    const existingMenu = document.getElementById('map-actions-menu');
+    if (existingMenu) {
+        existingMenu.remove();
+        if (window._closeMapMenuOnOutsideClick) {
+            document.removeEventListener('click', window._closeMapMenuOnOutsideClick);
+        }
+        return;
+    }
+
+    const menuHtml = `
+        <div id="map-actions-menu" style="
+            position: absolute; top: 0; right: 100%; margin-right: 8px;
+            background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            min-width: 190px; z-index: 9999; overflow: hidden;
+        ">
+            <button id="menu-open-svr" style="
+                display: block; width: 100%; padding: 12px 16px; border: none; background: none;
+                text-align: left; font-size: 15px; color: #333; cursor: pointer; border-bottom: 1px solid #eee;
+            "><i class="fas fa-globe" style="width: 20px; margin-right: 8px;"></i>www.svr.nl</button>
+            <button id="menu-logout" style="
+                display: block; width: 100%; padding: 12px 16px; border: none; background: none;
+                text-align: left; font-size: 15px; color: #d9534f; cursor: pointer;
+            "><i class="fas fa-sign-out-alt" style="width: 20px; margin-right: 8px;"></i>Uitloggen</button>
+        </div>
+    `;
+
+    const wrapper = document.getElementById('menu-btn-wrapper');
+    wrapper.insertAdjacentHTML('beforeend', menuHtml);
+
+    document.getElementById('menu-open-svr').addEventListener('click', () => {
+        window.open('https://www.svr.nl', '_blank');
+        window.toggleMapMenu();
+    });
+
+    document.getElementById('menu-logout').addEventListener('click', () => {
+        window.toggleMapMenu();
+        window.logoutSVR();
+    });
+
+    // Sluit het menu bij een tap buiten het menu/de knop, maar pas vanaf de
+    // volgende event-cyclus zodat de klik die het menu opende het niet meteen
+    // weer sluit.
+    setTimeout(() => {
+        window._closeMapMenuOnOutsideClick = function(e) {
+            const menu = document.getElementById('map-actions-menu');
+            const btn = document.getElementById('menuBtn');
+            if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
+                window.toggleMapMenu();
+            }
+        };
+        document.addEventListener('click', window._closeMapMenuOnOutsideClick);
+    }, 0);
+};
+
+// Ruimt de lokale sessie op en toont het inlogscherm. Wordt gebruikt door de
+// "Uitloggen"-knop, en is tevens de eenvoudigste manier om de sessie-verlopen
+// flow (401 -> inlogscherm) handmatig te testen op elk toestel.
+window.logoutSVR = function() {
+    localStorage.removeItem('svr_session_id');
+    localStorage.removeItem('svr_phpsessid');
+    if (window.showLoginScreen) window.showLoginScreen('Uitgelogd');
+};
+
 window.showHelp = function() {
     const dynamicText = document.getElementById('dynamic-help-text');
     if (isListView) { dynamicText.innerText = 'Terug naar boven scrollen'; }
@@ -2302,6 +2365,15 @@ async function loginToSVR(email, password) {
     return false;
   }
 }
+
+// Centrale logout-helper: ruimt lokale sessiegegevens op en toont het inlogscherm.
+// Wordt gebruikt door: de 401-afhandeling in fetchWithRetry, de fallback-detectie
+// in renderDetail, en de "Uitloggen"-optie in het actiemenu.
+window.logoutSVR = function(reason = "Uitgelogd") {
+    localStorage.removeItem('svr_session_id');
+    localStorage.removeItem('svr_phpsessid');
+    if (window.showLoginScreen) window.showLoginScreen(reason);
+};
 
 window.showLoginScreen = function(reason = "") {
   if (document.getElementById('login-overlay')) return;
@@ -2473,6 +2545,37 @@ window.closeHelpOverlayAndShowPWA = function() {
     window.shouldShowPWAAfterHelp = false; // Reset the flag after checking/showing
 };
 
+// Toggle voor het actiemenu (svr.nl-link + uitloggen), geopend via de bovenste
+// knop in de map-actions-stack.
+window.toggleActionsMenu = function() {
+    const menu = document.getElementById('actions-menu');
+    if (!menu) return;
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+};
+
 $(document).ready(() => {
     initApp();
+
+    // Actiemenu: svr.nl openen
+    $('#menu-svr-link').on('click', () => {
+        window.open('https://www.svr.nl', '_blank');
+        $('#actions-menu').hide();
+    });
+
+    // Actiemenu: uitloggen (ruimt sessie op en toont het inlogscherm; werkt
+    // ook prima als handmatige test van de sessie-verlopen-flow)
+    $('#menu-logout').on('click', () => {
+        $('#actions-menu').hide();
+        window.logoutSVR("Uitgelogd");
+    });
+
+    // Menu sluiten bij een tap buiten het menu of de knop zelf
+    $(document).on('click', (e) => {
+        const menu = document.getElementById('actions-menu');
+        const menuBtn = document.getElementById('menuBtn');
+        if (menu && menu.style.display === 'block' &&
+            !menu.contains(e.target) && e.target !== menuBtn && !menuBtn.contains(e.target)) {
+            menu.style.display = 'none';
+        }
+    });
 });
