@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.52"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.53"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -2215,25 +2215,35 @@ window.toggleMapMenu = function() {
         return;
     }
 
-    const menuHtml = `
-        <div id="map-actions-menu" style="
-            position: absolute; top: 0; right: 100%; margin-right: 8px;
-            background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            min-width: 190px; z-index: 9999; overflow: hidden;
-        ">
-            <button id="menu-open-svr" style="
-                display: block; width: 100%; padding: 12px 16px; border: none; background: none;
-                text-align: left; font-size: 15px; color: #333; cursor: pointer; border-bottom: 1px solid #eee;
-            "><i class="fas fa-globe" style="width: 20px; margin-right: 8px;"></i>www.svr.nl</button>
-            <button id="menu-logout" style="
-                display: block; width: 100%; padding: 12px 16px; border: none; background: none;
-                text-align: left; font-size: 15px; color: #d9534f; cursor: pointer;
-            "><i class="fas fa-sign-out-alt" style="width: 20px; margin-right: 8px;"></i>Uitloggen</button>
-        </div>
-    `;
+    const btn = document.getElementById('menuBtn');
+    const rect = btn.getBoundingClientRect();
 
-    const wrapper = document.getElementById('menu-btn-wrapper');
-    wrapper.insertAdjacentHTML('beforeend', menuHtml);
+    // Position: fixed t.o.v. de viewport en direct aan <body> gehangen (niet
+    // aan #menu-btn-wrapper) zodat dit menu altijd bovenop alles verschijnt,
+    // ongeacht eventuele position/overflow/stacking-context verschillen tussen
+    // de mobiele en desktop CSS-layout van .map-actions-stack. Dit is hetzelfde
+    // betrouwbare patroon (position: fixed, hoge z-index) als het login-overlay,
+    // dat al bewezen op beide platformen goed werkt.
+    const menu = document.createElement('div');
+    menu.id = 'map-actions-menu';
+    menu.style.cssText = `
+        position: fixed;
+        top: ${rect.top}px;
+        left: ${Math.max(8, rect.left - 198)}px;
+        background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        min-width: 190px; z-index: 10000; overflow: hidden;
+    `;
+    menu.innerHTML = `
+        <button id="menu-open-svr" style="
+            display: block; width: 100%; padding: 12px 16px; border: none; background: none;
+            text-align: left; font-size: 15px; color: #333; cursor: pointer; border-bottom: 1px solid #eee;
+        "><i class="fas fa-globe" style="width: 20px; margin-right: 8px;"></i>www.svr.nl</button>
+        <button id="menu-logout" style="
+            display: block; width: 100%; padding: 12px 16px; border: none; background: none;
+            text-align: left; font-size: 15px; color: #d9534f; cursor: pointer;
+        "><i class="fas fa-sign-out-alt" style="width: 20px; margin-right: 8px;"></i>Uitloggen</button>
+    `;
+    document.body.appendChild(menu);
 
     document.getElementById('menu-open-svr').addEventListener('click', () => {
         window.open('https://www.svr.nl', '_blank');
@@ -2250,9 +2260,8 @@ window.toggleMapMenu = function() {
     // weer sluit.
     setTimeout(() => {
         window._closeMapMenuOnOutsideClick = function(e) {
-            const menu = document.getElementById('map-actions-menu');
-            const btn = document.getElementById('menuBtn');
-            if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
+            const m = document.getElementById('map-actions-menu');
+            if (m && !m.contains(e.target) && !btn.contains(e.target)) {
                 window.toggleMapMenu();
             }
         };
@@ -2545,37 +2554,6 @@ window.closeHelpOverlayAndShowPWA = function() {
     window.shouldShowPWAAfterHelp = false; // Reset the flag after checking/showing
 };
 
-// Toggle voor het actiemenu (svr.nl-link + uitloggen), geopend via de bovenste
-// knop in de map-actions-stack.
-window.toggleActionsMenu = function() {
-    const menu = document.getElementById('actions-menu');
-    if (!menu) return;
-    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-};
-
 $(document).ready(() => {
     initApp();
-
-    // Actiemenu: svr.nl openen
-    $('#menu-svr-link').on('click', () => {
-        window.open('https://www.svr.nl', '_blank');
-        $('#actions-menu').hide();
-    });
-
-    // Actiemenu: uitloggen (ruimt sessie op en toont het inlogscherm; werkt
-    // ook prima als handmatige test van de sessie-verlopen-flow)
-    $('#menu-logout').on('click', () => {
-        $('#actions-menu').hide();
-        window.logoutSVR("Uitgelogd");
-    });
-
-    // Menu sluiten bij een tap buiten het menu of de knop zelf
-    $(document).on('click', (e) => {
-        const menu = document.getElementById('actions-menu');
-        const menuBtn = document.getElementById('menuBtn');
-        if (menu && menu.style.display === 'block' &&
-            !menu.contains(e.target) && e.target !== menuBtn && !menuBtn.contains(e.target)) {
-            menu.style.display = 'none';
-        }
-    });
 });
