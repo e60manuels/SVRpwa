@@ -20,6 +20,10 @@
 - **Data Source**: Pre-fetched camping data from SVR API (stored in `data/campings.json`)
 - **Proxy**: Cloudflare Worker (`svr-proxy-worker.e60-manuels.workers.dev`) for API access
 
+### Versioning Strategy
+
+- **App & Cache Versioning**: Increment the version number (`vX.Y.Z`) across `index.html`, `js/local_app.js`, `js/pwa_install.js`, `sw.js`, and `merge-and-enrich.js` for every production deploy to force Service Worker cache invalidation.
+- **Note on `data/campings_enriched.json`**: This is a static data file and does **not** need to be updated with the app version for cache-busting purposes. It can retain its own data-specific versioning if necessary.
 ---
 
 ## Directory Structure

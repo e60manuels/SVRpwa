@@ -15,7 +15,7 @@ function handleOptions(request) {
     headers: {
       'Access-Control-Allow-Origin': allowOrigin,
       'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie, X-Requested-With, X-SVR-Session, X-SVR-Filters, X-SVR-Config', // Added Custom Headers
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie, X-Requested-With, X-SVR-Session, X-SVR-PHPSESSID, X-SVR-Filters, X-SVR-Config', // Added Custom Headers
       'Access-Control-Allow-Credentials': 'true',
     }
   })
@@ -83,7 +83,7 @@ async function handleRequest(request) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie, X-Requested-With, X-SVR-Session, X-SVR-Filters, X-SVR-Config', // Added Custom Headers
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie, X-Requested-With, X-SVR-Session, X-SVR-PHPSESSID, X-SVR-Filters, X-SVR-Config', // Added Custom Headers
     'Access-Control-Allow-Credentials': 'true',
   }
 
@@ -102,97 +102,117 @@ async function handleRequest(request) {
       console.log(`[${requestId}] Handling /login POST request from PWA.`);
       let data
       try {
-        data = await request.json() // This is fine for POST, it expects JSON
+        data = await request.json()
       } catch(e) {
         console.error(`[${requestId}] Error parsing JSON from PWA for /login: ${e.message}`);
         return new Response(JSON.stringify({error: "Invalid JSON body provided to /login"}), {status: 400, headers: corsHeaders})
       }
-      console.log(`[${requestId}] Login data received: email=${data.email}, password_length=${data.password.length}`);
-      console.log(`[${requestId}] PWA Cookie header for login (if any): ${headers.get('Cookie')}`);
+      console.log(`[${requestId}] Login data received: email=${data.email}, password_length=${data.password ? data.password.length : 0}`);
 
+      // --- STEP 1: Get initialization cookies from SVR root ---
+      console.log(`[${requestId}] Step 1: Fetching SVR root to get initialization cookies...`);
+      const initialResponse = await fetch('https://svr.nl/', {
+        headers: { 
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
+        }
+      });
+      
+      console.log(`[${requestId}] Step 1 initial response status: ${initialResponse.status}`);
+      const initialCookies = [];
+      let phpSessionId = null;
+      for (const [key, value] of initialResponse.headers.entries()) {
+        if (key.toLowerCase() === 'set-cookie') {
+          initialCookies.push(value);
+          const phpMatch = value.match(/PHPSESSID=([^;]+)/i);
+          if (phpMatch) phpSessionId = phpMatch[1];
+        }
+      }
+      console.log(`[${requestId}] Collected ${initialCookies.length} initialization cookies from root. PHPSESSID: ${phpSessionId ? 'Found' : 'Not found'}`);
 
-      // Convert JSON to URL-encoded form data for SVR
+      // --- STEP 2: Perform actual login with initialization cookies ---
       const formData = new URLSearchParams()
       formData.append('email', data.email)
       formData.append('password', data.password)
 
-      console.log(`[${requestId}] Sending login POST to svr.nl/check_password.`);
+      console.log(`[${requestId}] Step 2: Sending login POST to svr.nl/check_password.`);
+      const loginHeaders = {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Origin': 'https://svr.nl',
+        'Referer': 'https://svr.nl/login',
+        'X-Requested-With': 'XMLHttpRequest'
+      };
+      
+      if (initialCookies.length > 0) {
+        // Construct Cookie header from all captured cookies (extracting name=value parts)
+        const cookiePairs = initialCookies.map(c => c.split(';')[0].trim());
+        loginHeaders['Cookie'] = cookiePairs.join('; ');
+      }
 
-      // POST to SVR
       const loginResponse = await fetch('https://svr.nl/check_password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Origin': 'https://svr.nl',
-          'Referer': 'https://svr.nl/login',
-          'X-Requested-With': 'XMLHttpRequest',
-          // NO COOKIE FROM PWA YET FOR LOGIN, SO WE DON'T FORWARD ONE HERE
-        },
+        headers: loginHeaders,
         body: formData.toString(),
         redirect: 'manual'
       })
+      
       console.log(`[${requestId}] Received login response status from SVR: ${loginResponse.status}`);
-      
-      // LOG ALL RESPONSE HEADERS FROM SVR.NL
-      console.log(`[${requestId}] SVR login response headers:`);
-      for (const [key, value] of loginResponse.headers.entries()) {
-          console.log(`[${requestId}]   ${key}: ${value}`);
-      }
-
-      // Get response body
       const loginResponseBody = await loginResponse.clone().text()
-      console.log(`[${requestId}] SVR login response body (first 200 chars): ${loginResponseBody.substring(0, 200)}`);
       
-      // Try to parse JSON
-      let jsonBody
+      let jsonBody;
       let sessionCookieValue = null;
       try {
         jsonBody = JSON.parse(loginResponseBody)
-        console.log(`[${requestId}] SVR login response parsed as JSON.`);
       } catch (e) {
-        // SVR might return HTML on error
         jsonBody = { message: "Non-JSON response from SVR", preview: loginResponseBody.substring(0, 100) }
-        console.log(`[${requestId}] SVR login response was NOT JSON.`);
       }
 
-      // Extract session cookie value if present
+      // Extract cookies from login response
+      const loginCookies = [];
       for (const [key, value] of loginResponse.headers.entries()) {
         if (key.toLowerCase() === 'set-cookie') {
-          const match = value.match(/session=([^;]+)/);
-          if (match && match[1]) {
-            sessionCookieValue = match[1];
-            console.log(`[${requestId}] Extracted session cookie value: ${sessionCookieValue.substring(0, 20)}...`);
-            break; 
-          }
+          loginCookies.push(value);
+          const sessionMatch = value.match(/session=([^;]+)/);
+          if (sessionMatch) sessionCookieValue = sessionMatch[1];
+          const phpMatch = value.match(/PHPSESSID=([^;]+)/i);
+          if (phpMatch) phpSessionId = phpMatch[1];
         }
       }
 
-      // Add session cookie value to the JSON response for the PWA
-      if (sessionCookieValue) {
-        jsonBody.session_id = sessionCookieValue;
-      }
+      // Add identifiers to JSON for PWA localStorage
+      if (sessionCookieValue) jsonBody.session_id = sessionCookieValue;
+      if (phpSessionId) jsonBody.phpsessid = phpSessionId;
       
-      // Construct response
       const response = new Response(JSON.stringify(jsonBody), {
         status: loginResponse.status,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders
-        }
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       })
 
-      // Forward all Set-Cookie headers from SVR to the PWA
-      const workerDomain = new URL(request.url).hostname; // Get the worker's hostname
-      for (const [key, value] of loginResponse.headers.entries()) {
-        if (key.toLowerCase() === 'set-cookie') {
-          const transformedCookie = transformSetCookieHeader(value, workerDomain);
-          response.headers.append('Set-Cookie', transformedCookie);
-          console.log(`[${requestId}] Transformed and forwarded Set-Cookie from SVR to PWA: ${transformedCookie.substring(0, 50)}...`);
+      // --- STEP 3: Return all unique cookies to PWA ---
+      const workerDomain = new URL(request.url).hostname;
+      const seenCookieNames = new Set();
+      
+      // Helper to process and append cookies
+      const processCookies = (cookies) => {
+        for (const cookie of cookies) {
+          const nameMatch = cookie.match(/^([^=]+)=/);
+          if (nameMatch) {
+            const name = nameMatch[1];
+            if (!seenCookieNames.has(name)) {
+              const transformed = transformSetCookieHeader(cookie, workerDomain);
+              response.headers.append('Set-Cookie', transformed);
+              seenCookieNames.add(name);
+            }
+          }
         }
-      }
-      console.log(`[${requestId}] Login response sent to PWA with status ${response.status}.`);
+      };
 
+      // Priority: login cookies (newer/authed) then initial cookies
+      processCookies(loginCookies);
+      processCookies(initialCookies);
+
+      console.log(`[${requestId}] Login complete. Returned ${seenCookieNames.size} unique cookies to PWA.`);
       return response
     }
 
@@ -255,11 +275,13 @@ async function handleRequest(request) {
 
 
     // 4. PROXY SVR.NL REQUESTS (Simplified)
-    let targetPath = url.pathname;
-    let svrHostname = 'https://www.svr.nl';
+    let targetPath = url.pathname.replace(/\/+/g, '/'); // Sanitize: Replace double slashes with single slash
+    if (!targetPath.startsWith('/')) targetPath = '/' + targetPath; // Ensure it starts with a slash
+    
+    let svrHostname = 'https://svr.nl';
 
     // No special path manipulation here. The PWA's fetchWithRetry already correctly
-    // transforms www.svr.nl API paths to /api/* when needed, and direct SVR object
+    // transforms svr.nl API paths to /api/* when needed, and direct SVR object
     // page navigation is now /object/*
     // The worker should simply forward its incoming path directly to svr.nl.
     const targetUrl = `${svrHostname}${targetPath}${url.search}`;
@@ -271,7 +293,7 @@ async function handleRequest(request) {
     corsHeaders['X-Debug-Target-Url'] = targetUrl
 
     // Filter headers to forward
-    const allowedHeaders = ['accept', 'content-type', 'cookie', 'user-agent', 'x-requested-with', 'accept-language', 'x-svr-session', 'x-svr-filters', 'x-svr-config'] // Add custom headers
+    const allowedHeaders = ['accept', 'content-type', 'cookie', 'user-agent', 'x-requested-with', 'accept-language', 'x-svr-session', 'x-svr-phpsessid', 'x-svr-filters', 'x-svr-config'] // Add custom headers
     const proxyHeaders = new Headers()
     
     // Base headers copy - skip cookie for manual handling to avoid duplication
@@ -284,43 +306,65 @@ async function handleRequest(request) {
     // Construct Cookie Header from various sources
     let cookieParts = [];
     
-    // 1. Existing PWA cookies (if any, though usually blocked cross-origin)
+    // 1. Existing PWA cookies (if any)
     const pwaCookieHeader = headers.get('Cookie');
-    if (pwaCookieHeader) cookieParts.push(pwaCookieHeader);
+    if (pwaCookieHeader) {
+        cookieParts.push(pwaCookieHeader);
+    }
 
-    // 2. Custom Session Header
+    // 2. Custom Session Header (mapped to 'session' cookie)
     const customSessionHeader = headers.get('X-SVR-Session');
-    if (customSessionHeader) cookieParts.push(`session=${customSessionHeader}`);
+    if (customSessionHeader) {
+        cookieParts.push(`session=${customSessionHeader}`);
+        console.log(`[${requestId}] Including session from X-SVR-Session header.`);
+    }
 
-    // 3. Custom Filter Headers
+    // 3. Custom PHPSESSID Header (mapped to 'PHPSESSID' cookie)
+    // Robust check for both case variants
+    const phpSessionHeader = headers.get('X-SVR-PHPSESSID') || headers.get('x-svr-phpsessid');
+    if (phpSessionHeader) {
+        cookieParts.push(`PHPSESSID=${phpSessionHeader}`);
+        console.log(`[${requestId}] Including PHPSESSID from X-SVR-PHPSESSID header.`);
+    } else {
+        console.log(`[${requestId}] WARNING: No PHPSESSID header found in request.`);
+    }
+
+    // 4. Custom Filter Headers
     const customFilters = headers.get('X-SVR-Filters');
     if (customFilters) cookieParts.push(`filters=${customFilters}`);
 
     const customConfig = headers.get('X-SVR-Config');
     if (customConfig) cookieParts.push(`config=${customConfig}`);
 
-    // 4. Default cookies expected by SVR (mimic Android behavior)
+    // 5. Default cookies expected by SVR (mimic Android behavior)
     cookieParts.push('cookies=1'); 
     cookieParts.push('view_mode=map');
 
     if (cookieParts.length > 0) {
-        const fullCookieString = cookieParts.join('; ');
+        // Remove duplicates and join
+        const uniqueCookieParts = [...new Set(cookieParts)];
+        const fullCookieString = uniqueCookieParts.join('; ');
         proxyHeaders.set('Cookie', fullCookieString);
-        console.log(`[${requestId}] Constructed Cookie header for SVR: ${fullCookieString.substring(0, 150)}...`);
-    } else {
-        console.log(`[${requestId}] No Cookies to send to SVR`);
+        console.log(`[${requestId}] Final Constructed Cookie header: ${fullCookieString.substring(0, 100)}...`);
     }
-    if (!proxyHeaders.has('user-agent')) {
-      proxyHeaders.set('user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-    }
+    
+    // FIX: Force a Desktop User-Agent to bypass potential iOS/WebKit filtering on SVR side
+    proxyHeaders.set('user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
     
     // Ensure we ask for HTML if we are fetching a detail page
     if (targetPath.startsWith('/object/')) {
         proxyHeaders.set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8');
+        proxyHeaders.set('sec-fetch-dest', 'document');
+        proxyHeaders.set('sec-fetch-mode', 'navigate');
+        proxyHeaders.set('sec-fetch-site', 'same-origin');
+        proxyHeaders.set('sec-fetch-user', '?1');
+        proxyHeaders.set('upgrade-insecure-requests', '1');
+        proxyHeaders.set('cache-control', 'no-cache');
+        proxyHeaders.set('pragma', 'no-cache');
     }
 
-    proxyHeaders.set('Origin', 'https://www.svr.nl') // Ensure origin is svr.nl for requests to svr.nl
-    proxyHeaders.set('Referer', 'https://www.svr.nl/') // Ensure referer is svr.nl for requests to svr.nl
+    proxyHeaders.set('Origin', 'https://svr.nl') // Ensure origin is svr.nl for requests to svr.nl
+    proxyHeaders.set('Referer', 'https://svr.nl/') // Ensure referer is svr.nl for requests to svr.nl
 
     const fetchOptions = {
       method: request.method,
@@ -348,6 +392,15 @@ async function handleRequest(request) {
         console.log(`[${requestId}]   ${key}: ${value}`);
     }
 
+    const responseText = await svrResponse.text();
+    console.log(`[${requestId}] SVR response preview: ${responseText.substring(0, 200)}`);
+
+    if (!responseText || responseText.trim().length === 0) {
+        console.error(`[${requestId}] SVR returned empty response body.`);
+        return new Response('Empty response from SVR', { 
+            status: 502, headers: corsHeaders 
+        });
+    }
 
     // Prepare response headers
     const newHeaders = new Headers(svrResponse.headers)
@@ -370,7 +423,7 @@ async function handleRequest(request) {
     }
     console.log(`[${requestId}] Proxied response sent to PWA with status ${svrResponse.status}.`);
 
-    return new Response(svrResponse.body, {
+    return new Response(responseText, {
       status: svrResponse.status,
       statusText: svrResponse.statusText,
       headers: newHeaders

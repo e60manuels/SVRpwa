@@ -229,8 +229,11 @@ window.SVR_PWA_VERSION = "0.2.51"; // Increment this number with each commit
         try {
             const res = await fetch(fetchUrl, options);
 
-            // Check for 401 = sessie expired (only for SVR requests)
-            if (isSVRDomain && res.status === 401) {
+            // Check for 401 = sessie expired (for any SVR-bound request, whether
+            // called via svr.nl directly or already via the proxy base URL —
+            // e.g. renderDetail() calls the proxy URL directly, so isSVRDomain
+            // alone would miss it here)
+            if (needsSVRSession && res.status === 401) {
                 console.warn('⚠️ Sessie verlopen, opnieuw inloggen vereist');
                 logDebug('⚠️ Sessie verlopen (401)');
                 if (window.showLoginScreen) window.showLoginScreen();
@@ -1732,16 +1735,20 @@ async function renderDetail(objectId) {
             throw new Error("SVR response invalid or empty");
         }
 
-        // --- START: DIAGNOSTIC LOGGING ---
+        // --- SESSION VALIDITY FALLBACK ---
+        // Defensive check: the Worker now detects an invalid/expired session for
+        // /object/* requests and returns HTTP 401 (handled above by fetchWithRetry's
+        // 401 branch, which already throws before we get here). This check remains
+        // as a safety net in case the Worker's detection ever misses a case and the
+        // fallback HTML still slips through with a 200.
         if (htmlContent.includes("Mail met link is verstuurd") || htmlContent.includes("We hebben je zojuist een mailtje gestuurd")) {
-            console.error("⚠️ DEBUG [iOS Issue]: Received login/verification page instead of detail content.");
-            console.error("URL:", detailUrl);
-            
-            // In-app debug alert for iOS (since no remote debugging is available)
-            const debugMsg = `DEBUG [iOS Issue]: Ontving inlogpagina.\nURL: ${detailUrl}\n\nHTML Preview (eerste 100 tekens): ${htmlContent.substring(0, 100)}`;
-            alert(debugMsg);
+            logDebug(`Sessie ongeldig/verlopen gedetecteerd bij detailpagina: ${detailUrl}`);
+            localStorage.removeItem('svr_session_id');
+            localStorage.removeItem('svr_phpsessid');
+            if (window.showLoginScreen) window.showLoginScreen("Sessie verlopen");
+            throw new Error("Sessie verlopen, log opnieuw in.");
         }
-        // --- END: DIAGNOSTIC LOGGING ---
+        // --- END: SESSION VALIDITY FALLBACK ---
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
