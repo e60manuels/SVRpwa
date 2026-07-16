@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.53"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.54"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -2187,7 +2187,7 @@ function renderResults(objects, cLat, cLng) {
                 <div class="card-distance"><i class="fa-solid fa-map-pin"></i> Afstand: ${(obj.distM/1000).toFixed(1)} km</div>
             </div>
             <div class="camping-actions">
-                <a href="#" class="action-btn btn-kaart" onclick="window.focusOnMarker(${lat},${lng}, '${obj.id}'); return false;"><i class="fa-solid fa-map"></i> KAART</a>
+                <a href="#" class="action-btn btn-kaart" onclick="window.focusOnMarker(${lat},${lng}, '${obj.id}', map.getZoom()); return false;"><i class="fa-solid fa-map"></i> KAART</a>
                 <a href="#" class="action-btn btn-route" onclick="window.openNavHelper(${lat}, ${lng}, '${safeName}'); return false;"><i class="fa-solid fa-route"></i> ROUTE</a>
                 <a href="#" class="action-btn btn-info" onclick="window.showSVRDetailPage('${obj.id}', 'list'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
             </div>
