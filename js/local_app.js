@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.54"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.55"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -1874,6 +1874,16 @@ async function renderDetail(objectId) {
                 #detail-container .footer h3 { color: black !important; font-family: 'Befalow', sans-serif; }
 
                 #detail-container .pt-5 { padding-top: 1.5rem !important; }
+
+                /* Navigation Arrows */
+                #detail-container .swiper-button-prev, #detail-container .swiper-button-next {
+                    color: white; background: rgba(0,0,0,0.3);
+                    width: 30px; height: 30px; border-radius: 50%;
+                    font-size: 15px; font-weight: bold;
+                }
+                #detail-container .swiper-button-prev:after, #detail-container .swiper-button-next:after {
+                    font-size: 15px;
+                }
             `;
             tempDiv.prepend(containerStyle);
 
@@ -1985,6 +1995,14 @@ async function renderDetail(objectId) {
                                     pagination.className = 'swiper-pagination';
                                     swiperContainer.appendChild(pagination);
 
+                                    const prevBtn = document.createElement('div');
+                                    prevBtn.className = 'swiper-button-prev';
+                                    swiperContainer.appendChild(prevBtn);
+
+                                    const nextBtn = document.createElement('div');
+                                    nextBtn.className = 'swiper-button-next';
+                                    swiperContainer.appendChild(nextBtn);
+
                                     mainImageContainer.parentNode.replaceChild(swiperContainer, mainImageContainer);
 
                                     if (typeof Swiper !== 'undefined') {
@@ -2005,6 +2023,10 @@ async function renderDetail(objectId) {
                                             pagination: {
                                                 el: '.swiper-pagination',
                                                 clickable: true,
+                                            },
+                                            navigation: {
+                                                nextEl: '.swiper-button-next',
+                                                prevEl: '.swiper-button-prev',
                                             },
                                             threshold: 10,
                                             followFinger: true,
