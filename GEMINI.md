@@ -273,6 +273,27 @@ This script:
        * Updated app and cache versions to v0.2.43 across all files.
        * Manual cache busting for assets in `index.html`.
 
+### Key Achievements **v0.2.56**:
+
+   * Camping Data Refresh:
+       * Nieuwe campingdata gegenereerd met `build-campings-json.js` (verdwenen/opnieuw geregistreerde/nieuwe campings t.o.v. de dataset van mei 2026).
+       * 1166 → 1133 campings; 12 campings opnieuw geregistreerd met nieuw UUID.
+       * Data-backup geparkeerd in `data/campings-backup-20260906-125646.json`.
+       * Versie en cache gebumped naar v0.2.56 voor cache-invalidatie van `data/campings.json`.
+
+### Key Achievements **v0.2.55**:
+
+   * Image Carousel Navigation:
+       * Geïmplementeerd Swiper navigatiepijlen voor de image carrousel in de detailpagina (zowel desktop als mobiel).
+       * Toegevoegde CSS-styling voor betere zichtbaarheid en interactie van de navigatieknoppen.
+       * Geconfigureerd `loop: true` voor naadloze overgang van laatste naar eerste afbeelding.
+
+### Key Achievements **v0.2.54**:
+
+   * KAART Knop Zoom Fix:
+       * Aangepast `KAART` knop gedrag in de lijstweergave: gebruikt nu het huidige kaart-zoomniveau (`map.getZoom()`) in plaats van hardcoded zoomniveau 16.
+       * Hiermee is het gedrag consistent met de `INFO` knop, wat zorgt voor een betere gebruikerservaring op desktop.
+
 ### Key Achievements **v0.2.49**:
 
    * Search Dropdown Overlap Fix:
