@@ -1,5 +1,5 @@
 // Version tracking for cache busting
-const APP_VERSION = "0.2.55";
+const APP_VERSION = "0.2.56";
 
 // ============================================================
 // pwa_install.js
