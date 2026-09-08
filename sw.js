@@ -1,4 +1,4 @@
-const CACHE_NAME = 'svr-pwa-cache-v0.2.56';
+const CACHE_NAME = 'svr-pwa-cache-v0.2.57';
 const MAP_CACHE_NAME = 'svr-pwa-map-tiles';
 const ASSETS_TO_CACHE = [
   './',
@@ -108,8 +108,11 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Cache-first strategy for other static assets
+    caches.match(event.request, { ignoreSearch: true }).then((response) => {
+      // Cache-first strategy for other static assets.
+      // ignoreSearch: true zorgt dat verzoeken met een cache-busting querystring
+      // (bijv. css/local_style.css?v=0.2.56) toch de precachete versie vinden
+      // (./css/local_style.css), ook zonder netwerkverbinding.
       return response || fetch(event.request).catch((error) => {
         // For image/script requests that fail and are not in cache
         throw error;
