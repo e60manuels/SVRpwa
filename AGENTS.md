@@ -140,8 +140,8 @@ This script:
 
 ### Version Tracking
 
-- **App Version**: Tracked in `window.SVR_PWA_VERSION` (currently `0.2.39`)
-- **Cache Version**: Embedded in Service Worker cache name (`v0.2.39`)
+- **App Version**: Tracked in `window.SVR_PWA_VERSION` (currently `0.2.59`)
+- **Cache Version**: Embedded in Service Worker cache name (`v0.2.59`)
 - **Data Version**: `data/campings.json` includes `updated` timestamp and `version` field
 
 ---
@@ -155,7 +155,7 @@ This script:
 
 ### Known Issues & Technical Debt
 
-1. **jQuery Dependency**: Heavy reliance on jQuery in `local_app.js` - modernization plan exists in `bestanden/modernization_plan.md`
+1. **jQuery Dependency**: Heavy reliance on jQuery in `local_app.js` (47× `$(...)`, 11× `.on(`) - modernization plan exists in `bestanden/modernization_plan.md`. Plan reviewed against codebase in v0.2.59: item 4 (DOM/marker batching) is done, items 1 and 6 were already obsolete, items 2/3/5 (event listeners, `applyState` show/hide, native smooth scroll) are still open and pending joint prioritization with the maintaining developers.
 2. **Performance**: Lighthouse score of 48 (LCP: 15.1s, TBT: 1060ms) - see `bestanden/lighthouse_findings.md`
 3. **Main Thread Blocking**: Large data file (40k+ lines) parsed synchronously
 4. **Memory**: All camping data loaded into memory at once
@@ -336,6 +336,27 @@ This file is the final, UI-ready dataset used by the PWA. It acts as a cache of 
    * Versioning:
        * Updated app and cache versions to v0.2.44 across all files.
        * Service Worker cache invalidated for fresh deployment.
+
+### Key Achievements **v0.2.57 - v0.2.59** (voorbereiding bestuurs-/developersmeeting):
+
+   * Offline Cache-Key Mismatch Fix (v0.2.57):
+       * Root cause gevonden: lokale assets (`css/local_style.css`, `css/custom_styles.css`, `js/local_app.js`, `js/pwa_install.js`, `data/campings.json`) worden runtime opgevraagd met een cache-busting querystring (`?v=X.X.X`), maar door `sw.js` precachet zonder querystring — een cache-key-mismatch die offline tot een onopgemaakte, kapotte app-shell leidde.
+       * Fix: `caches.match(event.request, { ignoreSearch: true })` in de generieke cache-first strategie, zodat versie-URL's altijd de precachete versie vinden.
+       * Bevestigd met een live offline-test op Android/Chrome (geïnstalleerde PWA, volledig gesloten en heropend).
+
+   * Duidelijke Offline-Foutmeldingen (v0.2.58):
+       * Zoeken, filterpaneel en detailpagina hangen alle drie af van een live netwerkaanroep (Nominatim-geocoding resp. de SVR-proxy) die `fetchWithRetry()` bij een netwerkfout stil opving en als lege string teruggaf — dit leidde tot misleidende meldingen ("Plaats niet gevonden", "Geen filters beschikbaar", "SVR response invalid or empty") in plaats van een herkenbare offline-melding.
+       * Alle drie tonen nu een duidelijke "geen internetverbinding"-melding wanneer `navigator.onLine` false is. Functioneel blijven deze onderdelen offline niet beschikbaar (bewuste architectuurkeuze, live data), alleen de foutmelding is verbeterd.
+
+   * Marker- en DOM-rendering performance (v0.2.59):
+       * `renderResults` bouwde voorheen per camping-kaart een losse jQuery `.append()`-call op en voegde kaartmarkers één voor één toe via `markerCluster.addLayer()` — beide raken de bekende performance-bevinding (Lighthouse-score 48, TBT 1060ms).
+       * Nu: alle camping-kaarten worden als array opgebouwd en in één `insertAdjacentHTML`-call ingevoegd; cluster-markers (buiten de top 10) worden gebatcht via `markerCluster.addLayers()`. `top10Layer` (max. 10 items, `L.featureGroup()`) is ongewijzigd — geen batch-API beschikbaar, geen meetbare winst bij dat aantal.
+       * Zie `bestanden/modernization_plan.md` voor de volledige jQuery-modernisatiestatus per punt.
+
+   * Repo-opruiming:
+       * Losse debug-/rapportbestanden verplaatst van de root naar `bestanden/` resp. `bestanden/reports/`.
+       * `README.md` toegevoegd als ontbrekend startpunt voor de repository.
+       * `GEMINI.md` vervangen door een verwijzing naar dit bestand (enige bron van waarheid, conform de AGENTS.md-standaard).
 
 ### Current Work In Progress (v0.2.36+)
 
