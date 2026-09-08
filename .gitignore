@@ -4,6 +4,11 @@ node_modules/
 # Backup JSON files (generated)
 data/*-backup*.json
 
+# Generated debug/report output (should land in bestanden/reports/, not root)
+/temp_check.txt
+/discrepancy_report_svr.txt
+/missing_svr_id_report*.txt
+
 # Log / temporary files
 *.log
 *.tmp
