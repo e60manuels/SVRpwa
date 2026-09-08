@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.57"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.58"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -764,7 +764,10 @@ window.hideFilterOverlay = function() {
             } else {
                 logDebug("Geen HTML ontvangen voor filters");
                 loading.style.display = 'none';
-                content.innerHTML = '<div style="padding:20px;text-align:center;">Geen filters beschikbaar</div>';
+                const filterFallbackMsg = !navigator.onLine
+                    ? 'Filters zijn alleen beschikbaar met een internetverbinding.'
+                    : 'Geen filters beschikbaar';
+                content.innerHTML = `<div style="padding:20px;text-align:center;">${filterFallbackMsg}</div>`;
             }
         } catch (e) {
             logDebug("Filter Fout: " + e.message);
@@ -1647,9 +1650,10 @@ window.performSearch = async function(forceAPI = false) {
         if (coords) {
             sLat = coords.latitude; sLng = coords.longitude;
         } else {
-            // Feedback voor niet gevonden locatie
+            // Feedback voor niet gevonden locatie (of geen internet: geocoding vereist een verbinding)
             const originalPlaceholder = $searchInput.attr('placeholder');
-            $searchInput.val('').attr('placeholder', 'Plaats niet gevonden...').addClass('search-error');
+            const notFoundMsg = !navigator.onLine ? 'Geen internetverbinding...' : 'Plaats niet gevonden...';
+            $searchInput.val('').attr('placeholder', notFoundMsg).addClass('search-error');
             setTimeout(() => {
                 $searchInput.attr('placeholder', originalPlaceholder).removeClass('search-error');
             }, 3000);
@@ -2097,7 +2101,10 @@ async function renderDetail(objectId) {
         if (splashScreen) splashScreen.classList.add('hide');
         const elementsToClear = Array.from(detailSheet.children).filter(el => el.id !== 'detail-splash');
         elementsToClear.forEach(el => el.remove());
-        $(detailSheet).append(`<div style="padding:40px;text-align:center;"><h3>Fout</h3><p>${e.message}</p><button onclick="window.handleDetailBack()">Terug</button></div>`);
+        const detailErrorMsg = !navigator.onLine
+            ? 'Detailpagina\'s zijn alleen beschikbaar met een internetverbinding.'
+            : e.message;
+        $(detailSheet).append(`<div style="padding:40px;text-align:center;"><h3>${!navigator.onLine ? 'Geen internetverbinding' : 'Fout'}</h3><p>${detailErrorMsg}</p><button onclick="window.handleDetailBack()">Terug</button></div>`);
     }
 }
 
