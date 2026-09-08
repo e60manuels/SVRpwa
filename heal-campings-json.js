@@ -3,7 +3,7 @@ const path = require('path');
 
 const API_DATA_PATH = './data/campings.json';
 const WEBSITE_DATA_PATH = './bestanden/detailpagina.txt';
-const REPORT_PATH = './discrepancy_report_svr.txt';
+const REPORT_PATH = './bestanden/reports/discrepancy_report_svr.txt';
 
 function normalizeName(name) {
     return name.toLowerCase()
