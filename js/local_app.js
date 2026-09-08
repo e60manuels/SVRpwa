@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.58"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.59"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -2169,9 +2169,12 @@ window.focusOnMarker = function(lat, lng, objectId, targetZoom = 16) {
 };
 
 function renderResults(objects, cLat, cLng) {
-    markerCluster.clearLayers(); top10Layer.clearLayers(); $('#resultsList').empty();
-    if (objects.length === 0) { $('#resultsList').append('<div style="padding:20px;text-align:center;">Geen campings gevonden.</div>'); return; }
+    markerCluster.clearLayers(); top10Layer.clearLayers();
+    const resultsListEl = document.getElementById('resultsList');
+    if (objects.length === 0) { resultsListEl.innerHTML = '<div style="padding:20px;text-align:center;">Geen campings gevonden.</div>'; return; }
     const bounds = L.latLngBounds([cLat, cLng]);
+    const clusterMarkers = []; // batch: verzamelt markers voor markerCluster.addLayers()
+    const cardsHtml = []; // batch: bouwt alle kaarten op, één keer invoegen na de loop
     objects.forEach((obj, index) => {
         const p = obj.properties, g = obj.geometry; if (!g) return;
 
@@ -2207,7 +2210,7 @@ function renderResults(objects, cLat, cLng) {
         </div>`;
 
         marker.bindPopup(popup);
-        if (index < 10) { top10Layer.addLayer(marker); bounds.extend([lat, lng]); } else markerCluster.addLayer(marker);
+        if (index < 10) { top10Layer.addLayer(marker); bounds.extend([lat, lng]); } else clusterMarkers.push(marker);
 
         const card = `<div class="camping-card">
             <div class="card-body">
@@ -2221,8 +2224,10 @@ function renderResults(objects, cLat, cLng) {
                 <a href="#" class="action-btn btn-info" onclick="window.showSVRDetailPage('${obj.id}', 'list'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
             </div>
         </div>`;
-        $('#resultsList').append(card);
+        cardsHtml.push(card);
     });
+    markerCluster.addLayers(clusterMarkers); // batch toevoegen i.p.v. addLayer() per marker -> voorkomt main-thread blocking
+    resultsListEl.insertAdjacentHTML('beforeend', cardsHtml.join(''));
     
     // Store bounds for later use
     window.lastMapBounds = bounds;
