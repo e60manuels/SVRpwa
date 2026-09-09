@@ -343,7 +343,7 @@ This file is the final, UI-ready dataset used by the PWA. It acts as a cache of 
        * Root cause: de X-sluitknop in de filteroverlay riep `window.hideFilterOverlay()` aan (alleen visueel verbergen), niet `window.closeFilterOverlay()` (dat ook de `{view:'filters'}` history-entry opruimt via `history.back()`) zoals de "Toepassen"- en "Wis filters"-knoppen wel deden.
        * Reproductie: filter openen → sluiten via X zonder optie te kiezen → detailpagina openen → detailpagina sluiten. De history-stack bleef `[kaart, filters, detail]` i.p.v. de 'filters'-entry netjes te poppen, waardoor `history.back()` bij het sluiten van de detailpagina op de filter-state landde en het paneel opnieuw opende.
        * Fix: X-knop roept nu ook `window.closeFilterOverlay()` aan.
-       * Bekend, bewust niet meegefixed: `closeRightPanel()` (het desktop toggle-knop-sluitpad) heeft hetzelfde onderliggende probleem. Wordt vanaf 7 plekken aangeroepen, deels al binnen `popstate`-afhandeling — vereist per-call-site-review om een `history.back()`-lus te voorkomen.
+       * Nader onderzocht (v0.2.60, bevestigd op een onafhankelijke kopie van de app): de sluit-check in `toggle_filters()` op de desktop-route (`filterEl.style.display === 'block'`) is dode code — `openRightPanel('filter')` zet het paneel altijd op `display: 'flex'`, dus die branch matcht nooit. Alle overige aanroepen van `closeRightPanel()`/`hideFilterOverlay()` zijn reactieve opruim-calls ná een reeds veranderde history-state, niet zelf een sluit-trigger. Geen verder risico gevonden; geen actie nodig.
 
 ### Key Achievements **v0.2.57 - v0.2.59** (voorbereiding bestuurs-/developersmeeting):
 
