@@ -140,8 +140,8 @@ This script:
 
 ### Version Tracking
 
-- **App Version**: Tracked in `window.SVR_PWA_VERSION` (currently `0.2.59`)
-- **Cache Version**: Embedded in Service Worker cache name (`v0.2.59`)
+- **App Version**: Tracked in `window.SVR_PWA_VERSION` (currently `0.2.60`)
+- **Cache Version**: Embedded in Service Worker cache name (`v0.2.60`)
 - **Data Version**: `data/campings.json` includes `updated` timestamp and `version` field
 
 ---
@@ -336,6 +336,14 @@ This file is the final, UI-ready dataset used by the PWA. It acts as a cache of 
    * Versioning:
        * Updated app and cache versions to v0.2.44 across all files.
        * Service Worker cache invalidated for fresh deployment.
+
+### Key Achievements **v0.2.60**:
+
+   * Filter-paneel Heropent Onterecht na Detailpagina (Navigatie-bug):
+       * Root cause: de X-sluitknop in de filteroverlay riep `window.hideFilterOverlay()` aan (alleen visueel verbergen), niet `window.closeFilterOverlay()` (dat ook de `{view:'filters'}` history-entry opruimt via `history.back()`) zoals de "Toepassen"- en "Wis filters"-knoppen wel deden.
+       * Reproductie: filter openen → sluiten via X zonder optie te kiezen → detailpagina openen → detailpagina sluiten. De history-stack bleef `[kaart, filters, detail]` i.p.v. de 'filters'-entry netjes te poppen, waardoor `history.back()` bij het sluiten van de detailpagina op de filter-state landde en het paneel opnieuw opende.
+       * Fix: X-knop roept nu ook `window.closeFilterOverlay()` aan.
+       * Bekend, bewust niet meegefixed: `closeRightPanel()` (het desktop toggle-knop-sluitpad) heeft hetzelfde onderliggende probleem. Wordt vanaf 7 plekken aangeroepen, deels al binnen `popstate`-afhandeling — vereist per-call-site-review om een `history.back()`-lus te voorkomen.
 
 ### Key Achievements **v0.2.57 - v0.2.59** (voorbereiding bestuurs-/developersmeeting):
 
