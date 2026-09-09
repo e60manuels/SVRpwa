@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.59"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.60"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -481,7 +481,7 @@ window.SVR_PWA_VERSION = "0.2.59"; // Increment this number with each commit
         <div class="svr-overlay-header" id="filter-drag-header">
             <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 10px; pointer-events: none;"><div style="width: 40px; height: 5px; background: #BBB; border-radius: 3px;"></div></div>
             <h3 class="svr-overlay-title">Filters</h3>
-            <div class="svr-overlay-close" onclick="window.hideFilterOverlay()"><i class="fas fa-times"></i></div>
+            <div class="svr-overlay-close" onclick="window.closeFilterOverlay()"><i class="fas fa-times"></i></div>
         </div>
         <div id="svr-filter-overlay-content">
             <div id="active-filters-holder"><div id="active-tags-container"></div></div>
