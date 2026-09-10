@@ -337,6 +337,13 @@ This file is the final, UI-ready dataset used by the PWA. It acts as a cache of 
        * Updated app and cache versions to v0.2.44 across all files.
        * Service Worker cache invalidated for fresh deployment.
 
+### Key Achievements **v0.2.61**:
+
+   * Klikbare Campingnaam in Lijstweergave:
+       * De campingnaam (`<h3>`) bovenaan elke tile in de lijstweergave is nu ook klikbaar en opent dezelfde detailpagina als de INFO-knop.
+       * Gebruikt dezelfde aanroep (`window.showSVRDetailPage(id, 'list')`) en hetzelfde patroon als de bestaande naam-link op map-popups.
+       * CSS: `.camping-name-link` met `cursor: pointer` en underline-on-hover zodat het klikbare karakter zichtbaar is.
+
 ### Key Achievements **v0.2.60**:
 
    * Filter-paneel Heropent Onterecht na Detailpagina (Navigatie-bug):
