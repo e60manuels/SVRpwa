@@ -191,7 +191,6 @@
         .card-body { padding: 10px 12px; }
         .card-body h3 { margin: 0 0 2px 0; font-family: 'Befalow', sans-serif; font-size: 25px; color: var(--svr-blue); font-weight: normal; }
         .camping-name-link { cursor: pointer; }
-        .camping-name-link:hover { text-decoration: underline; }
         .card-location { font-size: 13px; color: var(--svr-green); font-weight: 500; margin-bottom: 2px; }
         .card-distance { font-size: 13px; color: var(--svr-red); font-weight: 500; }
         
