@@ -337,6 +337,16 @@ This file is the final, UI-ready dataset used by the PWA. It acts as a cache of 
        * Updated app and cache versions to v0.2.44 across all files.
        * Service Worker cache invalidated for fresh deployment.
 
+### Key Achievements **v0.2.63**:
+
+   * Service Worker-update blijft (te) lang uit op productie — oude versie bleef terugkomen:
+       * Symptoom: na deploys bleef productie op v0.2.60 hangen; pas na cookies/site-data wissen kwam de nieuwe versie door.
+       * Oorzaak: GitHub Pages/Fastly serveert `sw.js` en `index.html` met `Cache-Control: max-age=600`, en de registratie gebruikte `{ updateViaCache: 'all' }`. Browsers moesten bij een SW-updatecheck de gecachte (oude) `sw.js` zónder hervalidatie gebruiken → de oude SW bleef actief, oude caches bleven staan en serveerden cache-first de oude assets.
+       * Fix (SW-rolout-mechanisme):
+           * `index.html`: registratie met `updateViaCache: 'none'` zodat updatechecks `sw.js` altijd opnieuw ophalen, registratie direct bij laden, en een `controllerchange`-listener die éénmalig herlaadt zodra een nieuwe SW (`skipWaiting` + `clients.claim`) de controle overneemt.
+           * `sw.js`: de network-first fetch van `index.html` gebruikt `{ cache: 'no-cache' }`, zodat de HTML altijd hervalideert i.p.v. de tot-10-minuten-oude gecachte HTML te serveren.
+       * Geen backdoor: gebruikers met een oude SW pakken de fix bij hun eerstvolgende bezoek op; daarna is een update binnen één extra reload actief.
+
 ### Key Achievements **v0.2.62**:
 
    * Geen Underline op Campingnaam-Link:

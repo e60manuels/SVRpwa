@@ -1,4 +1,4 @@
-const CACHE_NAME = 'svr-pwa-cache-v0.2.62';
+const CACHE_NAME = 'svr-pwa-cache-v0.2.63';
 const MAP_CACHE_NAME = 'svr-pwa-map-tiles';
 const ASSETS_TO_CACHE = [
   './',
@@ -88,7 +88,9 @@ self.addEventListener('fetch', (event) => {
 
   if (isAppShell) {
     event.respondWith(
-      fetch(event.request)
+      // cache: 'no-cache' forceert hervalidatie met de server, zodat GitHub
+      // Pages/Fastly's max-age=600 de HTML niet tot tien minuten oud serveert.
+      fetch(event.request, { cache: 'no-cache' })
         .then(networkResponse => {
           return caches.open(CACHE_NAME).then(cache => {
             cache.put(event.request, networkResponse.clone()); // Update cache
