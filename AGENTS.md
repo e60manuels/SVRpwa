@@ -337,6 +337,12 @@ This file is the final, UI-ready dataset used by the PWA. It acts as a cache of 
        * Updated app and cache versions to v0.2.44 across all files.
        * Service Worker cache invalidated for fresh deployment.
 
+### Key Achievements **v0.2.64**:
+
+   * Dummy release test (na de v0.2.63 SW-rolout-fix):
+       * Doel: verifiëren dat een nieuwe versie nu direct doorkomt — zonder de 10-minutenwachttijd (max-age=600) — door alleen een versiebump te publiceren.
+       * Verwacht resultaat: na volledig sluiten/ heropenen van de geïnstalleerde PWA staat het infoscherm meteen op v0.2.64.
+
 ### Key Achievements **v0.2.63**:
 
    * Service Worker-update blijft (te) lang uit op productie — oude versie bleef terugkomen:
