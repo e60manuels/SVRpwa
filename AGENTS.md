@@ -337,6 +337,12 @@ This file is the final, UI-ready dataset used by the PWA. It acts as a cache of 
        * Updated app and cache versions to v0.2.44 across all files.
        * Service Worker cache invalidated for fresh deployment.
 
+### Key Achievements **v0.2.62**:
+
+   * Geen Underline op Campingnaam-Link:
+       * Na testen bleek de hover-underline (`text-decoration: underline` op `.camping-name-link:hover`) ongewenst: bij klikken flitst de naam kort als link onderstreept, en bij sluiten van de detailpagina blijft de streep staan zolang de pointer boven de tile hangt.
+       * Fix: hover-underline-regel verwijderd. Alleen `cursor: pointer` op `.camping-name-link` resteert; geen onderstreping zichtbaar bij hover of na sluiten van de detailpagina.
+
 ### Key Achievements **v0.2.61**:
 
    * Klikbare Campingnaam in Lijstweergave:
