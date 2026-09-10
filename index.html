@@ -36,8 +36,8 @@
     <link rel="preload" href="https://unpkg.com/swiper/swiper-bundle.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css"></noscript>
 
-    <link rel="stylesheet" href="css/local_style.css?v=0.2.62" />
-    <link rel="stylesheet" href="css/custom_styles.css?v=0.2.62" />
+    <link rel="stylesheet" href="css/local_style.css?v=0.2.63" />
+    <link rel="stylesheet" href="css/custom_styles.css?v=0.2.63" />
 </head>
 <body>
 
@@ -175,19 +175,28 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
-    <script src="js/local_app.js?v=0.2.62"></script>
-    <script src="js/pwa_install.js?v=0.2.62"></script>
+    <script src="js/local_app.js?v=0.2.63"></script>
+    <script src="js/pwa_install.js?v=0.2.63"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js', { updateViaCache: 'all' })
-                    .then(reg => {
-                        console.log('Service Worker geregistreerd', reg);
-                        // Force update check on every launch
-                        reg.update();
-                    })
-                    .catch(err => console.log('Service Worker registratie mislukt', err));
-            });
+            // updateViaCache: 'none' dwingt de browser sw.js bij een updatecheck
+            // opnieuw op te halen. GitHub Pages/Fastly cachen sw.js met max-age=600;
+            // met 'all' bleef een oude SW ongedetecteerd en serveerden oude caches de oude app.
+            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+                .then(reg => {
+                    console.log('Service Worker geregistreerd', reg);
+                    // Force update check on every launch
+                    reg.update();
+                })
+                .catch(err => console.log('Service Worker registratie mislukt', err));
+
+            // Er draaide al een SW -> zodra een nieuwe versie controle overneemt
+            // (skipWaiting + clients.claim), herlaad direct naar de verse versie.
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    window.location.reload();
+                });
+            }
         }
     </script>
 </body>
