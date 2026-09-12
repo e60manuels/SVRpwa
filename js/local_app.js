@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.64"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.69"; // Increment this number with each commit
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -176,7 +176,8 @@ window.SVR_PWA_VERSION = "0.2.64"; // Increment this number with each commit
                 pathForProxy = originalUrl.hostname + originalUrl.pathname;
             }
 
-            fetchUrl = `${PROXY_BASE_URL}/${pathForProxy}${originalUrl.search}`;
+            const pathSeparator = pathForProxy.startsWith('/') ? '' : '/';
+            fetchUrl = `${PROXY_BASE_URL}${pathSeparator}${pathForProxy}${originalUrl.search}`;
             logDebug(`Proxying original request: ${url} -> ${fetchUrl}`);
         } else {
             // If the URL is ALREADY the proxy base URL, then we treat it as a direct proxy request
@@ -782,7 +783,7 @@ window.hideFilterOverlay = function() {
     function createFilterItem(webNode) {
         const input = webNode.querySelector('input');
         if (!input) return null;
-        const guid = input.getAttribute('data-filter-id') || input.id;
+        const guid = input.getAttribute('data-filter-id') || input.value || input.id;
         const name = webNode.querySelector('label')?.innerText.trim() || "Onbekend";
 
         if (!guid || guid === "null") return null;
@@ -2171,6 +2172,9 @@ window.focusOnMarker = function(lat, lng, objectId, targetZoom = 16) {
 function renderResults(objects, cLat, cLng) {
     markerCluster.clearLayers(); top10Layer.clearLayers();
     const resultsListEl = document.getElementById('resultsList');
+    // Vervang altijd de vorige lijst (v0.2.59-latere invoering van insertAdjacentHTML
+    // had de oude $('#resultsList').empty() laten vallen -> stale resultaten bleven staan)
+    resultsListEl.innerHTML = '';
     if (objects.length === 0) { resultsListEl.innerHTML = '<div style="padding:20px;text-align:center;">Geen campings gevonden.</div>'; return; }
     const bounds = L.latLngBounds([cLat, cLng]);
     const clusterMarkers = []; // batch: verzamelt markers voor markerCluster.addLayers()
