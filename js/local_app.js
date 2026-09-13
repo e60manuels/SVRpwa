@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.75"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.76"; // Increment this number with each commit
 
 // Normaliseer zoektekst: kleine letters, diakritiek weg, aanhalingstekens
 // genormaliseerd, meerdere spaties ingedikt.
@@ -172,9 +172,8 @@ function getCampingNameMatches(q) {
         const queryLower = normalizeSearchText(q);
         if (!queryLower) return [];
 
-        // Plaatsnamen zijn primair in de zoekhulp; campingnamen volgen daarna
-        // en krijgen maximaal een paar plekken zodat ze bereikbaar blijven maar
-        // de lijst nooit vullen.
+        // Plaatsnamen zijn primair in de zoekhulp; campingnamen vullen daarna de
+        // resterende plekken (eindafkap op 10 via de combine-rule hieronder).
 
         const placeSuggestions = window.allLocations
             .filter(l => {
@@ -191,7 +190,7 @@ function getCampingNameMatches(q) {
             }));
 
         const campingSuggestions = getCampingNameMatches(q)
-            .slice(0, 3)
+            .slice(0, 10)
             .map(c => ({
                 type: 'camping',
                 label: String(c.naam || '').trim() + (c.stad ? ` (${c.stad})` : ''),
