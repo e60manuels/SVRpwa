@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.73"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.75"; // Increment this number with each commit
 
 // Normaliseer zoektekst: kleine letters, diakritiek weg, aanhalingstekens
 // genormaliseerd, meerdere spaties ingedikt.
@@ -364,13 +364,13 @@ function getCampingNameMatches(q) {
         
         /* MOBILE STYLES (default) */
         @media (max-width: 767px) {
-            #svr-filter-overlay {
+            #svr-filter-overlay, #svr-favorites-overlay {
                 position: fixed; bottom: 0; left: 0; width: 100%; height: 90vh;
                 background-color: #f0f0f0; z-index: 9995; display: flex; flex-direction: column;
                 box-sizing: border-box; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
                 border-top-left-radius: 12px; border-top-right-radius: 12px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             }
-            #svr-filter-overlay.open { transform: translateY(0); }
+            #svr-filter-overlay.open, #svr-favorites-overlay.open { transform: translateY(0); }
             .svr-overlay-header { 
                 background-color: #f0f0f0; 
                 padding: 8px 15px 12px 15px; 
@@ -406,7 +406,7 @@ function getCampingNameMatches(q) {
 
         /* SHARED STYLES (Both Mobile & Desktop) */
         .svr-overlay-title { font-size: 1.2rem; font-weight: bold; margin: 0; color: #008AD3; font-family: 'Befalow', sans-serif; text-align: left; }
-        #svr-filter-overlay-content { flex-grow: 1; overflow-y: auto; width: 100%; background-color: #f0f0f0; padding: 15px; box-sizing: border-box; scroll-behavior: smooth; }
+        #svr-filter-overlay-content, #svr-favorites-overlay-content { flex-grow: 1; overflow-y: auto; width: 100%; background-color: #f0f0f0; padding: 15px; box-sizing: border-box; scroll-behavior: smooth; }
         #active-filters-holder { background: #FDCC01; border-radius: 12px; padding: 12px 15px; margin-bottom: 15px; display: none; box-sizing: border-box; width: 100%; position: sticky; top: 0; z-index: 100; }
         .active-filter-tag { display: inline-flex; align-items: center; background: white; padding: 4px 10px; border-radius: 15px; margin: 4px; font-size: 12px; font-weight: bold; color: #008AD3; border: 1px solid #ddd; }
         .filter-section-card { background: white; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow: visible !important; }
@@ -428,6 +428,7 @@ function getCampingNameMatches(q) {
         .svr-footer-btn { flex: 1; height: 40px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         #svr-filter-apply-btn { background-color: #FDCC01; color: #333; }
         #svr-filter-reset-btn { background-color: white; color: #c0392b; border: 1px solid #ddd; }
+        #svr-favorites-reset-btn { background-color: white; color: #c0392b; border: 1px solid #ddd; }
         .filter-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f9f9f9; }
         
         /* Filter Sub-Dropdown Styles */
@@ -495,7 +496,7 @@ function getCampingNameMatches(q) {
 
         /* DESKTOP SPECIFIC (min-width: 768px) */
         @media (min-width: 768px) {
-            #svr-filter-overlay { 
+            #svr-filter-overlay, #svr-favorites-overlay { 
                 display: flex; flex-direction: column; background-color: #f0f0f0; 
                 border-radius: 0; transform: none !important; transition: none !important;
                 overflow: hidden;
@@ -529,7 +530,7 @@ function getCampingNameMatches(q) {
             }
 
             /* Content scrollable maken zonder header te pushen */
-            #svr-filter-overlay-content {
+            #svr-filter-overlay-content, #svr-favorites-overlay-content {
                 flex: 1 1 auto;
                 overflow-y: auto !important;
                 background-color: #f8f8f8;
@@ -671,6 +672,24 @@ window.hideFilterOverlay = function() {
 
     // Enable swipe for filter overlay
     window.enableSwipeToClose(overlay, window.closeFilterOverlay, '.svr-overlay-header');
+
+    // --- FAVORIETEN OVERLAY (zelfde opbouw als de Filters-overlay) ---
+    const favOverlay = document.createElement('div'); favOverlay.id = 'svr-favorites-overlay';
+    favOverlay.innerHTML = `
+        <div class="svr-overlay-header" id="favorites-drag-header">
+            <div style="width: 40px; height: 5px; background: #BBB; border-radius: 3px;"></div>
+            <h3 class="svr-overlay-title">Favorieten</h3>
+            <div class="svr-overlay-close" onclick="window.closeFavoritesOverlay()"><i class="fas fa-times"></i></div>
+        </div>
+        <div id="svr-favorites-overlay-content">
+            <div id="favorites-container"></div>
+        </div>
+        <div class="svr-overlay-footer">
+            <button id="svr-favorites-reset-btn" class="svr-footer-btn" onclick="window.clearFavorites()">Wis favorieten</button>
+        </div>
+    `;
+    document.body.appendChild(favOverlay);
+    window.enableSwipeToClose(favOverlay, window.closeFavoritesOverlay, '.svr-overlay-header');
 
     window.toggle_filters = async function() {
         const isDesktop = window.innerWidth >= 768;
@@ -1312,6 +1331,156 @@ window.resetSearch = function() {
     renderDefaultView();
 };
 
+// === FAVORIETEN (lokaal, geen serverafhankelijkheid) ===
+const FAVORITES_KEY = 'svr_favorites';
+
+function getFavoriteIds() {
+    try {
+        const raw = localStorage.getItem(FAVORITES_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveFavoriteIds(ids) {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(ids));
+}
+
+window.isSVRFavorite = function(id) {
+    return getFavoriteIds().includes(id);
+};
+
+// Toggle voor de hartje-knop in de detailheader. Werkt offline en onafhankelijk
+// van de SVR-sessie; favorieten worden lokaal opgeslagen.
+window.toggleSVRFavorite = function(id) {
+    if (!id) return;
+    const favs = getFavoriteIds();
+    const isFav = favs.includes(id);
+    const next = isFav ? favs.filter(f => f !== id) : favs.concat(id);
+    saveFavoriteIds(next);
+
+    // De svr.nl-knop in de embedded body is het enige hartje op de pagina.
+    const icon = document.querySelector('#detail-container button[id^="heart_"] i');
+    if (icon) {
+        icon.classList.toggle('fa-solid', !isFav);
+        icon.classList.toggle('fa-regular', isFav);
+    }
+    return !isFav;
+};
+
+// Toont de favorietenlijst in een overlay die qua opbouw en stijl identiek is
+// aan de Filters-pagina (header met sluitknop, content scrollbaar).
+window.showFavorites = function(withHistory = true) {
+    const favOverlay = document.getElementById('svr-favorites-overlay');
+    const backdrop = document.getElementById('svr-filter-backdrop');
+    if (!favOverlay) return;
+    const isDesktop = window.innerWidth >= 768;
+
+    renderFavoritesOverlayContent();
+
+    if (isDesktop) {
+        openRightPanel('favorites');
+        favOverlay.classList.add('open');
+    } else {
+        backdrop.style.display = 'block';
+        favOverlay.style.transform = '';
+        setTimeout(() => { favOverlay.classList.add('open'); backdrop.classList.add('open'); }, 10);
+    }
+    if (withHistory) {
+        history.pushState({ view: 'favorites' }, "");
+    }
+};
+
+window.hideFavoritesOverlay = function() {
+    if (window.parent !== window) {
+        window.parent.postMessage({ type: 'svr-nav', panel: 'favorites', open: false }, '*');
+    }
+    const isDesktop = window.innerWidth >= 768;
+    const favOverlay = document.getElementById('svr-favorites-overlay');
+    const backdrop = document.getElementById('svr-filter-backdrop');
+    if (!favOverlay) return;
+
+    if (isDesktop) {
+        closeRightPanel();
+        favOverlay.style.display = 'none';
+        favOverlay.classList.remove('open');
+    } else {
+        favOverlay.classList.remove('open');
+        backdrop.classList.remove('open');
+        favOverlay.style.transform = '';
+        setTimeout(() => {
+            if (!favOverlay.classList.contains('open')) {
+                backdrop.style.display = 'none';
+            }
+        }, 500);
+    }
+};
+
+window.closeFavoritesOverlay = function() {
+    if (history.state && (history.state.view === 'favorites' || history.state.view === 'detail')) {
+        history.back();
+    } else {
+        window.hideFavoritesOverlay();
+    }
+};
+
+// Opent de detailpagina vanuit de favorietenlijst en sluit eerst de overlay,
+// zodat de history-stack netjes blijft (favorieten-entry wordt gepopt).
+window.openFavoriteDetail = function(id) {
+    window.closeFavoritesOverlay();
+    setTimeout(() => window.showSVRDetailPage(id, 'list'), 150);
+};
+
+window.openFavoriteMap = function(lat, lng, id) {
+    window.closeFavoritesOverlay();
+    setTimeout(() => window.focusOnMarker(lat, lng, id), 150);
+};
+
+// Leegt de favorietenlijst via de "Wis favorieten"-knop en hertekent de overlay
+// (toont dan de lege-staatmelding). Zelfde gedrag als "Wis filters".
+window.clearFavorites = function() {
+    saveFavoriteIds([]);
+    renderFavoritesOverlayContent();
+};
+
+// Vult de favorieten-overlay met dezelfde campingkaarten als de lijstweergave.
+function renderFavoritesOverlayContent() {
+    const container = document.getElementById('favorites-container');
+    if (!container) return;
+    const favs = getFavoriteIds();
+    const campings = (window.staticCampsites || []).filter(c => favs.includes(c.id));
+
+    if (campings.length === 0) {
+        container.innerHTML =
+            '<div style="padding:20px;text-align:center;">Nog geen favorieten. Klik op het hartje op een campingdetailpagina om een camping favoriet te maken.</div>';
+        return;
+    }
+
+    const center = centroidOf(campings);
+    const sLat = center ? center.lat : 52.1326;
+    const sLng = center ? center.lng : 5.2913;
+
+    const cardsHtml = campings.map(c => {
+        const distM = calculateDistance(sLat, sLng, c.lat, c.lng);
+        const lat = c.lat, lng = c.lng;
+        const safeName = btoa(unescape(encodeURIComponent(c.naam)));
+        return `<div class="camping-card">
+            <div class="card-body">
+                <h3 class="camping-name-link" onclick="window.openFavoriteDetail('${c.id}'); return false;">${c.naam}</h3>
+                <div class="card-location"><i class="fa-solid fa-map-pin"></i> ${c.stad}</div>
+                <div class="card-distance"><i class="fa-solid fa-map-pin"></i> Afstand: ${(distM/1000).toFixed(1)} km</div>
+            </div>
+            <div class="camping-actions">
+                <a href="#" class="action-btn btn-kaart" onclick="window.openFavoriteMap(${lat},${lng}, '${c.id}'); return false;"><i class="fa-solid fa-map"></i> KAART</a>
+                <a href="#" class="action-btn btn-route" onclick="window.openNavHelper(${lat}, ${lng}, '${safeName}'); return false;"><i class="fa-solid fa-route"></i> ROUTE</a>
+                <a href="#" class="action-btn btn-info" onclick="window.openFavoriteDetail('${c.id}'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
+            </div>
+        </div>`;
+    }).join('');
+    container.innerHTML = cardsHtml;
+}
+
 function applyState(state) {
     if (!state) return;
     
@@ -1595,6 +1764,10 @@ window.onpopstate = (e) => {
                 openRightPanel('detail');
                 renderDetail(e.state.objectId);
             }
+            if (e.state && e.state.view === 'favorites') {
+                // Favorieten heropenen via history (bijv. forward-navigatie)
+                window.showFavorites(false);
+            }
             if (!e.state || e.state.view === 'map' || e.state.view === 'list' || e.state.view === 'split') {
                 // Standaard desktop: niets te doen, kaart en lijst zijn altijd zichtbaar
                 if (map) setTimeout(() => map.invalidateSize(), 100);
@@ -1619,6 +1792,25 @@ window.onpopstate = (e) => {
             // For any other view, if the filters were open, hide them
             if (filterOverlay && filterOverlay.classList.contains('open')) {
                 window.hideFilterOverlay();
+            }
+        }
+
+        // Handle Favorites View
+        const favOverlayPop = document.getElementById('svr-favorites-overlay');
+        if (e.state.view === 'favorites') {
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'svr-nav', panel: 'favorites', open: true }, '*');
+            }
+            // This is reached if we navigate FORWARD to favorites (rare but possible via history)
+            backdrop.style.display = 'block';
+            setTimeout(() => {
+                favOverlayPop.classList.add('open');
+                backdrop.classList.add('open');
+            }, 10);
+        } else {
+            // For any other view, if favorites were open, hide them
+            if (favOverlayPop && favOverlayPop.classList.contains('open')) {
+                window.hideFavoritesOverlay();
             }
         }
 
@@ -1666,6 +1858,11 @@ window.onpopstate = (e) => {
         
         if (filterOverlay && filterOverlay.classList.contains('open')) {
             window.hideFilterOverlay();
+        }
+
+        const favOverlayNull = document.getElementById('svr-favorites-overlay');
+        if (favOverlayNull && favOverlayNull.classList.contains('open')) {
+            window.hideFavoritesOverlay();
         }
 
         if (detailOverlay.classList.contains('open') && window.parent !== window) {
@@ -1732,6 +1929,7 @@ function openRightPanel(type) {
 
     const detailEl = document.getElementById('detail-container');
     const filterEl = document.getElementById('svr-filter-overlay');
+    const favEl = document.getElementById('svr-favorites-overlay');
 
     // Sluit beide eerst (schone lei)
     if (window.parent !== window) {
@@ -1741,12 +1939,17 @@ function openRightPanel(type) {
         if (filterEl.classList.contains('open') && type !== 'filter') {
             window.parent.postMessage({ type: 'svr-nav', panel: 'filter', open: false }, '*');
         }
+        if (favEl.classList.contains('open') && type !== 'favorites') {
+            window.parent.postMessage({ type: 'svr-nav', panel: 'favorites', open: false }, '*');
+        }
     }
 
     detailEl.style.display = 'none';
     detailEl.classList.remove('open');
     filterEl.style.display = 'none';
     filterEl.classList.remove('open');
+    favEl.style.display = 'none';
+    favEl.classList.remove('open');
 
     // Toon de gevraagde met FLEX (belangrijk voor header fix)
     if (type === 'detail') {
@@ -1755,6 +1958,9 @@ function openRightPanel(type) {
     } else if (type === 'filter') {
         filterEl.style.display = 'flex';
         filterEl.classList.add('open');
+    } else if (type === 'favorites') {
+        favEl.style.display = 'flex';
+        favEl.classList.add('open');
     }
 
     document.body.classList.add('panel-open');
@@ -1776,6 +1982,7 @@ function closeRightPanel() {
 
     const detailEl = document.getElementById('detail-container');
     const filterEl = document.getElementById('svr-filter-overlay');
+    const favEl = document.getElementById('svr-favorites-overlay');
 
     if (window.parent !== window) {
         if (detailEl.classList.contains('open')) {
@@ -1784,12 +1991,17 @@ function closeRightPanel() {
         if (filterEl.classList.contains('open')) {
             window.parent.postMessage({ type: 'svr-nav', panel: 'filter', open: false }, '*');
         }
+        if (favEl.classList.contains('open')) {
+            window.parent.postMessage({ type: 'svr-nav', panel: 'favorites', open: false }, '*');
+        }
     }
 
     detailEl.style.display = 'none';
     detailEl.classList.remove('open');
     filterEl.style.display = 'none';
     filterEl.classList.remove('open');
+    favEl.style.display = 'none';
+    favEl.classList.remove('open');
 
     document.body.classList.remove('panel-open');
     // Desktop: verberg toggle knop (wordt getoond bij scrollen)
@@ -2031,6 +2243,23 @@ async function renderDetail(objectId) {
             tempDiv.querySelectorAll('img').forEach(img => {
                 img.classList.remove('d-none');
                 img.removeAttribute('loading');
+            });
+
+            // De oorspronkelijke svr.nl "Favoriet"-knop (rechts van de campingnaam,
+            // zoals op mobiel) blijven gebruiken, maar ombouwen naar de PWA-toggle:
+            // set_fav bestaat in de PWA niet (scripts worden gestript). We koppelen
+            // de knop aan de lokale favorietenfunctie en tonen meteen de juiste
+            // staat: leeg hartje (alleen rode rand) = geen favoriet, vol rood
+            // hartje = favoriet.
+            tempDiv.querySelectorAll('button[id^="heart_"], button[onclick*="set_fav"]').forEach(btn => {
+                btn.removeAttribute('onclick');
+                btn.setAttribute('onclick', `window.toggleSVRFavorite('${objectId}'); return false;`);
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    const isFav = window.isSVRFavorite(objectId);
+                    icon.classList.toggle('fa-solid', isFav);
+                    icon.classList.toggle('fa-regular', !isFav);
+                }
             });
 
             const SVR_BASE = 'https://www.svr.nl';
@@ -2536,6 +2765,10 @@ window.toggleMapMenu = function() {
             display: block; width: 100%; padding: 12px 16px; border: none; background: none;
             text-align: left; font-size: 15px; color: #333; cursor: pointer; border-bottom: 1px solid #eee;
         "><i class="fas fa-globe" style="width: 20px; margin-right: 8px;"></i>www.svr.nl</button>
+        <button id="menu-favorites" style="
+            display: block; width: 100%; padding: 12px 16px; border: none; background: none;
+            text-align: left; font-size: 15px; color: #333; cursor: pointer; border-bottom: 1px solid #eee;
+        "><i class="fa-solid fa-heart" style="width: 20px; margin-right: 8px; color: #d11a2a;"></i>Toon favorieten</button>
         <button id="menu-logout" style="
             display: block; width: 100%; padding: 12px 16px; border: none; background: none;
             text-align: left; font-size: 15px; color: #d9534f; cursor: pointer;
@@ -2546,6 +2779,11 @@ window.toggleMapMenu = function() {
     document.getElementById('menu-open-svr').addEventListener('click', () => {
         window.open('https://www.svr.nl', '_blank');
         window.toggleMapMenu();
+    });
+
+    document.getElementById('menu-favorites').addEventListener('click', () => {
+        window.toggleMapMenu();
+        window.showFavorites();
     });
 
     document.getElementById('menu-logout').addEventListener('click', () => {
