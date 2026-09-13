@@ -126,7 +126,23 @@
         .search-container { flex: 1; display: flex; background: white; border-radius: 20px; padding: 0 8px; align-items: center; height: 40px; box-sizing: border-box; position: relative; z-index: 10; }
         .search-container input { border: none; outline: none; width: 100%; padding: 0 8px; font-size: 15px; background: transparent; }
         
-        #searchIcon { color: var(--svr-blue); padding: 5px; font-size: 16px; }
+        .search-reset-btn {
+            width: 26px;
+            height: 26px;
+            min-width: 26px;
+            border: none;
+            border-radius: 50%;
+            background: #eee;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-size: 13px;
+            cursor: pointer;
+            margin-right: 4px;
+        }
+        .search-reset-btn:hover { background: #ddd; color: #333; }
         .search-container #infoBtn.map-stack-btn {
             width: 32px;
             height: 32px;
@@ -653,9 +669,11 @@
         z-index: 1001 !important;
     }
 
-    /* Header moet hoger zijn dan list-container voor suggesties */
+    /* Header moet hoger zijn dan list-container én de detail/filter-panelen
+       (z-index 1500), zodat de suggesties ook boven een geopende detailpagina
+       verschijnen. */
     .svr-header {
-        z-index: 1001 !important;
+        z-index: 2000 !important;
     }
 
     /* === HELP OVERLAY: desktop herpositionering === */
@@ -856,7 +874,6 @@
 @media (min-width: 1024px) {
     .search-container { height: 32px; }
     .search-container input { font-size: 13px; }
-    #searchIcon { font-size: 14px; }
     .map-stack-btn { width: 36px; height: 36px; }
     .map-stack-btn i { font-size: 14px; }
     .active-filter-chip { font-size: 9px; height: 22px; padding: 0 8px; }

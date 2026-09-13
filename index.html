@@ -36,8 +36,8 @@
     <link rel="preload" href="https://unpkg.com/swiper/swiper-bundle.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css"></noscript>
 
-    <link rel="stylesheet" href="css/local_style.css?v=0.2.69" />
-    <link rel="stylesheet" href="css/custom_styles.css?v=0.2.69" />
+    <link rel="stylesheet" href="css/local_style.css?v=0.2.73" />
+    <link rel="stylesheet" href="css/custom_styles.css?v=0.2.73" />
 </head>
 <body>
 
@@ -103,7 +103,9 @@
             </div>
             
             <div class="search-container" style="position: relative;">
-                <i class="fas fa-search" id="searchIcon"></i>
+                <button id="searchResetBtn" class="search-reset-btn" title="Zoekopdracht wissen" style="display:none;" onclick="window.resetSearch()" aria-label="Zoekopdracht wissen">
+                    <i class="fas fa-times"></i>
+                </button>
                 <input type="text" id="searchInput" placeholder="Zoek een SVR camping" autocomplete="off">
                 <button id="infoBtn" class="map-stack-btn" onclick="window.showHelp()">
                     <i class="fas fa-info"></i>
@@ -175,8 +177,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script> <!-- Added Swiper JS -->
-    <script src="js/local_app.js?v=0.2.69"></script>
-    <script src="js/pwa_install.js?v=0.2.69"></script>
+    <script src="js/local_app.js?v=0.2.73"></script>
+    <script src="js/pwa_install.js?v=0.2.73"></script>
     <script>
         if ('serviceWorker' in navigator) {
             // updateViaCache: 'none' dwingt de browser sw.js bij een updatecheck

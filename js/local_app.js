@@ -1,5 +1,46 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.69"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.73"; // Increment this number with each commit
+
+// Normaliseer zoektekst: kleine letters, diakritiek weg, aanhalingstekens
+// genormaliseerd, meerdere spaties ingedikt.
+function normalizeSearchText(value) {
+    return String(value || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[‘’`´]/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+// Zoekt campingnamen in de (eenmalig opgebouwde) lokale dataset en retourneert
+// de campings gesorteerd op relevantie (0=naam start met zoekterm, 1=een woord
+// start ermee, 2=zoekterm komt er elders in voor).
+function getCampingNameMatches(q) {
+    const index = window.campingSearchIndex;
+    if (!Array.isArray(index)) return [];
+
+    const query = normalizeSearchText(q);
+    if (!query) return [];
+
+    const matches = [];
+    for (let i = 0; i < index.length; i++) {
+        const entry = index[i];
+        if (!entry.name || !entry.n.includes(query)) continue;
+
+        let rank = 2;
+        if (entry.n.startsWith(query)) {
+            rank = 0;
+        } else if (entry.n.split(/\s+/).some(word => word.startsWith(query))) {
+            rank = 1;
+        }
+        matches.push({ camping: entry.camping, name: entry.name, rank });
+    }
+
+    return matches
+        .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name, 'nl'))
+        .map(x => x.camping);
+}
 
 // [SECTION: INITIALIZATION]
 (function () {
@@ -24,6 +65,10 @@ window.SVR_PWA_VERSION = "0.2.69"; // Increment this number with each commit
 
     // Flag to track if we already have some data on screen
     window.hasDataOnScreen = false;
+
+    // Zoekintentie na klik op een suggestie ('camping' of 'place'), zodat
+    // performSearch weet welk type de gebruiker bedoelde.
+    window._searchIntent = null;
 
     // Introduce a flag to control PWA prompt visibility after help overlay interaction
     window.shouldShowPWAAfterHelp = false; // Initialize the flag
@@ -57,7 +102,17 @@ window.SVR_PWA_VERSION = "0.2.69"; // Increment this number with each commit
             if (res.ok) {
                 const data = await res.json();
                 window.staticCampsites = data.campings || [];
-                
+
+                // Eenmalig opgebouwde zoekindex voor campingnamen (i.p.v. bij elke
+                // toetsaanslag alle campings opnieuw te normaliseren).
+                window.campingSearchIndex = window.staticCampsites
+                    .filter(c => c && c.naam)
+                    .map(c => ({
+                        camping: c,
+                        name: String(c.naam).trim(),
+                        n: normalizeSearchText(c.naam)
+                    }));
+
                 // Store categories for search decision
                 if (data.categories) {
                     data.categories.forEach(cat => {
@@ -114,11 +169,43 @@ window.SVR_PWA_VERSION = "0.2.69"; // Increment this number with each commit
     loadLocations();
 
     window.getSuggestionsLocal = function(q) {
-        const queryLower = q.toLowerCase().trim();
-        return window.allLocations.filter(l => 
-            l.name.toLowerCase().startsWith(queryLower) || 
-            l.name.toLowerCase().includes(" " + queryLower)
-        ).slice(0, 10).map(l => `${l.name} (${l.province})`);
+        const queryLower = normalizeSearchText(q);
+        if (!queryLower) return [];
+
+        // Plaatsnamen zijn primair in de zoekhulp; campingnamen volgen daarna
+        // en krijgen maximaal een paar plekken zodat ze bereikbaar blijven maar
+        // de lijst nooit vullen.
+
+        const placeSuggestions = window.allLocations
+            .filter(l => {
+                const name = normalizeSearchText(l.name);
+                return name.startsWith(queryLower) ||
+                       name.includes(" " + queryLower);
+            })
+            .slice(0, 7)
+            .map(l => ({
+                type: 'place',
+                label: `${l.name} (${l.province})`,
+                value: l.name,
+                province: l.province
+            }));
+
+        const campingSuggestions = getCampingNameMatches(q)
+            .slice(0, 3)
+            .map(c => ({
+                type: 'camping',
+                label: String(c.naam || '').trim() + (c.stad ? ` (${c.stad})` : ''),
+                value: String(c.naam || '').trim(),
+                id: c.id,
+                camping: c
+            }));
+
+        // Combineer: plaatsen eerst, campings als aanvulling (max 10).
+        return [...placeSuggestions, ...campingSuggestions].slice(0, 10);
+    };
+
+    window.findLocalCampingMatches = function(q) {
+        return getCampingNameMatches(q);
     };
 
     window.getCoordinatesWeb = async function(place) {
@@ -929,6 +1016,8 @@ window.hideFilterOverlay = function() {
         }
     }
 
+    window.updateActiveFiltersUI = updateActiveFiltersUI;
+
     /**
      * Verwijdert een enkel filter via de chip en ververst de resultaten.
      */
@@ -1084,6 +1173,144 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     const a = Math.sin(dLat/2)**2 + Math.cos(p1)*Math.cos(p2)*Math.sin(dLon/2)**2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
+
+// Geometrisch middelpunt (centroid van de bounding box) van een reeks campings.
+// Retourneert null als geen enkele camping een geldige positie heeft.
+function centroidOf(campings) {
+    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity, valid = false;
+    for (const c of campings || []) {
+        const lat = parseFloat(c.lat), lng = parseFloat(c.lng);
+        if (!isFinite(lat) || !isFinite(lng)) continue;
+        valid = true;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+    }
+    if (!valid) return null;
+    return { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2 };
+}
+
+// Verplaatst de rode punaise (zoekcentrum) naar de opgegeven locatie.
+function placeSearchMarker(lat, lng) {
+    if (centerMarker) map.removeLayer(centerMarker);
+    centerMarker = L.marker([lat, lng], {
+        icon: L.divIcon({
+            className: 'search-marker',
+            html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>',
+            iconSize:[30,30],
+            iconAnchor:[15,30]
+        }),
+        zIndexOffset: 2000
+    }).addTo(map);
+}
+
+// Geeft dezelfde kaartweergave als een plaatsnaam-zoekopdracht rond (lat,lng):
+// het middelpunt uitgebreid met de tien dichtstbijzijnde campings. Zo verwijdt
+// een enkele campingmatch uit een naam-zoekopdracht niet maximaal in te zoomen.
+function getPlaceSearchViewBounds(lat, lng) {
+    const bounds = L.latLngBounds([lat, lng]);
+    if (Array.isArray(window.staticCampsites)) {
+        window.staticCampsites
+            .map(c => ({ c, d: calculateDistance(lat, lng, c.lat, c.lng) }))
+            .sort((a, b) => a.d - b.d)
+            .slice(0, 10)
+            .forEach(({ c }) => bounds.extend([c.lat, c.lng]));
+    }
+    return bounds;
+}
+
+// Renders lokale campingmatches: filters toepassen, zoekcentrum bepalen,
+// lijst + kaart vullen en de punaise op de juiste plaats zetten.
+function renderCampingResults(campings) {
+    let filtered = campings;
+
+    // Bestaande filters blijven van toepassing.
+    if (window.currentFilters && window.currentFilters.length > 0) {
+        filtered = campings.filter(c =>
+            window.currentFilters.every(f => c.filters && c.filters.includes(f))
+        );
+    }
+
+    // Zoekcentrum = middelpunt van de gevonden campings (bij één match de
+    // positie van die camping). Dit houdt de rode punaise en de weergegeven
+    // afstanden consistent met wat er op de kaart staat.
+    const center = centroidOf(filtered);
+    const sLat = center ? center.lat : 52.1326;
+    const sLng = center ? center.lng : 5.2913;
+
+    const objects = filtered.map(c => ({
+        id: c.id,
+        geometry: { coordinates: [c.lng, c.lat] },
+        properties: { name: c.naam, city: c.stad, type_camping: c.type },
+        distM: calculateDistance(sLat, sLng, c.lat, c.lng)
+    }));
+
+    objects.sort((a, b) => a.distM - b.distM);
+    placeSearchMarker(sLat, sLng);
+
+    if (filtered.length === 1) {
+        // Enkele match uit een naam-zoekopdracht: zoom gelijk aan een
+        // plaatsnaam-zoekopdracht rond deze camping i.p.v. maximaal in te
+        // zoomen op het punt van de camping (fitBounds op één positie).
+        window.skipFitBounds = true;
+        renderResults(objects, sLat, sLng);
+        window.skipFitBounds = false;
+        const viewBounds = getPlaceSearchViewBounds(sLat, sLng);
+        window.lastMapBounds = viewBounds;
+        if (!isListView) {
+            map.fitBounds(viewBounds, { padding: [50, 50] });
+        }
+    } else {
+        renderResults(objects, sLat, sLng);
+    }
+
+    window.hasDataOnScreen = true;
+    setTimeout(() => map.invalidateSize(), 500);
+}
+
+// Toont de volledige default kaart + lijst zoals bij het laden van de app:
+// alle campings, zoekcentrum Nederland, punaise op de default-positie.
+function renderDefaultView() {
+    if (!window.staticCampsites) return;
+    const sLat = 52.1326, sLng = 5.2913;
+    const objects = window.staticCampsites.map(c => ({
+        id: c.id,
+        geometry: { coordinates: [c.lng, c.lat] },
+        properties: { name: c.naam, city: c.stad, type_camping: c.type },
+        distM: calculateDistance(sLat, sLng, c.lat, c.lng)
+    }));
+    objects.sort((a, b) => a.distM - b.distM);
+    placeSearchMarker(sLat, sLng);
+    renderResults(objects, sLat, sLng);
+    window.hasDataOnScreen = true;
+    setTimeout(() => map.invalidateSize(), 100);
+}
+
+// Reset: zoekveld leegmaken, actieve filters wissen en de default kaart + lijst
+// tonen (alle campings rond het Nederlandse startpunt).
+window.resetSearch = function() {
+    window._searchIntent = null;
+    $('#searchResetBtn').hide();
+    $searchInput.val('');
+    $suggestionsList.hide();
+
+    // Filters ook leegmaken zodat "volledige default" echt compleet is.
+    if (window.currentFilters && window.currentFilters.length > 0) {
+        const overlay = document.getElementById('svr-filter-overlay');
+        if (overlay) {
+            overlay.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+        window.currentFilters = [];
+        const btn = document.getElementById('filterBtn');
+        if (btn) { btn.style.background = 'white'; btn.style.color = '#333'; }
+        updateActiveFiltersUI([], 'both');
+        const expires = "; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "filters=[]; expires=" + expires + "; path=/; domain=svr.nl";
+    }
+
+    renderDefaultView();
+};
 
 function applyState(state) {
     if (!state) return;
@@ -1617,19 +1844,32 @@ $searchInput.on('keydown', function(e) {
 });
 
 // Trigger search on Icon click
-$('#searchIcon').on('click', function() {
-    $suggestionsList.hide();
-    window.performSearch();
-});
-
 $searchInput.on('input', function() {
-    const q = $(this).val(); if (q.length < 2) { $suggestionsList.hide(); return; }
+    const q = $(this).val();
+    $('#searchResetBtn').toggle(q.length > 0);
+    if (q.length < 3) { $suggestionsList.hide(); return; }
     const suggestions = window.getSuggestionsLocal(q);
     $suggestionsList.empty();
     if (suggestions.length === 0) { $suggestionsList.hide(); return; }
-    suggestions.forEach(p => {
-        const $li = $('<li class="suggestion-item"></li>').text(p);
-        $li.on('click', (e) => { e.stopPropagation(); $searchInput.val(p); $suggestionsList.hide(); window.performSearch(); });
+    suggestions.forEach(suggestion => {
+        const icon = suggestion.type === 'camping' ? '⛺' : '📍';
+        const $li = $('<li class="suggestion-item"></li>')
+            .text(`${icon} ${suggestion.label}`);
+        $li.on('click', (e) => {
+            e.stopPropagation();
+            window._searchIntent = suggestion.type;
+            $searchInput.val(suggestion.value);
+            $suggestionsList.hide();
+            // Desktop: sluit een open detail-/filterpaneel zodat de zoekresultaten
+            // zichtbaar worden en ruim de bijbehorende history-entry op.
+            if (window.innerWidth >= 768) {
+                window.closeRightPanel();
+                if (history.state && (history.state.view === 'detail' || history.state.view === 'filters')) {
+                    history.back();
+                }
+            }
+            window.performSearch();
+        });
         $suggestionsList.append($li);
     });
     $suggestionsList.show();
@@ -1645,37 +1885,57 @@ window.performSearch = async function(forceAPI = false) {
     const q = $searchInput.val().trim();
     let sLat = 52.1326, sLng = 5.2913;
 
-    if (q) {
-        // Geocoding om coördinaten van de plaatsnaam te krijgen
-        const coords = await window.getCoordinatesWeb(q);
-        if (coords) {
-            sLat = coords.latitude; sLng = coords.longitude;
-        } else {
-            // Feedback voor niet gevonden locatie (of geen internet: geocoding vereist een verbinding)
-            const originalPlaceholder = $searchInput.attr('placeholder');
-            const notFoundMsg = !navigator.onLine ? 'Geen internetverbinding...' : 'Plaats niet gevonden...';
-            $searchInput.val('').attr('placeholder', notFoundMsg).addClass('search-error');
-            setTimeout(() => {
-                $searchInput.attr('placeholder', originalPlaceholder).removeClass('search-error');
-            }, 3000);
+    // De intentie uit een suggestie-klik (eenmalig verbruiken). Bij een expliciet
+    // gekozen plaats ('place') gaat de zoekopdracht altijd naar die plaats, bij een
+    // expliciet gekozen camping ('camping') direct naar de lokale campingnamen.
+    const searchIntent = window._searchIntent;
+    window._searchIntent = null;
+
+    // Expliciet gekozen camping-suggestie: direct lokaal op naam zoeken.
+    if (searchIntent === 'camping' && q) {
+        const matches = window.findLocalCampingMatches(q);
+        if (matches.length > 0) {
+            renderCampingResults(matches);
             isSearching = false;
             return;
         }
+    }
+
+    // Plaats-primair: de zoekhulp is vooral op plaatsnaam gericht, dus eerst
+    // de plaats proberen te geocoden — niet eerst naar campingnamen kijken.
+    let coords = null;
+    if (q) {
+        coords = await window.getCoordinatesWeb(q);
+        if (coords) { sLat = coords.latitude; sLng = coords.longitude; }
     } else if (currentUserLatLng) {
         sLat = currentUserLatLng.lat; sLng = currentUserLatLng.lng;
     }
 
+    // Plaats niet gevonden: val terug op campingnamen uit de lokale dataset
+    // (niet bij een expliciet gekozen plaats-suggestie). Werkt ook offline.
+    if (!coords && q && searchIntent !== 'place') {
+        const matches = window.findLocalCampingMatches(q);
+        if (matches.length > 0) {
+            renderCampingResults(matches);
+            isSearching = false;
+            return;
+        }
+    }
+
+    // Echte foutmelding als noch plaats noch campingnaam iets opleverde.
+    if (q && !coords) {
+        const originalPlaceholder = $searchInput.attr('placeholder');
+        const notFoundMsg = !navigator.onLine ? 'Geen internetverbinding...' : 'Plaats niet gevonden...';
+        $searchInput.val('').attr('placeholder', notFoundMsg).addClass('search-error');
+        setTimeout(() => {
+            $searchInput.attr('placeholder', originalPlaceholder).removeClass('search-error');
+        }, 3000);
+        isSearching = false;
+        return;
+    }
+
     // Update de rode punaise naar de nieuwe locatie
-    if (centerMarker) map.removeLayer(centerMarker);
-    centerMarker = L.marker([sLat, sLng], {
-        icon: L.divIcon({
-            className: 'search-marker',
-            html: '<i class="fa-solid fa-map-pin" style="color:#c0392b;font-size:30px;"></i>',
-            iconSize:[30,30],
-            iconAnchor:[15,30]
-        }),
-        zIndexOffset: 2000
-    }).addTo(map);
+    placeSearchMarker(sLat, sLng);
 
     // UNIFIED SEARCH & FILTER LOGIC (Static Delivery)
     if (window.staticCampsites) {
