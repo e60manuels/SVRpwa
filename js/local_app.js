@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.77"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.79"; // Increment this number with each commit
 
 // Normaliseer zoektekst: kleine letters, diakritiek weg, aanhalingstekens
 // genormaliseerd, meerdere spaties ingedikt.
@@ -1424,6 +1424,16 @@ window.hideFavoritesOverlay = function() {
 };
 
 window.closeFavoritesOverlay = function() {
+    const isDesktop = window.innerWidth >= 768;
+    // Desktop: de KAART-knop pan-te de kaart naar een favoriet terwijl de
+    // favorieten-popup open bleef. Bij sluiten herstellen we het laatste
+    // zoekvenster zodat je teruggaat naar de laatst getoonde zoekopdracht.
+    if (isDesktop && window.favoriteMapPanned) {
+        window.favoriteMapPanned = false;
+        if (window.lastMapBounds) {
+            map.fitBounds(window.lastMapBounds, { padding: [50, 50] });
+        }
+    }
     if (history.state && (history.state.view === 'favorites' || history.state.view === 'detail')) {
         history.back();
     } else {
@@ -1446,20 +1456,53 @@ window.openFavoriteDetail = function(id) {
     }
 };
 
-// Toont een favoriet op de kaart én in de lijst: vervangt de huidige
-// zoekresultaten door deze ene camping (was: alleen kaart pannen, waardoor de
-// vorige zoeklocatie — bijv. Middelburg — op kaart én lijst bleef staan).
+// Toont een favoriet op de kaart:
+// - Desktop: de favorieten-popup blijft open en de kaart pan/zoomt naar de
+//   camping. De lijst/zoekresultaten worden niet vervangen.
+// - Mobiel: de sheet wordt visueel gesloten, de camping wordt op de kaart
+//   getoond en een map-history-entry komt bovenop de (behouden) favorites-entry,
+//   zodat Android-back terugkeert naar de favorietenlijst i.p.v. de app te verlaten.
 window.openFavoriteMap = function(lat, lng, id) {
-    window.closeFavoritesOverlay();
+    const isDesktop = window.innerWidth >= 768;
+    if (isDesktop) {
+        window.favoriteMapPanned = true;
+        // Herbind de bestaande marker-popup met GPS-afstand (i.p.v. zoekcentrum-afstand)
+        if (currentUserLatLng) {
+            let favMarker = null;
+            markerCluster.eachLayer(m => { if (m.objId === id) favMarker = m; });
+            if (!favMarker) top10Layer.eachLayer(m => { if (m.objId === id) favMarker = m; });
+            if (favMarker) {
+                const ll = favMarker.getLatLng();
+                const gpsDistKm = (calculateDistance(currentUserLatLng.lat, currentUserLatLng.lng, ll.lat, ll.lng) / 1000).toFixed(1);
+                const popup = favMarker.getPopup();
+                if (popup) {
+                    popup.setContent(popup.getContent().replace(/Afstand: [\d.]+ km/, 'Afstand: ' + gpsDistKm + ' km'));
+                }
+            }
+        }
+        window.focusOnMarker(lat, lng, id);
+        return;
+    }
+    // Mobiel: alleen visueel sluiten (history blijft) zodat back naar favorieten gaat
+    window.hideFavoritesOverlay();
     setTimeout(() => {
         const camping = (window.staticCampsites || []).find(c => c.id === id);
         if (camping) {
+            // Afstand is niet relevant in de favorieten-context: popup + kaart zonder
+            // 'Afstand: X.X km' (was 0.0 km, want enkel resultaat = eigen middelpunt).
+            window.suppressDistance = true;
             renderCampingResults([camping]);
+            window.suppressDistance = false;
             setTimeout(() => {
                 window.focusOnMarker(camping.lat, camping.lng, camping.id);
             }, 300);
         } else {
             window.focusOnMarker(lat, lng, id);
+        }
+        // Push map-state bovenop de favorites-entry zodat back eerst weer de
+        // favorietenlijst opent (alleen als favorites nog onderaan de stack staat).
+        if (history.state && history.state.view === 'favorites') {
+            history.pushState({ view: 'map', fromFavorites: true }, '');
         }
     }, 150);
 };
@@ -1484,19 +1527,13 @@ function renderFavoritesOverlayContent() {
         return;
     }
 
-    const center = centroidOf(campings);
-    const sLat = center ? center.lat : 52.1326;
-    const sLng = center ? center.lng : 5.2913;
-
     const cardsHtml = campings.map(c => {
-        const distM = calculateDistance(sLat, sLng, c.lat, c.lng);
         const lat = c.lat, lng = c.lng;
         const safeName = btoa(unescape(encodeURIComponent(c.naam)));
         return `<div class="camping-card">
             <div class="card-body">
                 <h3 class="camping-name-link" onclick="window.openFavoriteDetail('${c.id}'); return false;">${c.naam}</h3>
                 <div class="card-location"><i class="fa-solid fa-map-pin"></i> ${c.stad}</div>
-                <div class="card-distance"><i class="fa-solid fa-map-pin"></i> Afstand: ${(distM/1000).toFixed(1)} km</div>
             </div>
             <div class="camping-actions">
                 <a href="#" class="action-btn btn-kaart" onclick="window.openFavoriteMap(${lat},${lng}, '${c.id}'); return false;"><i class="fa-solid fa-map"></i> KAART</a>
@@ -2715,13 +2752,20 @@ function renderResults(objects, cLat, cLng) {
         // Match original Android app popup styling exactly
         // See: bestanden/outerHTML_marker_popup.txt
         const address = p.address ? `${p.address}, ${p.city}` : p.city;
-        const distDisplay = (obj.distM/1000).toFixed(1);
+        // Bereken afstand: bij normale zoekopdracht vanaf het zoekcentrum, in favorieten-context
+        // (suppressDistance) vanaf de GPS-positie van de gebruiker.
+        const distDisplay = window.suppressDistance && currentUserLatLng
+            ? (calculateDistance(currentUserLatLng.lat, currentUserLatLng.lng, lat, lng) / 1000).toFixed(1)
+            : (obj.distM / 1000).toFixed(1);
+        const distLine = window.suppressDistance && !currentUserLatLng
+            ? ''
+            : `<div style="font-size: 13px; color: #333; margin-top: 2px;"><i class="fa-solid fa-map-pin" style="color: #c0392b;"></i> Afstand: ${distDisplay} km</div>`;
 
         const popup = `<div style="min-width: 220px;">
             <div style="word-wrap: break-word; margin-top: -5px;">
                 <h5 onclick="window.showSVRDetailPage('${obj.id}', 'map')" style="margin: 0; padding: 0; font-family: 'Befalow', sans-serif; font-size: 25px; font-weight: normal; color: #008AD3; cursor: pointer;">${p.name}</h5>
                 <div style="font-size: 13px; color: #666; margin-top: 0px;">${address}</div>
-                <div style="font-size: 13px; color: #333; margin-top: 2px;"><i class="fa-solid fa-map-pin" style="color: #c0392b;"></i> Afstand: ${distDisplay} km</div>
+                ${distLine}
                 <div class="camping-actions" style="display: flex; margin: 8px -15px -15px -15px; border-top: 1px solid #eee;">
                     <a href="#" class="action-btn btn-route" style="flex: 1; text-align: center; padding: 6px 0; color: #c0392b; text-decoration: none; font-weight: bold; font-size: 14px; border-right: 1px solid #eee;" onclick="window.openNavHelper(${lat}, ${lng}, '${safeName}'); return false;"><i class="fa-solid fa-route"></i> ROUTE</a>
                     <a href="#" class="action-btn btn-info" style="flex: 1; text-align: center; padding: 6px 0; color: #008AD3; text-decoration: none; font-weight: bold; font-size: 14px;" onclick="window.showSVRDetailPage('${obj.id}', 'map'); return false;"><i class="fa-solid fa-circle-info"></i> INFO</a>
@@ -2736,7 +2780,7 @@ function renderResults(objects, cLat, cLng) {
             <div class="card-body">
                 <h3 class="camping-name-link" onclick="window.showSVRDetailPage('${obj.id}', 'list'); return false;">${p.name}</h3>
                 <div class="card-location"><i class="fa-solid fa-map-pin"></i> ${p.city}</div>
-                <div class="card-distance"><i class="fa-solid fa-map-pin"></i> Afstand: ${(obj.distM/1000).toFixed(1)} km</div>
+                ${window.suppressDistance && !currentUserLatLng ? '' : `<div class="card-distance"><i class="fa-solid fa-map-pin"></i> Afstand: ${distDisplay} km</div>`}
             </div>
             <div class="camping-actions">
                 <a href="#" class="action-btn btn-kaart" onclick="window.focusOnMarker(${lat},${lng}, '${obj.id}', map.getZoom()); return false;"><i class="fa-solid fa-map"></i> KAART</a>
