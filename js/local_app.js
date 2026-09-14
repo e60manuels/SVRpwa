@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.79"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.80"; // Increment this number with each commit
 
 // Normaliseer zoektekst: kleine letters, diakritiek weg, aanhalingstekens
 // genormaliseerd, meerdere spaties ingedikt.
@@ -1145,6 +1145,9 @@ const top10Layer = L.featureGroup();
 let centerMarker = null;
 let currentUserLatLng = null;
 let userLocationMarker = null;
+// Android back-bevestiging: tijdstip waarop de 'verlaat de app'-toast getoond
+// is. Een tweede back binnen 3 seconden bevestigt het verlaten.
+let exitConfirmArmed = 0;
 
 // Add zoom control positioned at bottom right (desktop only)
 const isDesktop = window.innerWidth >= 768;
@@ -1210,8 +1213,11 @@ function centroidOf(campings) {
 }
 
 // Verplaatst de rode punaise (zoekcentrum) naar de opgegeven locatie.
+// In de favorieten-context (KAART-knop) wordt de punaise onderdrukt: de favoriet
+// wordt dan via de marker-popup aangeduid i.p.v. door een rode pin.
 function placeSearchMarker(lat, lng) {
     if (centerMarker) map.removeLayer(centerMarker);
+    if (window.suppressSearchMarker) return;
     centerMarker = L.marker([lat, lng], {
         icon: L.divIcon({
             className: 'search-marker',
@@ -1236,6 +1242,18 @@ function getPlaceSearchViewBounds(lat, lng) {
             .forEach(({ c }) => bounds.extend([c.lat, c.lng]));
     }
     return bounds;
+}
+
+// Geeft de dichtstbijzijnde campings rondom (lat,lng). Gebruikt door de
+// favorieten-KAART-knop om de omgeving van een favoriet te tonen (i.p.v. alleen
+// de enkele favoriet), zodat de kaart net als op desktop contextmarkers toont.
+function nearestCampingsAround(lat, lng, count = 10) {
+    if (!Array.isArray(window.staticCampsites)) return [{ lat, lng }];
+    return window.staticCampsites
+        .map(c => ({ c, d: calculateDistance(lat, lng, c.lat, c.lng) }))
+        .sort((a, b) => a.d - b.d)
+        .slice(0, count)
+        .map(({ c }) => c);
 }
 
 // Renders lokale campingmatches: filters toepassen, zoekcentrum bepalen,
@@ -1488,10 +1506,14 @@ window.openFavoriteMap = function(lat, lng, id) {
     setTimeout(() => {
         const camping = (window.staticCampsites || []).find(c => c.id === id);
         if (camping) {
-            // Afstand is niet relevant in de favorieten-context: popup + kaart zonder
-            // 'Afstand: X.X km' (was 0.0 km, want enkel resultaat = eigen middelpunt).
+            // Net als op desktop de omgeving van de favoriet tonen (de favoriet
+            // wordt via de marker-popup aangeduid) i.p.v. alleen de ene camping.
+            // suppressDistance (GPS-afstand in popup) + suppressSearchMarker
+            // (geen rode punaise) blijven in de favorieten-context actief.
             window.suppressDistance = true;
-            renderCampingResults([camping]);
+            window.suppressSearchMarker = true;
+            renderCampingResults(nearestCampingsAround(camping.lat, camping.lng, 10));
+            window.suppressSearchMarker = false;
             window.suppressDistance = false;
             setTimeout(() => {
                 window.focusOnMarker(camping.lat, camping.lng, camping.id);
@@ -1808,6 +1830,24 @@ window.handleDetailBack = function() {
 };
 
 
+// Toont een tijdelijke toast-melding (wordt na ~2.8s automatisch verwijderd).
+function showAppExitToast() {
+    let toast = document.getElementById('app-exit-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'app-exit-toast';
+        toast.className = 'app-exit-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = 'Nogmaals terug-drukken om de app te verlaten';
+    toast.classList.add('visible');
+    clearTimeout(showAppExitToast._timer);
+    showAppExitToast._timer = setTimeout(() => {
+        toast.classList.remove('visible');
+    }, 2800);
+}
+
+
 // Update onpopstate to handle the sheet animation on history changes
 window.onpopstate = (e) => {
     const detailOverlay = document.getElementById('detail-container');
@@ -1815,6 +1855,30 @@ window.onpopstate = (e) => {
     const backdrop = document.getElementById('svr-filter-backdrop');
     const splashScreen = document.getElementById('detail-splash');
     const filterOverlay = document.getElementById('svr-filter-overlay');
+
+    // ---- Android back-exit bevestiging (alleen mobiel + niet-geïnstalleerd) ----
+    // Een 'laatste' back-press (binnen de app niets meer om terug te keren,
+    // gemarkeerd via de __svrBase-entry) verlaat de app NIET meteen, maar toont
+    // eerst een toast. Een tweede back binnen 3s bevestigt het verlaten.
+    if (e.state && e.state.__svrBase === true && window.innerWidth < 768) {
+        const installed = typeof window.isAppInstalled === 'function' && window.isAppInstalled();
+        if (!installed) {
+            const now = Date.now();
+            if (exitConfirmArmed && (now - exitConfirmArmed) < 3000) {
+                // Bevestigd: naar de entry vóór de basis-entry navigeren = app verlaten
+                exitConfirmArmed = 0;
+                history.back();
+                return;
+            }
+            exitConfirmArmed = now;
+            showAppExitToast();
+            // Guard opnieuw pushen zodat een volgende back wéér deze branch raakt
+            history.pushState({ view: 'map' }, "", window.location.pathname);
+            setTimeout(() => { exitConfirmArmed = 0; }, 3000);
+            return;
+        }
+    }
+    // ---- Einde Android back-exit bevestiging ----
 
     if (e.state) {
         const isDesktopPop = window.innerWidth >= 768;
@@ -3098,7 +3162,17 @@ async function initApp() {
 }
 
 window.initializeApp = function() {
-    history.replaceState({ view: 'map' }, "");
+    // Basis-history-entry die de oorsprong van de app vastlegt én fungeert als
+    // herkenbaar 'laatste punt' voor de Android-back-bevestiging.
+    history.replaceState({ view: 'map', __svrBase: true }, "");
+
+    // Niet-geïnstalleerde app: houd een guard-entry boven de basis-entry. Zo
+    // wordt een 'laatste' Android-back-press door popstate onderschept (toast +
+    // opnieuw pushen) i.p.v. de app direct te laten verlaten. Bij een
+    // geïnstalleerde PWA is dat niet nodig (back sluit naar de app-lijst).
+    if (typeof window.isAppInstalled === 'function' && !window.isAppInstalled()) {
+        history.pushState({ view: 'map' }, "", window.location.pathname);
+    }
 
     // Reset filters on startup
     window.currentFilters = [];
