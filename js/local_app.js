@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.76"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.77"; // Increment this number with each commit
 
 // Normaliseer zoektekst: kleine letters, diakritiek weg, aanhalingstekens
 // genormaliseerd, meerdere spaties ingedikt.
@@ -1410,7 +1410,14 @@ window.hideFavoritesOverlay = function() {
         favOverlay.style.transform = '';
         setTimeout(() => {
             if (!favOverlay.classList.contains('open')) {
-                backdrop.style.display = 'none';
+                // De backdrop wordt ook door de detail-/filteroverlay gebruikt:
+                // laat 'm staan als er ondertussen een andere overlay open is
+                // (bijv. detail dat direct uit een favorieten-tegel opent).
+                const detailEl = document.getElementById('detail-container');
+                const filterEl = document.getElementById('svr-filter-overlay');
+                if (!detailEl.classList.contains('open') && !filterEl.classList.contains('open')) {
+                    backdrop.style.display = 'none';
+                }
             }
         }, 500);
     }
@@ -1424,16 +1431,37 @@ window.closeFavoritesOverlay = function() {
     }
 };
 
-// Opent de detailpagina vanuit de favorietenlijst en sluit eerst de overlay,
-// zodat de history-stack netjes blijft (favorieten-entry wordt gepopt).
+// Opent de detailpagina vanuit de favorietenlijst. De overlay wordt alleen
+// visueel gesloten — de favorites history-entry blijft staan, zodat sluiten van
+// de detailpagina (history.back) weer op de favorieten uitkomt.
 window.openFavoriteDetail = function(id) {
-    window.closeFavoritesOverlay();
-    setTimeout(() => window.showSVRDetailPage(id, 'list'), 150);
+    window.hideFavoritesOverlay();
+    const openDetail = () => window.showSVRDetailPage(id, 'list');
+    if (window.innerWidth >= 768) {
+        openDetail();
+    } else {
+        // Mobiel: laat de favorites-sheet eerst wegzakken voordat de detail-sheet
+        // omhoog komt, zodat ze elkaar niet visueel bevechten.
+        setTimeout(openDetail, 150);
+    }
 };
 
+// Toont een favoriet op de kaart én in de lijst: vervangt de huidige
+// zoekresultaten door deze ene camping (was: alleen kaart pannen, waardoor de
+// vorige zoeklocatie — bijv. Middelburg — op kaart én lijst bleef staan).
 window.openFavoriteMap = function(lat, lng, id) {
     window.closeFavoritesOverlay();
-    setTimeout(() => window.focusOnMarker(lat, lng, id), 150);
+    setTimeout(() => {
+        const camping = (window.staticCampsites || []).find(c => c.id === id);
+        if (camping) {
+            renderCampingResults([camping]);
+            setTimeout(() => {
+                window.focusOnMarker(camping.lat, camping.lng, camping.id);
+            }, 300);
+        } else {
+            window.focusOnMarker(lat, lng, id);
+        }
+    }, 150);
 };
 
 // Leegt de favorietenlijst via de "Wis favorieten"-knop en hertekent de overlay
@@ -2075,7 +2103,7 @@ $searchInput.on('input', function() {
             // zichtbaar worden en ruim de bijbehorende history-entry op.
             if (window.innerWidth >= 768) {
                 window.closeRightPanel();
-                if (history.state && (history.state.view === 'detail' || history.state.view === 'filters')) {
+                if (history.state && (history.state.view === 'detail' || history.state.view === 'filters' || history.state.view === 'favorites')) {
                     history.back();
                 }
             }
