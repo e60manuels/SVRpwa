@@ -25,7 +25,7 @@ function merge() {
 
         const finalOutput = {
             updated: new Date().toISOString(),
-            version: "0.2.83",
+            version: "0.2.84",
             campings: enrichedCampings
         };
 

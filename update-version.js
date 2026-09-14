@@ -14,7 +14,8 @@ const filesToUpdate = [
     { path: 'js/local_app.js', regex: /window\.SVR_PWA_VERSION = "0\.2\.\d+"/g, replacement: `window.SVR_PWA_VERSION = "${newVersion}"` },
     { path: 'js/pwa_install.js', regex: /const APP_VERSION = "0\.2\.\d+"/g, replacement: `const APP_VERSION = "${newVersion}"` },
     { path: 'merge-and-enrich.js', regex: /version: "0\.2\.\d+"/g, replacement: `version: "${newVersion}"` },
-    { path: 'sw.js', regex: /svr-pwa-cache-v0\.2\.\d+/g, replacement: `svr-pwa-cache-v${newVersion}` }
+    { path: 'sw.js', regex: /svr-pwa-cache-v0\.2\.\d+/g, replacement: `svr-pwa-cache-v${newVersion}` },
+    { path: 'version.json', regex: /"version":\s*"0\.2\.\d+"/g, replacement: `"version": "${newVersion}"` }
 ];
 
 filesToUpdate.forEach(file => {
