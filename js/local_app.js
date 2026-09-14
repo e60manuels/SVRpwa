@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.81"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.82"; // Increment this number with each commit
 
 // Normaliseer zoektekst: kleine letters, diakritiek weg, aanhalingstekens
 // genormaliseerd, meerdere spaties ingedikt.
@@ -1294,6 +1294,10 @@ function renderCampingResults(campings, opts) {
         window.suppressSearchMarker = true;
         renderCampingResults(nearestCampingsAround(one.lat, one.lng, 10));
         window.suppressSearchMarker = false;
+        // Open de popup van de gekozen camping zodat duidelijk is welke match je
+        // hebt geselecteerd tussen de omringende markers (zelfde flow als de
+        // favorieten-KAART: pan naar de marker + popup na de fitBounds-animatie).
+        setTimeout(() => window.focusOnMarker(one.lat, one.lng, one.id), 300);
     } else if (filtered.length === 1) {
         // Enkele match uit een andere route (bijv. plaats-zoekopdracht met één
         // resultaat): zoom rond deze camping zoals een plaatsnaam-zoekopdracht,
