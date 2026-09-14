@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.80"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.81"; // Increment this number with each commit
 
 // Normaliseer zoektekst: kleine letters, diakritiek weg, aanhalingstekens
 // genormaliseerd, meerdere spaties ingedikt.
@@ -1258,7 +1258,7 @@ function nearestCampingsAround(lat, lng, count = 10) {
 
 // Renders lokale campingmatches: filters toepassen, zoekcentrum bepalen,
 // lijst + kaart vullen en de punaise op de juiste plaats zetten.
-function renderCampingResults(campings) {
+function renderCampingResults(campings, opts) {
     let filtered = campings;
 
     // Bestaande filters blijven van toepassing.
@@ -1283,12 +1283,22 @@ function renderCampingResults(campings) {
     }));
 
     objects.sort((a, b) => a.distM - b.distM);
-    placeSearchMarker(sLat, sLng);
 
-    if (filtered.length === 1) {
-        // Enkele match uit een naam-zoekopdracht: zoom gelijk aan een
-        // plaatsnaam-zoekopdracht rond deze camping i.p.v. maximaal in te
-        // zoomen op het punt van de camping (fitBounds op één positie).
+    if (filtered.length === 1 && opts && opts.campingName) {
+        // Enkele match uit een campingnaam-zoekopdracht: net als bij een favoriet
+        // op de kaart wordt de camping mét zijn dichtstbijzijnde buren getoond en
+        // wordt géén rode punaise geplaatst — de match zelf wordt via de
+        // marker-popup aangeduid. De recursieve aanroep past de actieve filters
+        // toe op de buren en regelt zelf de kaartweergave (fitBounds op de buren).
+        const one = filtered[0];
+        window.suppressSearchMarker = true;
+        renderCampingResults(nearestCampingsAround(one.lat, one.lng, 10));
+        window.suppressSearchMarker = false;
+    } else if (filtered.length === 1) {
+        // Enkele match uit een andere route (bijv. plaats-zoekopdracht met één
+        // resultaat): zoom rond deze camping zoals een plaatsnaam-zoekopdracht,
+        // mét de rode punaise op het zoekcentrum en zonder buren te tekenen.
+        placeSearchMarker(sLat, sLng);
         window.skipFitBounds = true;
         renderResults(objects, sLat, sLng);
         window.skipFitBounds = false;
@@ -1298,6 +1308,7 @@ function renderCampingResults(campings) {
             map.fitBounds(viewBounds, { padding: [50, 50] });
         }
     } else {
+        placeSearchMarker(sLat, sLng);
         renderResults(objects, sLat, sLng);
     }
 
@@ -2235,7 +2246,7 @@ window.performSearch = async function(forceAPI = false) {
     if (searchIntent === 'camping' && q) {
         const matches = window.findLocalCampingMatches(q);
         if (matches.length > 0) {
-            renderCampingResults(matches);
+            renderCampingResults(matches, { campingName: true });
             isSearching = false;
             return;
         }
@@ -2256,7 +2267,7 @@ window.performSearch = async function(forceAPI = false) {
     if (!coords && q && searchIntent !== 'place') {
         const matches = window.findLocalCampingMatches(q);
         if (matches.length > 0) {
-            renderCampingResults(matches);
+            renderCampingResults(matches, { campingName: true });
             isSearching = false;
             return;
         }
