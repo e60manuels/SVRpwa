@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.82"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.83"; // Increment this number with each commit
 
 // Normaliseer zoektekst: kleine letters, diakritiek weg, aanhalingstekens
 // genormaliseerd, meerdere spaties ingedikt.
@@ -1292,7 +1292,9 @@ function renderCampingResults(campings, opts) {
         // toe op de buren en regelt zelf de kaartweergave (fitBounds op de buren).
         const one = filtered[0];
         window.suppressSearchMarker = true;
+        window.suppressDistance = true;
         renderCampingResults(nearestCampingsAround(one.lat, one.lng, 10));
+        window.suppressDistance = false;
         window.suppressSearchMarker = false;
         // Open de popup van de gekozen camping zodat duidelijk is welke match je
         // hebt geselecteerd tussen de omringende markers (zelfde flow als de
