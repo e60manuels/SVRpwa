@@ -13,6 +13,23 @@ data/*-backup*.json
 *.log
 *.tmp
 
+# Debug captures / dumps - NEVER commit these (sessie-cookies en PII bleken in zulke captures te lekken)
+# Root-level captures
+/console.txt
+/Poldercamping.txt
+/*-document.txt
+
+# bestanden/: code-kopieën en dumps mogen niet (opnieuw) in de repo; gecureerde docs (md) wel
+bestanden/*.js
+bestanden/*.kt
+bestanden/*.html
+bestanden/*.webp
+bestanden/*.json
+bestanden/*.gradle*
+bestanden/*.txt
+# Uitzondering: de gecureerde ontwerp-notitie die wél geversioneerd blijft
+!bestanden/ontwerp-v0.2.29.txt
+
 # OS / editor artefacts
 .DS_Store
 Thumbs.db
