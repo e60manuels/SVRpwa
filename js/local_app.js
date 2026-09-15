@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.86"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.87"; // Increment this number with each commit
 
 // Normaliseer zoektekst: kleine letters, diakritiek weg, aanhalingstekens
 // genormaliseerd, meerdere spaties ingedikt.
@@ -2216,9 +2216,13 @@ $searchInput.on('input', function() {
     $suggestionsList.empty();
     if (suggestions.length === 0) { $suggestionsList.hide(); return; }
     suggestions.forEach(suggestion => {
-        const icon = '📍';
-        const $li = $('<li class="suggestion-item"></li>')
-            .text(`${icon} ${suggestion.label}`);
+        const $li = $('<li class="suggestion-item"></li>');
+        if (suggestion.type === 'camping') {
+            $li.append($('<span class="suggestion-camp-icon"></span>'));
+            $li.append(document.createTextNode(' ' + suggestion.label));
+        } else {
+            $li.text(`📍 ${suggestion.label}`);
+        }
         $li.on('click', (e) => {
             e.stopPropagation();
             window._searchIntent = suggestion.type;
