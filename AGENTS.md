@@ -431,6 +431,14 @@ This file is the final, UI-ready dataset used by the PWA. It acts as a cache of 
 - [ ] User must clear Chrome site data or uninstall/reinstall to re-trigger native prompt.
 - [ ] Manual fallback: `showInstallPromotion()` called when ⓘ help button is clicked.
 
+### Known Issue — Chrome v2-WebAPK crash op Android 8.1-tablets (o.a. Samsung Galaxy Tab A 10.1"/SM-T580)
+
+- **Symptoom**: na installatie via Chrome (WebAPK) start de app niet; de Android-dialog "… is gestopt" verschijnt.
+- **Root cause**: Chrome (≥ zo'n version) bouwt de WebAPK-v2-shell (`h2o`, `H2OOpaqueMainActivity`) met dex-format versie 039, dat Android 9+ vereist. Android 8.1 (dex ≤038 grens) kan de classes niet laden → `androidx`-achtige `ClassNotFoundException: org.chromium.webapk.shell_apk.h2o.SplashContentProvider` bij `installProvider` → FATAL EXCEPTION. Log: `Unrecognized version number in base.apk: 0 3 9`.
+- **Geen PWA-zijde fix mogelijk**: herinstalleren, Chrome-data wissen en Play-rollback/-update verhelpen het niet; identiek gerapporteerd in bv. mealie-recipes/mealie#6312 en meerdere dev.to-/forum-threads. De site zelf werkt prima in een Chrome-tab.
+- **Werkende install-route op zulke tablets**: installeren via Samsung Internet (eigen, compatibele WebAPK-runtime) of Chrome "Toevoegen aan startscherm" (snelkoppeling naar tab). Samenvatting diagnose in `bestanden/known-issues/` (n.v.t.) — zie dit changelog-blok en commit `402c9a8`.
+- **Veldtest jan 2026**: Samsung Internet-installatie op SM-T580 (Android 8.1) start en rendert v0.2.89 correct, incl. de two-view-layoutfixes.
+
 ---
 
 ## Desktop Split-Screen Layout (v0.2.35+)
