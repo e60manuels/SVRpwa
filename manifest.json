@@ -1,6 +1,6 @@
 {
-  "name": "SVR Campings",
-  "short_name": "SVR",
+  "name": "SVRpwa",
+  "short_name": "SVRpwa",
   "description": "Vind SVR campings bij de boer.",
   "start_url": "./index.html",
   "scope": "./",

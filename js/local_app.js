@@ -1,5 +1,5 @@
 // VERSION COUNTER - UPDATE THIS WITH EACH COMMIT FOR VISIBILITY
-window.SVR_PWA_VERSION = "0.2.89"; // Increment this number with each commit
+window.SVR_PWA_VERSION = "0.2.90"; // Increment this number with each commit
 
 // Tablet/desktop-detectie voor de two-view PWA:
 // - Rechtop (portrait) of smal scherm  => mobiele view (fullscreen, toggle).
